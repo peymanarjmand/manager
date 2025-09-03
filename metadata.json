@@ -1,0 +1,6 @@
+{
+  "name": "Life Manager",
+  "description": "An application to help organize your life with various tools like a password manager, smart accountant, phone book, and more. It supports both English and Farsi.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}

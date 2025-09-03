@@ -1,0 +1,10 @@
+/* Tailwind entrypoint for offline build */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional: base layer customizations */
+@layer base {
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body { @apply bg-slate-900 text-slate-100; }
+}

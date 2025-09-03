@@ -1,0 +1,137 @@
+import React, { useState, useEffect } from 'react';
+import { useSettingsStore } from './store';
+import { Settings } from '../../types';
+import { CloseIcon, AlertIcon } from '../../components/Icons';
+
+const FormInput = ({ label, id, value, onChange, type = 'number', min = 1, step = 1, unit }) => (
+    <div>
+        <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
+        <div className="relative">
+            <input
+                type={type}
+                id={id}
+                name={id}
+                value={value}
+                onChange={onChange}
+                min={min}
+                step={step}
+                className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition"
+            />
+            <span className="absolute left-3 inset-y-0 flex items-center text-slate-400 text-sm">{unit}</span>
+        </div>
+    </div>
+);
+
+const FormToggle = ({ label, id, checked, onChange, description }) => (
+    <div className="flex justify-between items-center">
+        <div>
+            <label htmlFor={id} className="block text-sm font-medium text-slate-200">{label}</label>
+            {description && <p className="text-xs text-slate-400">{description}</p>}
+        </div>
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            onClick={onChange}
+            className={`${checked ? 'bg-sky-500' : 'bg-slate-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-800`}
+        >
+            <span className={`${checked ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+        </button>
+    </div>
+);
+
+export const SettingsModal = ({ isOpen, onClose }) => {
+    const storedSettings = useSettingsStore(state => state.settings);
+    const updateSettings = useSettingsStore(state => state.updateSettings);
+    const [localSettings, setLocalSettings] = useState<Settings>(storedSettings);
+
+    useEffect(() => {
+        setLocalSettings(storedSettings);
+    }, [isOpen, storedSettings]);
+
+    if (!isOpen) return null;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value, type, checked } = e.target;
+        setLocalSettings(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : type === 'number' ? parseInt(value, 10) : value,
+        }));
+    };
+    
+    const handleToggle = (name: keyof Settings) => {
+        setLocalSettings(prev => ({
+            ...prev,
+            [name]: !prev[name],
+        }));
+    }
+
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        updateSettings(localSettings);
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
+            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-slate-700 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSave}>
+                    <header className="flex justify-between items-center p-4 border-b border-slate-700">
+                        <h3 className="text-xl font-bold text-slate-100">تنظیمات تایمر و هشدارها</h3>
+                        <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">
+                            <CloseIcon />
+                        </button>
+                    </header>
+
+                    <main className="p-6 space-y-6 overflow-y-auto">
+                        <section>
+                            <h4 className="font-semibold text-slate-200 mb-3">تنظیمات تایمر پومودورو</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <FormInput label="زمان تمرکز" id="focusDuration" value={localSettings.focusDuration} onChange={handleChange} unit="دقیقه" />
+                                <FormInput label="استراحت کوتاه" id="shortBreakDuration" value={localSettings.shortBreakDuration} onChange={handleChange} unit="دقیقه" />
+                                <FormInput label="استراحت طولانی" id="longBreakDuration" value={localSettings.longBreakDuration} onChange={handleChange} unit="دقیقه" />
+                                <FormInput label="جلسات در هر دور" id="sessionsPerRound" value={localSettings.sessionsPerRound} onChange={handleChange} unit="جلسه" />
+                            </div>
+                        </section>
+                        
+                        <div className="border-t border-slate-700"></div>
+
+                        <section>
+                            <h4 className="font-semibold text-slate-200 mb-3">تنظیمات هشدارهای سلامتی</h4>
+                            <div className="space-y-4">
+                               <FormToggle label="فعال‌سازی هشدار استراحت چشم" id="eyeStrainAlertEnabled" checked={localSettings.eyeStrainAlertEnabled} onChange={() => handleToggle('eyeStrainAlertEnabled')} description="هر ۲۰ دقیقه یکبار یادآوری می‌کند."/>
+                               {localSettings.eyeStrainAlertEnabled && (
+                                   <div className="pl-4 border-r-2 border-slate-700 space-y-4 animate-fade-in">
+                                        <FormToggle label="پخش صدا برای هشدار" id="soundEnabled" checked={localSettings.soundEnabled} onChange={() => handleToggle('soundEnabled')} description="" />
+                                        <div>
+                                            <label htmlFor="eyeStrainMessage" className="block text-sm font-medium text-slate-300 mb-1">متن پیام هشدار</label>
+                                             <input
+                                                type="text"
+                                                id="eyeStrainMessage"
+                                                name="eyeStrainMessage"
+                                                value={localSettings.eyeStrainMessage}
+                                                onChange={handleChange}
+                                                className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition"
+                                            />
+                                        </div>
+                                   </div>
+                               )}
+                            </div>
+                             <div className="mt-4 bg-amber-500/10 p-3 rounded-lg flex items-start ring-1 ring-amber-500/30 text-xs">
+                                <AlertIcon className="h-5 w-5 text-amber-300 shrink-0 ml-2" />
+                                <p className="text-amber-200">
+                                    برای دریافت اعلان‌ها، باید به مرورگر اجازه نمایش آن‌ها را بدهید.
+                                </p>
+                            </div>
+                        </section>
+
+                    </main>
+
+                    <footer className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end">
+                        <button type="submit" className="py-2 px-5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-sky-400">ذخیره تغییرات</button>
+                    </footer>
+                </form>
+            </div>
+        </div>
+    );
+};
