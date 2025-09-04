@@ -1,0 +1,18 @@
+appId: com.life.manager
+productName: Life Manager
+files:
+  - dist/**
+  - dist-electron/**
+extraMetadata:
+  main: dist-electron/main.cjs
+win:
+  target:
+    - nsis
+    - zip
+  artifactName: "${productName}-${version}-win.${ext}"
+nsis:
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+directories:
+  output: release

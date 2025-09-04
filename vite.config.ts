@@ -1,5 +1,6 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
+import electron from 'vite-plugin-electron/simple';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
@@ -12,6 +13,38 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      }
+      },
+      plugins: [
+        electron({
+          main: {
+            entry: 'electron/main.ts',
+            vite: {
+              build: {
+                outDir: 'dist-electron',
+                rollupOptions: {
+                  output: {
+                    entryFileNames: 'main.cjs',
+                    format: 'cjs',
+                  }
+                }
+              }
+            }
+          },
+          preload: {
+            input: 'electron/preload.ts',
+            vite: {
+              build: {
+                outDir: 'dist-electron',
+                rollupOptions: {
+                  output: {
+                    entryFileNames: 'preload.mjs',
+                    format: 'es',
+                  }
+                }
+              }
+            }
+          },
+        })
+      ]
     };
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { Header } from './components/Header';
 import { LoginPage } from './features/auth/LoginPage';
@@ -18,6 +18,10 @@ export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phon
 function App(): React.ReactNode {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
+
+  const autoLockEnabled = useSettingsStore((s) => s.settings.autoLockEnabled);
+  const autoLockMinutes = useSettingsStore((s) => s.settings.autoLockMinutes);
+  const inactivityTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Check for active session on component mount, but require in-memory master key too
@@ -52,6 +56,13 @@ function App(): React.ReactNode {
     rehydrateAllStores();
   };
 
+  const performSoftLock = () => {
+    // Soft lock: clear only master key, keep session flag so next login just needs password
+    clearMasterKey();
+    setIsAuthenticated(false);
+    setCurrentView('dashboard');
+  };
+
   const handleLogout = () => {
     // Clear session flag and master key first
     sessionStorage.removeItem('lifeManagerSessionActive');
@@ -64,6 +75,51 @@ function App(): React.ReactNode {
     }
   };
 
+  // Inactivity auto-lock
+  useEffect(() => {
+    if (!isAuthenticated) {
+      // If not authenticated, ensure no timers/listeners remain
+      if (inactivityTimerRef.current) {
+        window.clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (!autoLockEnabled || autoLockMinutes <= 0) {
+      // Disable any running timers if auto-lock disabled
+      if (inactivityTimerRef.current) {
+        window.clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      return;
+    }
+
+    const resetTimer = () => {
+      if (inactivityTimerRef.current) {
+        window.clearTimeout(inactivityTimerRef.current);
+      }
+      const ms = autoLockMinutes * 60 * 1000;
+      inactivityTimerRef.current = window.setTimeout(() => {
+        performSoftLock();
+      }, ms);
+    };
+
+    const activityEvents: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
+    const onActivity = () => resetTimer();
+
+    activityEvents.forEach((evt) => window.addEventListener(evt, onActivity, { passive: true }));
+    resetTimer(); // start timer initially
+
+    return () => {
+      activityEvents.forEach((evt) => window.removeEventListener(evt, onActivity));
+      if (inactivityTimerRef.current) {
+        window.clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+    };
+  }, [isAuthenticated, autoLockEnabled, autoLockMinutes]);
+
   const handleNavigate = (view: View) => {
     setCurrentView(view);
   };
@@ -74,7 +130,7 @@ function App(): React.ReactNode {
   
   return (
     <div className="min-h-screen bg-slate-900 text-white font-sans">
-      <Header onLogout={handleLogout} />
+      <Header onLogout={handleLogout} onLock={performSoftLock} />
       <main>
         {currentView === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
         {currentView === 'password-manager' && <PasswordManager onNavigateBack={() => handleNavigate('dashboard')} />}

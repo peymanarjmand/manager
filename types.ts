@@ -22,7 +22,14 @@ export interface AlertSettings {
     soundEnabled: boolean;
 }
 
-export interface Settings extends PomodoroSettings, AlertSettings {}
+export interface SecuritySettings {
+    autoLockEnabled: boolean; // enable inactivity auto-lock
+    autoLockMinutes: number; // minutes of inactivity before lock
+    clipboardAutoClearEnabled: boolean; // enable auto clearing clipboard after copy
+    clipboardClearSeconds: number; // seconds to clear clipboard
+}
+
+export interface Settings extends PomodoroSettings, AlertSettings, SecuritySettings {}
 
 
 // New Types for Password Manager

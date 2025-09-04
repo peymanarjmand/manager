@@ -22,6 +22,11 @@ export const useSettingsStore = create<SettingsState>()(
                 eyeStrainInterval: 20,
                 eyeStrainMessage: 'زمان استراحت چشم! به یک جسم دور برای ۲۰ ثانیه نگاه کنید.',
                 soundEnabled: true,
+                // security defaults
+                autoLockEnabled: true,
+                autoLockMinutes: 10,
+                clipboardAutoClearEnabled: true,
+                clipboardClearSeconds: 25,
             },
             updateSettings: (newSettings) => set((state) => ({
                 settings: { ...state.settings, ...newSettings }

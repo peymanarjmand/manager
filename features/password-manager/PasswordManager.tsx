@@ -1,9 +1,10 @@
-import React, { useState, useMemo, ChangeEvent } from 'react';
+import React, { useState, useMemo, ChangeEvent, useRef } from 'react';
 import { PASSWORD_CATEGORIES } from './constants';
 import { AnyPasswordEntry, PasswordCategory } from './types';
-import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon, EyeOffIcon, CloseIcon, AlertIcon, DefaultImageIcon } from '../../components/Icons';
+import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon, EyeOffIcon, CloseIcon, AlertIcon, DefaultImageIcon, CopyIcon, CheckCircleIcon } from '../../components/Icons';
 import { usePasswordStore } from './store';
 import { saveImageDataURL, isImageRef, getObjectURLByRef } from '../../lib/idb-images';
+import { useSettingsStore } from '../settings/store';
 
 type ModalState = {
     isOpen: boolean;
@@ -165,6 +166,9 @@ const ItemFormModal = ({ isOpen, onClose, onSave, entry, category }) => {
 const ItemCard = ({ entry, onEdit, onDelete }) => {
     const [isRevealed, setIsRevealed] = useState(false);
     const [objectURL, setObjectURL] = useState<string | null>(null);
+    const settings = useSettingsStore(state => state.settings);
+    const [copied, setCopied] = useState(false);
+    const clearTimerRef = useRef<number | null>(null);
 
     React.useEffect(() => {
         let revoked: string | null = null;
@@ -182,6 +186,15 @@ const ItemCard = ({ entry, onEdit, onDelete }) => {
         };
     }, [entry.image]);
 
+    React.useEffect(() => {
+        return () => {
+            if (clearTimerRef.current) {
+                window.clearTimeout(clearTimerRef.current);
+                clearTimerRef.current = null;
+            }
+        };
+    }, []);
+
     const getTitle = () => {
         switch (entry.category) {
             case 'emails': return entry.email;
@@ -196,6 +209,31 @@ const ItemCard = ({ entry, onEdit, onDelete }) => {
         const secret = entry.password || entry.cardPin || entry.mobileBankPass || '••••••••';
         return isRevealed ? secret : '••••••••';
     }
+
+    const getRawSecret = () => (entry.password || entry.cardPin || entry.mobileBankPass || '');
+
+    const handleCopy = async () => {
+        const raw = getRawSecret();
+        if (!raw) return;
+        try {
+            await navigator.clipboard.writeText(raw);
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1500);
+            if (settings.clipboardAutoClearEnabled) {
+                const delayMs = Math.max(1, settings.clipboardClearSeconds || 20) * 1000;
+                if (clearTimerRef.current) window.clearTimeout(clearTimerRef.current);
+                clearTimerRef.current = window.setTimeout(async () => {
+                    try {
+                        await navigator.clipboard.writeText('');
+                    } catch (err) {
+                        console.warn('Clipboard clear failed:', err);
+                    }
+                }, delayMs) as unknown as number;
+            }
+        } catch (err) {
+            console.warn('Clipboard write failed:', err);
+        }
+    };
 
     const hasSecret = entry.password || entry.cardPin || entry.mobileBankPass;
 
@@ -220,9 +258,14 @@ const ItemCard = ({ entry, onEdit, onDelete }) => {
             {hasSecret && (
                 <div className="flex items-center justify-between bg-slate-900/50 rounded-md px-3 py-1.5">
                     <span className="text-sm text-slate-300 font-mono tracking-wider">{getSecretField()}</span>
-                    <button onClick={() => setIsRevealed(!isRevealed)} className="text-slate-400 hover:text-sky-400 transition" aria-label={isRevealed ? "پنهان کردن رمز" : "نمایش رمز"}>
-                        {isRevealed ? <EyeOffIcon/> : <EyeIcon/>}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={handleCopy} className="text-slate-400 hover:text-emerald-400 transition" title="کپی رمز">
+                            {copied ? <CheckCircleIcon /> : <CopyIcon />}
+                        </button>
+                        <button onClick={() => setIsRevealed(!isRevealed)} className="text-slate-400 hover:text-sky-400 transition" aria-label={isRevealed ? "پنهان کردن رمز" : "نمایش رمز"}>
+                            {isRevealed ? <EyeOffIcon/> : <EyeIcon/>}
+                        </button>
+                    </div>
                 </div>
             )}
              {entry.description && <p className="text-sm text-slate-400 pt-1 border-t border-slate-700/50">{entry.description}</p>}
