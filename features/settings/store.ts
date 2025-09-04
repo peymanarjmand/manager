@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Settings } from '../../types';
+import { encryptedStateStorage } from '../../lib/storage';
 
 const STORAGE_KEY = 'lifeManagerSettings';
 
@@ -28,7 +29,7 @@ export const useSettingsStore = create<SettingsState>()(
         }),
         {
             name: STORAGE_KEY,
-            storage: createJSONStorage(() => localStorage),
+            storage: createJSONStorage(() => encryptedStateStorage as unknown as Storage),
         }
     )
 );

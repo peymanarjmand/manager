@@ -15,3 +15,63 @@ export const webStorage: KVStorage = {
     if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
   },
 };
+
+// Encrypted wrapper around webStorage for persisted JSON strings (async API for zustand persist)
+import { getMasterKey } from './crypto-session';
+import { encryptString, decryptString } from './crypto';
+
+// Detect our encrypted payload format
+function isEncryptedPayload(value: string): boolean {
+  try {
+    const obj = JSON.parse(value);
+    return obj && typeof obj === 'object' && typeof obj.iv === 'string' && typeof obj.ct === 'string';
+  } catch {
+    return false;
+  }
+}
+
+// Async-compatible storage for zustand persist (StateStorage-like)
+export const encryptedStateStorage = {
+  async getItem(key: string): Promise<string | null> {
+    const raw = webStorage.getItem(key);
+    if (raw == null) return null;
+
+    if (isEncryptedPayload(raw)) {
+      const keyObj = getMasterKey();
+      if (!keyObj) {
+        // No key yet; delay hydration by pretending nothing exists
+        return null;
+      }
+      try {
+        const payload = JSON.parse(raw);
+        return await decryptString(payload, keyObj);
+      } catch (e) {
+        console.error('Decryption failed for key', key, e);
+        return null;
+      }
+    }
+
+    // Backward-compat: return plaintext JSON as-is
+    return raw;
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    const keyObj = getMasterKey();
+    if (!keyObj) {
+      // Avoid writing plaintext when no master key is present
+      return;
+    }
+    try {
+      if (isEncryptedPayload(value)) {
+        webStorage.setItem(key, value);
+        return;
+      }
+      const payload = await encryptString(value, keyObj);
+      webStorage.setItem(key, JSON.stringify(payload));
+    } catch (e) {
+      console.error('Encryption wrapper error for key', key, e);
+    }
+  },
+  async removeItem(key: string): Promise<void> {
+    webStorage.removeItem(key);
+  },
+};

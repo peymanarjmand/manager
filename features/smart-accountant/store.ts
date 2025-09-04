@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus } from './types';
-import { webStorage } from '../../lib/storage';
+import { encryptedStateStorage } from '../../lib/storage';
 import moment from 'jalali-moment';
 
 const STORAGE_KEY = 'lifeManagerAccountant';
@@ -107,7 +107,7 @@ export const useAccountantStore = create<AccountantState>()(
                 return { installments: newInstallments };
             }),
             togglePaidStatus: (planId, paymentId) => set(state => {
-                const newInstallments = [...state.installments];
+                const newInstallments = [...state.installments]; // keep order while toggling
                 const planIndex = newInstallments.findIndex(p => p.id === planId);
                 if (planIndex > -1) {
                     const newPayments = [...newInstallments[planIndex].payments];
@@ -138,7 +138,7 @@ export const useAccountantStore = create<AccountantState>()(
         }),
         {
             name: STORAGE_KEY,
-            storage: createJSONStorage(() => webStorage as unknown as Storage),
+            storage: createJSONStorage(() => encryptedStateStorage as unknown as Storage),
         }
     )
 );

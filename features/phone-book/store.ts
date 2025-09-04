@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Contact } from './types';
-import { webStorage } from '../../lib/storage';
+import { encryptedStateStorage } from '../../lib/storage';
 
 const STORAGE_KEY = 'lifeManagerPhoneBook';
 
@@ -41,7 +41,7 @@ export const usePhoneBookStore = create<PhoneBookState>()(
         }),
         {
             name: STORAGE_KEY,
-            storage: createJSONStorage(() => webStorage as unknown as Storage),
+            storage: createJSONStorage(() => encryptedStateStorage as unknown as Storage),
         }
     )
 );

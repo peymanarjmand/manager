@@ -6,6 +6,12 @@ import { PasswordManager } from './features/password-manager/PasswordManager';
 import { PhoneBook } from './features/phone-book/PhoneBook';
 import { SmartAccountant } from './features/smart-accountant/SmartAccountant';
 import { DailyTasks } from './features/daily-tasks/DailyTasks';
+import { clearMasterKey, getMasterKey } from './lib/crypto-session';
+import { usePasswordStore } from './features/password-manager/store';
+import { usePhoneBookStore } from './features/phone-book/store';
+import { useAccountantStore } from './features/smart-accountant/store';
+import { useSettingsStore } from './features/settings/store';
+import { useDailyTasksStore } from './features/daily-tasks/store';
 
 export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phone-book' | 'daily-tasks';
 
@@ -14,22 +20,48 @@ function App(): React.ReactNode {
   const [currentView, setCurrentView] = useState<View>('dashboard');
 
   useEffect(() => {
-    // Check for active session on component mount
+    // Check for active session on component mount, but require in-memory master key too
     const sessionActive = sessionStorage.getItem('lifeManagerSessionActive');
-    if (sessionActive === 'true') {
+    const key = getMasterKey();
+    if (sessionActive === 'true' && key) {
       setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
     }
   }, []);
+
+  const rehydrateAllStores = () => {
+    try {
+      const stores: any[] = [
+        usePasswordStore,
+        usePhoneBookStore,
+        useAccountantStore,
+        useSettingsStore,
+        useDailyTasksStore,
+      ];
+      stores.forEach((s) => s?.persist?.rehydrate && s.persist.rehydrate());
+    } catch (e) {
+      console.error('Error rehydrating stores after login', e);
+    }
+  };
 
   const handleLoginSuccess = () => {
     sessionStorage.setItem('lifeManagerSessionActive', 'true');
     setIsAuthenticated(true);
+    // After master key is set by LoginPage, rehydrate encrypted stores so data loads
+    rehydrateAllStores();
   };
 
   const handleLogout = () => {
+    // Clear session flag and master key first
     sessionStorage.removeItem('lifeManagerSessionActive');
+    clearMasterKey();
     setIsAuthenticated(false);
     setCurrentView('dashboard'); // Reset to dashboard on logout
+    // Hard refresh to clear any decrypted in-memory state in stores/components
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   const handleNavigate = (view: View) => {

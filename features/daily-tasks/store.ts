@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { DailyTasksData, Task, Project, Subtask } from './types';
+import { encryptedStateStorage } from '../../lib/storage';
 
 const STORAGE_KEY = 'lifeManagerDailyTasks';
 
@@ -115,7 +116,7 @@ export const useDailyTasksStore = create<DailyTasksState>()(
         }),
         {
             name: STORAGE_KEY,
-            storage: createJSONStorage(() => localStorage),
+            storage: createJSONStorage(() => encryptedStateStorage as unknown as Storage),
         }
     )
 );
