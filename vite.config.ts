@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => {
         electron({
           main: {
             entry: 'electron/main.ts',
+            onstart({ startup }) {
+              // Auto start Electron when Vite dev server is ready
+              startup();
+            },
             vite: {
               build: {
                 outDir: 'dist-electron',

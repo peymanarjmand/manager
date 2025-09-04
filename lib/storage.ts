@@ -16,7 +16,7 @@ export const webStorage: KVStorage = {
   },
 };
 
-// Encrypted wrapper around webStorage for persisted JSON strings (async API for zustand persist)
+// Encrypted wrapper around storage for persisted JSON strings (async API for zustand persist)
 import { getMasterKey } from './crypto-session';
 import { encryptString, decryptString } from './crypto';
 
@@ -30,10 +30,27 @@ function isEncryptedPayload(value: string): boolean {
   }
 }
 
+function isElectronEnv(): boolean {
+  return typeof window !== 'undefined' && !!window.electronAPI?.kv;
+}
+
 // Async-compatible storage for zustand persist (StateStorage-like)
 export const encryptedStateStorage = {
   async getItem(key: string): Promise<string | null> {
-    const raw = webStorage.getItem(key);
+    const useElectron = isElectronEnv();
+
+    let raw: string | null = null;
+    if (useElectron) {
+      try {
+        raw = await window.electronAPI!.kv.get(key);
+      } catch (e) {
+        console.error('Electron KV get failed', e);
+        raw = null;
+      }
+    } else {
+      raw = webStorage.getItem(key);
+    }
+
     if (raw == null) return null;
 
     if (isEncryptedPayload(raw)) {
@@ -55,23 +72,41 @@ export const encryptedStateStorage = {
     return raw;
   },
   async setItem(key: string, value: string): Promise<void> {
+    const useElectron = isElectronEnv();
     const keyObj = getMasterKey();
     if (!keyObj) {
       // Avoid writing plaintext when no master key is present
       return;
     }
     try {
-      if (isEncryptedPayload(value)) {
-        webStorage.setItem(key, value);
-        return;
+      let toPersist = value;
+      if (!isEncryptedPayload(value)) {
+        const payload = await encryptString(value, keyObj);
+        toPersist = JSON.stringify(payload);
       }
-      const payload = await encryptString(value, keyObj);
-      webStorage.setItem(key, JSON.stringify(payload));
+
+      if (useElectron) {
+        try {
+          await window.electronAPI!.kv.set(key, toPersist);
+        } catch (e) {
+          console.error('Electron KV set failed', e);
+        }
+      } else {
+        webStorage.setItem(key, toPersist);
+      }
     } catch (e) {
       console.error('Encryption wrapper error for key', key, e);
     }
   },
   async removeItem(key: string): Promise<void> {
+    if (isElectronEnv()) {
+      try {
+        await window.electronAPI!.kv.remove(key);
+      } catch (e) {
+        console.error('Electron KV remove failed', e);
+      }
+      return;
+    }
     webStorage.removeItem(key);
   },
 };

@@ -28,12 +28,12 @@
 
 ## فاز 1: لایه ذخیره‌سازی و مدیریت تصاویر
 1) Storage Adapter (وب/Electron)
-   - ایجاد ماژول انتزاعی برای عملیات: `get`, `set`, `remove`, `migrate`. (در حال انجام)
+   - ایجاد ماژول انتزاعی برای عملیات: `get`, `set`, `remove`, `migrate`. ✅
    - وب: استفاده از `localStorage`/`IndexedDB` (ترجیح IndexedDB برای داده‌های حجیم). ✅ ایجاد وب‌Adapter اولیه (`lib/storage.ts`) و اتصال استور PasswordManager به آن.
-   - Electron: فایل رمزنگاری‌شده در `userData` (با همکاری فاز 2). (برنامه‌ریزی‌شده)
+   - Electron: فایل رمزنگاری‌شده در `userData` (با همکاری فاز 2). ✅ پیاده‌سازی اولیه: ذخیره تک‌فایل `kv-store.json` در `userData`؛ مقدارها در Renderer رمزنگاری شده و از طریق IPC ذخیره/خوانده می‌شوند (kv:get/kv:set/kv:remove).
 2) مدیریت تصاویر
    - وب: ذخیره Blob در IndexedDB و نگه‌داری reference/URL. ✅ ایجاد سرویس `lib/idb-images.ts` و اتصال در `PasswordManager.tsx` (ذخیره رفرنس و resolve در نمایش).
-   - Electron: ذخیره در مسیر `userData/images` و نگه‌داری مسیر. (برنامه‌ریزی‌شده)
+   - Electron: ذخیره در مسیر `userData/images` و نگه‌داری مسیر. ✅ پیاده‌سازی شد: IPCهای تصاویر (images:saveDataURL / images:get / images:delete) با ذخیره‌سازی فایل بر اساس id و پسوند بر مبنای MIME.
    - محدود کردن حجم/ابعاد تصویر و فشرده‌سازی اختیاری موقع آپلود. (برنامه‌ریزی‌شده)
 3) معیار پذیرش فاز 1
    - جداسازی کامل UI از جزئیات ذخیره‌سازی؛ عدم رسیدن حجم به سقف `localStorage` با تصاویر. (بخشی محقق شده؛ تصاویر به IndexedDB منتقل شدند)
@@ -61,10 +61,12 @@
      - `contextIsolation: true`, `nodeIntegration: false`, `enableRemoteModule: false`.
      - محدود کردن `window.open` و ناوبری.
    - تعریف IPC امن برای عملیات مجاز: خواندن/نوشتن فایل رمزنگاری‌شده، مدیریت تصاویر، دسترسی مسیر `userData`، پاک‌سازی کلیپ‌بورد.
+   - پیاده‌سازی شد: IPCهای اولیه ذخیره‌سازی (kv:get / kv:set / kv:remove) با ذخیره JSON در `userData/kv-store.json` و عدم انتقال کلید به Main. ✅
+   - پیاده‌سازی شد: IPC تصاویر (saveDataURL/get/delete) و IPC پاک‌سازی کلیپ‌بورد. ✅
 2) یکپارچه‌سازی با Vite
-   - استفاده از `vite-plugin-electron` (یا معادل) برای dev/build هم‌زمان renderer + main.
+   - استفاده از `vite-plugin-electron` (یا معادل) برای dev/build هم‌زمان renderer + main. ✅ (خروجی‌ها در `dist-electron`، `main.cjs` و `preload.mjs`)
 3) معیار پذیرش فاز 3
-   - اجرای اپ در محیط Electron (dev) با IPC امن و عدم ارجاع به منابع ریموت.
+   - اجرای اپ در محیط Electron (dev) با IPC امن و عدم ارجاع به منابع ریموت. ✅
 
 ## فاز 4: بسته‌بندی و خروجی ویندوز
 1) پیکربندی `electron-builder`
@@ -110,7 +112,8 @@
 - [x] سازگاری عقب‌رو: خواندن JSONهای قدیمیِ بدون رمز و نوشتن به فرمت رمزنگاری‌شده.
 - [x] امنیت تکمیلی: قفل خودکار پس از عدم فعالیت + پاک‌سازی خودکار کلیپ‌بورد.
 - [x] مهاجرت/Export UI: بکاپ رمزنگاری‌شده/غیررمزنگاری‌شده پیش از مهاجرت نهایی (Settings > پشتیبان‌گیری).
-- [x] اسکلت Electron امن + IPC پایه (ping). IPC فایل/تصویر/کلیپ‌بورد در گام بعد.
+- [x] اسکلت Electron امن + IPC پایه (ping) + KV ذخیره‌سازی (kv:get/set/remove).
 - [x] ادغام با Vite و اسکریپت‌های dev/build.
 - [x] پیکربندی اولیه electron-builder (خروجی NSIS/Zip).
+- [ ] IPC تصاویر (read/write در `userData/images`) و IPC کلیپ‌بورد.
 - [ ] تست کامل آفلاین + سخت‌سازی نهایی.
