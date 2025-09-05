@@ -71,7 +71,7 @@
 ## فاز 4: بسته‌بندی و خروجی ویندوز
 1) پیکربندی `electron-builder`
    - `appId`، `artifactName` (مثلاً `LifeManagerSetup-${version}.exe`)، آیکون `.ico`، هدف `nsis`.
-   - حذف منابع ریموت، اضافه‌کردن CSP سخت‌گیرانه.
+   - حذف منابع ریموت، اضافه‌کردن CSP سخت‌گیرانه. ✅ (CSP در index.html افزوده شد)
 2) ساخت و تست آفلاین
    - ساخت exe، نصب روی ویندوز، تست کامل بدون اینترنت: بوت، ورود، خواندن/نوشتن داده، Import/Export رمزنگاری‌شده.
 3) معیار پذیرش فاز 4
@@ -115,5 +115,6 @@
 - [x] اسکلت Electron امن + IPC پایه (ping) + KV ذخیره‌سازی (kv:get/set/remove).
 - [x] ادغام با Vite و اسکریپت‌های dev/build.
 - [x] پیکربندی اولیه electron-builder (خروجی NSIS/Zip).
-- [ ] IPC تصاویر (read/write در `userData/images`) و IPC کلیپ‌بورد.
+- [x] IPC تصاویر (read/write در `userData/images`) و IPC کلیپ‌بورد.
+- [x] CSP سخت‌گیرانه برای Renderer (index.html).
 - [ ] تست کامل آفلاین + سخت‌سازی نهایی.

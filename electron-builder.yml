@@ -1,5 +1,6 @@
 appId: com.life.manager
 productName: Life Manager
+asar: true
 files:
   - dist/**
   - dist-electron/**
@@ -9,7 +10,7 @@ win:
   target:
     - nsis
     - zip
-  artifactName: "${productName}-${version}-win.${ext}"
+  artifactName: "LifeManagerSetup-${version}.${ext}"
 nsis:
   oneClick: true
   perMachine: false
