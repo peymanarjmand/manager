@@ -30,33 +30,15 @@ function isEncryptedPayload(value: string): boolean {
   }
 }
 
-function isElectronEnv(): boolean {
-  return typeof window !== 'undefined' && !!window.electronAPI?.kv;
-}
 
 // Async-compatible storage for zustand persist (StateStorage-like)
 export const encryptedStateStorage = {
   async getItem(key: string): Promise<string | null> {
-    const useElectron = isElectronEnv();
-
-    let raw: string | null = null;
-    if (useElectron) {
-      try {
-        raw = await window.electronAPI!.kv.get(key);
-      } catch (e) {
-        console.error('Electron KV get failed', e);
-        raw = null;
-      }
-    } else {
-      raw = webStorage.getItem(key);
-    }
-
+    const raw = webStorage.getItem(key);
     if (raw == null) return null;
-
     if (isEncryptedPayload(raw)) {
       const keyObj = getMasterKey();
       if (!keyObj) {
-        // No key yet; delay hydration by pretending nothing exists
         return null;
       }
       try {
@@ -67,15 +49,11 @@ export const encryptedStateStorage = {
         return null;
       }
     }
-
-    // Backward-compat: return plaintext JSON as-is
     return raw;
   },
   async setItem(key: string, value: string): Promise<void> {
-    const useElectron = isElectronEnv();
     const keyObj = getMasterKey();
     if (!keyObj) {
-      // Avoid writing plaintext when no master key is present
       return;
     }
     try {
@@ -84,29 +62,12 @@ export const encryptedStateStorage = {
         const payload = await encryptString(value, keyObj);
         toPersist = JSON.stringify(payload);
       }
-
-      if (useElectron) {
-        try {
-          await window.electronAPI!.kv.set(key, toPersist);
-        } catch (e) {
-          console.error('Electron KV set failed', e);
-        }
-      } else {
-        webStorage.setItem(key, toPersist);
-      }
+      webStorage.setItem(key, toPersist);
     } catch (e) {
       console.error('Encryption wrapper error for key', key, e);
     }
   },
   async removeItem(key: string): Promise<void> {
-    if (isElectronEnv()) {
-      try {
-        await window.electronAPI!.kv.remove(key);
-      } catch (e) {
-        console.error('Electron KV remove failed', e);
-      }
-      return;
-    }
     webStorage.removeItem(key);
   },
 };
