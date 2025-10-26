@@ -1502,18 +1502,37 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
                     {installmentsSortMode === 'custom' && <span className="text-xs text-slate-400">برای تغییر ترتیب کارت‌ها را بکشید و رها کنید</span>}
                 </div>
 
-                {/* Monthly paid summary */}
+                {/* Monthly paid and remaining summaries */}
                 {(() => {
                     const active = installments.filter(plan => plan.payments.some(p => !p.isPaid));
-                    const monthPaid = active
-                        .flatMap(p => p.payments)
-                        .filter(p => p.isPaid && moment(p.dueDate).isBetween(startOfThisJMonth, endOfThisJMonth, undefined, '[]'))
-                        .reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
+                    const inThisMonth = (p) => moment(p.dueDate).isBetween(startOfThisJMonth, endOfThisJMonth, undefined, '[]');
+                    const monthlyPayments = active.flatMap(p => p.payments).filter(inThisMonth);
+                    const monthAll = monthlyPayments.reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
+                    const monthPaid = monthlyPayments.filter(p => p.isPaid).reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
+                    const monthRemaining = Math.max(0, monthAll - monthPaid);
+                    const progress = monthAll > 0 ? (monthPaid / monthAll) * 100 : 0;
                     return (
-                        <div className="bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700 mb-5">
-                            <div className="flex items-center justify-between">
-                                <span className="text-slate-300 text-sm">کل پرداختی این ماه</span>
-                                <span className="text-emerald-400 font-extrabold">{formatCurrency(monthPaid)}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                            <div className="bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-300 text-sm">کل پرداختی این ماه</span>
+                                    <span className="text-emerald-400 font-extrabold">{formatCurrency(monthPaid)}</span>
+                                </div>
+                            </div>
+                            <div className="bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-300 text-sm">مانده پرداخت این ماه</span>
+                                    <span className="text-rose-400 font-extrabold">{formatCurrency(monthRemaining)}</span>
+                                </div>
+                            </div>
+                            <div className="md:col-span-2">
+                                <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+                                    <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                                </div>
+                                <div className="mt-1 text-xs text-slate-400 text-center">
+                                    <span>پیشرفت پرداخت ماه جاری: </span>
+                                    <span className="text-slate-200 font-semibold">{progress.toFixed(0)}%</span>
+                                </div>
                             </div>
                         </div>
                     );
