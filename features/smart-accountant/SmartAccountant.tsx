@@ -1436,10 +1436,36 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
                     </div>
                 ) : (
                     <>
-                        <div className="mb-4">
-                            <p className="text-2xl font-bold text-sky-400 mb-1">{formatCurrency(remainingAmount)}</p>
-                            <p className="text-sm text-slate-400">مانده</p>
-                        </div>
+                        {(() => {
+                            const monthPays = plan.payments.filter(p => moment(p.dueDate).isBetween(startOfThisJMonth, endOfThisJMonth, undefined, '[]'));
+                            const monthAmount = monthPays.reduce((s, p) => s + (p.amount || 0) + (p.penalty || 0), 0);
+                            const monthPaid = monthPays.length > 0 ? monthPays.every(p => p.isPaid) : false;
+                            const earliestMonthDue = monthPays.length > 0 ? monthPays.map(p => p.dueDate).sort((a,b) => new Date(a).getTime() - new Date(b).getTime())[0] : null;
+                            return (
+                                <div className="mb-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className={`text-2xl font-extrabold ${monthPaid ? 'text-emerald-400' : 'text-sky-400'}`}>
+                                                {monthPays.length > 0 ? formatCurrency(monthAmount) : 'بدون قسط این ماه'}
+                                            </p>
+                                            {monthPays.length > 0 && <p className="text-xs text-slate-400 mt-0.5">قسط این ماه</p>}
+                                        </div>
+                                        {monthPays.length > 0 && (
+                                            <span className={`px-2 py-0.5 rounded-full text-xs ring-1 ${monthPaid ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30' : 'bg-rose-500/10 text-rose-400 ring-rose-500/30'}`}>
+                                                {monthPaid ? 'پرداخت شده' : 'پرداخت نشده'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="mt-2 flex items-center justify-between text-sm">
+                                        <div className="text-slate-400">
+                                            <span>مانده وام: </span>
+                                            <span className="text-slate-200 font-bold">{formatCurrency(remainingAmount)}</span>
+                                        </div>
+                                        {earliestMonthDue && <div className="text-xs text-slate-500">سررسید: {formatDate(earliestMonthDue)}</div>}
+                                    </div>
+                                </div>
+                            );
+                        })()}
                         <div className="mt-auto pt-3 border-t border-slate-700/50 text-xs text-slate-400">
                            <div className="flex justify-between items-center mb-1">
                                <span>پیشرفت</span>
