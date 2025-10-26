@@ -171,6 +171,7 @@ const SocialInsuranceView = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<any | null>(null);
     const [selectedYear, setSelectedYear] = useState<number | null>(null);
+    const [yearQuery, setYearQuery] = useState<string>("");
 
     useEffect(() => {
         const handler = () => { setEditing(null); setModalOpen(true); };
@@ -198,6 +199,12 @@ const SocialInsuranceView = () => {
         return Array.from(set).sort((a,b) => b - a);
     }, [socialInsurance]);
 
+    const filteredYears = useMemo(() => {
+        const q = (yearQuery || '').trim();
+        if (!q) return years;
+        return years.filter(y => String(y).includes(q));
+    }, [years, yearQuery]);
+
     const monthNames = useMemo(() => Array.from({ length: 12 }, (_, i) => moment().jMonth(i).locale('fa').format('jMMMM')), []);
 
     const openNewFor = (year: number, month: number) => {
@@ -224,16 +231,27 @@ const SocialInsuranceView = () => {
             </div>
 
             {selectedYear == null ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                    {years.map(y => (
-                        <button key={y} onClick={() => setSelectedYear(y)} className="bg-slate-800/60 hover:bg-slate-800 rounded-xl p-5 ring-1 ring-slate-700 text-center transition">
-                            <div className="text-2xl font-extrabold text-slate-100">{y}</div>
-                            <div className="text-xs text-slate-400 mt-1">مشاهده سوابق</div>
-                        </button>
-                    ))}
-                    {years.length === 0 && (
-                        <div className="text-center py-10 text-slate-400 bg-slate-800/20 rounded-lg col-span-full">هنوز سابقه‌ای ثبت نشده است.</div>
-                    )}
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="search"
+                            value={yearQuery}
+                            onChange={(e) => setYearQuery((e.target as HTMLInputElement).value)}
+                            placeholder="جستجوی سال..."
+                            className="w-full sm:w-64 bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+                        />
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto pb-1">
+                        {filteredYears.map(y => (
+                            <button key={y} onClick={() => setSelectedYear(y)} className="min-w-[96px] bg-slate-800/60 hover:bg-slate-800 rounded-xl p-4 ring-1 ring-slate-700 text-center transition">
+                                <div className="text-2xl font-extrabold text-slate-100">{y}</div>
+                                <div className="text-xs text-slate-400 mt-1">مشاهده سوابق</div>
+                            </button>
+                        ))}
+                        {filteredYears.length === 0 && (
+                            <div className="text-center py-10 text-slate-400 bg-slate-800/20 rounded-lg w-full">هیچ سالی مطابق جستجو یافت نشد.</div>
+                        )}
+                    </div>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -243,6 +261,23 @@ const SocialInsuranceView = () => {
                         </button>
                         <h3 className="text-xl font-bold text-white">سوابق سال {selectedYear}</h3>
                     </div>
+                    {(() => {
+                        const recs = socialInsurance.filter(p => p.year === selectedYear);
+                        const yAmount = recs.reduce((s, p) => s + (p.amount || 0), 0);
+                        const yDays = recs.reduce((s, p) => s + (p.daysCovered || 0), 0);
+                        return (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className="bg-slate-800/60 rounded-xl p-3 ring-1 ring-slate-700">
+                                    <div className="text-slate-300 text-xs">مجموع پرداختی سال</div>
+                                    <div className="text-emerald-400 font-extrabold">{formatCurrency(yAmount)}</div>
+                                </div>
+                                <div className="bg-slate-800/60 rounded-xl p-3 ring-1 ring-slate-700">
+                                    <div className="text-slate-300 text-xs">مجموع روزهای سال</div>
+                                    <div className="text-amber-400 font-extrabold">{yDays} روز</div>
+                                </div>
+                            </div>
+                        );
+                    })()}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
                             const rec = socialInsurance.find(p => p.year === selectedYear && p.month === m);
