@@ -235,21 +235,40 @@ const SocialInsuranceView = () => {
 };
 
 const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: boolean; onClose: () => void; onSave: (p: any) => void; payment: any | null; }) => {
-    const [form, setForm] = useState<any>(() => payment || ({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: 30, amount: 0, payDate: new Date().toISOString() }));
+    const [form, setForm] = useState<any>(() => payment || ({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: moment.jDaysInMonth(moment().jYear(), moment().jMonth()), amount: 0, payDate: new Date().toISOString() }));
     const [receiptURL, setReceiptURL] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
 
+    const monthNames = useMemo(() => Array.from({ length: 12 }, (_, i) => moment().jMonth(i).locale('fa').format('jMMMM')), []);
+
+    const computeDaysCovered = (year: number, month: number) => {
+        return moment.jDaysInMonth(year, month - 1);
+    };
+
     useEffect(() => {
         if (payment) setForm(payment);
-        else setForm({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: 30, amount: 0, payDate: new Date().toISOString() });
+        else setForm({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: moment.jDaysInMonth(moment().jYear(), moment().jMonth()), amount: 0, payDate: new Date().toISOString() });
         setReceiptURL(null);
     }, [payment, isOpen]);
+
+    useEffect(() => {
+        // Auto-update daysCovered when year/month changes
+        setForm((p: any) => ({ ...p, daysCovered: computeDaysCovered(p.year, p.month) }));
+    }, [form.year, form.month]);
 
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ ...form, amount: Number(form.amount) || 0, daysCovered: Number(form.daysCovered) || 0 });
+        // smart validation: prevent duplicate year/month
+        const existing = useAccountantStore.getState().socialInsurance;
+        const duplicate = existing.find(x => x.year === form.year && x.month === form.month && x.id !== form.id);
+        if (duplicate) {
+            alert('برای این سال/ماه قبلا پرداخت ثبت شده است.');
+            return;
+        }
+        const days = computeDaysCovered(form.year, form.month);
+        onSave({ ...form, amount: Number(form.amount) || 0, daysCovered: days });
     };
 
     return (
@@ -267,14 +286,16 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
                                 <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.year} onChange={e => setForm(p => ({...p, year: Number((e.target as HTMLInputElement).value)}))} required />
                             </div>
                             <div>
-                                <label className="block text-sm text-slate-300 mb-1">ماه (۱-۱۲)</label>
-                                <input type="number" min={1} max={12} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.month} onChange={e => setForm(p => ({...p, month: Number((e.target as HTMLInputElement).value)}))} required />
+                                <label className="block text-sm text-slate-300 mb-1">ماه</label>
+                                <select className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.month} onChange={e => setForm(p => ({...p, month: Number((e.target as HTMLSelectElement).value)}))}>
+                                    {monthNames.map((name, idx) => <option key={idx+1} value={idx+1}>{name}</option>)}
+                                </select>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-sm text-slate-300 mb-1">روزهای پوشش</label>
-                                <input type="number" min={0} max={31} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.daysCovered} onChange={e => setForm(p => ({...p, daysCovered: Number((e.target as HTMLInputElement).value)}))} required />
+                                <label className="block text-sm text-slate-300 mb-1">روزهای پوشش (اتوماتیک)</label>
+                                <input type="number" min={0} max={31} disabled className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none opacity-70" value={computeDaysCovered(form.year, form.month)} />
                             </div>
                             <div>
                                 <label className="block text-sm text-slate-300 mb-1">مبلغ (تومان)</label>
@@ -283,8 +304,7 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-sm text-slate-300 mb-1">تاریخ پرداخت</label>
-                                <input type="date" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={moment(form.payDate).format('YYYY-MM-DD')} onChange={e => setForm(p => ({...p, payDate: moment((e.target as HTMLInputElement).value, 'YYYY-MM-DD').toISOString()}))} required />
+                                <JalaliDatePicker label="تاریخ پرداخت" id="siPayDate" value={form.payDate} onChange={(iso) => setForm(p => ({ ...p, payDate: iso }))} />
                             </div>
                             <div>
                                 <label className="block text-sm text-slate-300 mb-1">یادداشت (اختیاری)</label>
@@ -294,27 +314,31 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
                         <div>
                             <label className="block text-sm text-slate-300 mb-1">تصویر فیش (اختیاری)</label>
                             <input type="file" accept="image/*" onChange={async (e) => {
-                                const f = e.target.files?.[0];
-                                if (!f) return;
-                                const reader = new FileReader();
-                                reader.onloadend = async () => {
-                                    const dataUrl = String(reader.result);
-                                    setIsUploading(true);
-                                    try {
-                                        // Upload to Supabase storage bucket 'receipts' (create if needed in Supabase UI)
-                                        const fileName = `si/${form.id}-${Date.now()}.jpg`;
-                                        const { error: upErr } = await supabase.storage.from('receipts').upload(fileName, dataUrl, { upsert: true, contentType: 'image/jpeg' } as any);
-                                        if (upErr) { console.error('Upload error', upErr); }
-                                        else {
-                                            setForm(p => ({...p, receiptRef: fileName}));
-                                        }
-                                    } finally {
-                                        setIsUploading(false);
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setIsUploading(true);
+                                try {
+                                    const path = `si/${form.id}-${Date.now()}-${file.name}`;
+                                    const { error: upErr } = await supabase.storage.from('receipts').upload(path, file, { upsert: true });
+                                    if (upErr) { console.error('Upload error', upErr); }
+                                    else {
+                                        setForm(p => ({...p, receiptRef: path}));
+                                        const { data } = supabase.storage.from('receipts').getPublicUrl(path);
+                                        setReceiptURL(data.publicUrl);
                                     }
-                                };
-                                reader.readAsDataURL(f);
+                                } finally {
+                                    setIsUploading(false);
+                                }
                             }} />
                             {isUploading && <p className="text-xs text-slate-400 mt-1">در حال آپلود…</p>}
+                            {receiptURL && (
+                                <div className="mt-2 p-2 bg-slate-900/50 rounded">
+                                    <img src={receiptURL} className="max-h-48 rounded-md" />
+                                    <div className="mt-2 text-right">
+                                        <a href={receiptURL} target="_blank" rel="noreferrer" className="text-sky-400 text-sm">دانلود فیش</a>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
