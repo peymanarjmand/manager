@@ -88,3 +88,13 @@ export interface AccountantData {
     installments: InstallmentPlan[];
     checks: Check[];
 }
+
+// Darfak (house build) expense
+export interface DarfakExpense {
+    id: string;
+    title: string;
+    amount: number;
+    date: string; // ISO
+    tags: string[]; // e.g., ['#مصالح', '#دستمزد']
+    note?: string;
+}

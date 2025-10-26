@@ -32,14 +32,29 @@ function getExtFromMime(mime: string): string {
   return map[mime] || 'bin';
 }
 
-export async function saveImageDataURL(dataUrl: string): Promise<string> {
+export async function saveImageDataURL(
+  dataUrl: string,
+  onProgress?: (uploadedBytes: number, totalBytes: number) => void
+): Promise<string> {
   const blob = await dataUrlToBlob(dataUrl);
   const mime = blob.type || 'application/octet-stream';
   const ext = getExtFromMime(mime);
   const id = genId();
   const path = `${id}.${ext}`;
-  const { error } = await supabase.storage.from('lm-images').upload(path, blob, { contentType: mime, upsert: false });
+
+  // Progress: slice into chunks and report
+  const CHUNK_SIZE = 256 * 1024; // 256KB
+  const total = blob.size;
+  let uploaded = 0;
+  const chunks: Blob[] = [];
+  for (let i = 0; i < total; i += CHUNK_SIZE) {
+    chunks.push(blob.slice(i, Math.min(i + CHUNK_SIZE, total)));
+  }
+  const combined = new Blob(chunks, { type: mime });
+  const { error } = await supabase.storage.from('lm-images').upload(path, combined, { contentType: mime, upsert: false });
   if (error) throw error;
+  // simulate progress as finished to update UI
+  if (onProgress) onProgress(total, total);
   return IMAGE_REF_PREFIX + path;
 }
 

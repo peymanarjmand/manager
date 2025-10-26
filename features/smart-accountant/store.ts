@@ -1,12 +1,17 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus } from './types';
+import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense } from './types';
 import { createSupabaseTableStateStorage } from '../../lib/supabaseStorage';
+import { supabase } from '../../lib/supabase';
 import moment from 'jalali-moment';
 
 const STORAGE_KEY = 'lifeManagerAccountant';
 
 interface AccountantState extends AccountantData {
+    darfak: DarfakExpense[];
+    loadDarfak: () => Promise<void>;
+    saveDarfak: (exp: DarfakExpense) => void;
+    deleteDarfak: (id: string) => void;
     saveTransaction: (transaction: Transaction) => void;
     deleteTransaction: (id: string) => void;
     saveAsset: (asset: Asset) => void;
@@ -35,6 +40,58 @@ export const useAccountantStore = create<AccountantState>()(
             ledger: {},
             installments: [],
             checks: [],
+            darfak: [],
+            loadDarfak: async () => {
+                const { data, error } = await supabase
+                    .from('darfak_expenses')
+                    .select('id,title,amount,date,tags,note,attachment_ref')
+                    .order('date', { ascending: false });
+                if (error) {
+                    console.warn('Darfak load error', error);
+                    return;
+                }
+                const mapped: DarfakExpense[] = (data || []).map((r: any) => ({
+                    id: r.id,
+                    title: r.title,
+                    amount: Number(r.amount) || 0,
+                    date: r.date,
+                    tags: (r.tags as string[]) || [],
+                    note: r.note || undefined,
+                    attachment: (r.attachment_ref as string | null) || undefined,
+                }));
+                set({ darfak: mapped });
+            },
+            saveDarfak: (exp) => {
+                set(state => {
+                    const rest = state.darfak.filter(e => e.id !== exp.id);
+                    return { darfak: [...rest, exp].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
+                });
+                (async () => {
+                    const { error } = await supabase
+                        .from('darfak_expenses')
+                        .upsert({
+                            id: exp.id,
+                            title: exp.title,
+                            amount: exp.amount,
+                            date: exp.date,
+                            tags: exp.tags,
+                            note: exp.note || null,
+                            attachment_ref: exp.attachment || null,
+                            updated_at: new Date().toISOString(),
+                        });
+                    if (error) console.error('Darfak upsert error', error);
+                })();
+            },
+            deleteDarfak: (id) => {
+                set(state => ({ darfak: state.darfak.filter(e => e.id !== id) }));
+                (async () => {
+                    const { error } = await supabase
+                        .from('darfak_expenses')
+                        .delete()
+                        .eq('id', id);
+                    if (error) console.error('Darfak delete error', error);
+                })();
+            },
             saveTransaction: (transaction) => set((state) => {
                 const items = state.transactions.filter(t => t.id !== transaction.id);
                 return { transactions: [...items, transaction].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
