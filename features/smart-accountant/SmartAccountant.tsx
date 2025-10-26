@@ -1359,7 +1359,10 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                                     reader.readAsDataURL(f);
                                 }} />
                                 {qReceiptURL && (
-                                    <a href={qReceiptURL} target="_blank" rel="noreferrer" className="text-sky-400 text-xs">دانلود</a>
+                                    <>
+                                        <img src={qReceiptURL} alt="رسید" className="h-10 w-10 rounded-md object-cover hidden sm:block" />
+                                        <a href={qReceiptURL} target="_blank" rel="noreferrer" className="text-sky-400 text-xs">دانلود</a>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -1373,6 +1376,9 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                     {safeLedger.map(entry => (
                         <div key={entry.id} className={`bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 ${entry.isSettled ? 'opacity-50' : ''}`}>
                             <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
+                                {entry.receiptImage && (
+                                    <ImageFromRef srcOrRef={entry.receiptImage} className="h-12 w-12 rounded-md object-cover hidden sm:block" />
+                                )}
                                 <div className="min-w-0">
                                     <p className="font-bold text-slate-100 truncate">{entry.description}</p>
                                     <p className="text-sm text-slate-400 truncate">{formatDate(entry.date)}</p>
