@@ -77,7 +77,6 @@ export const useAccountantStore = create<AccountantState>()(
                             tags: exp.tags,
                             note: exp.note || null,
                             attachment_ref: exp.attachment || null,
-                            updated_at: new Date().toISOString(),
                         });
                     if (error) console.error('Darfak upsert error', error);
                 })();

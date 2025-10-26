@@ -128,26 +128,28 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
                         <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">بستن</button>
                     </div>
                     <div className="p-6 space-y-4">
-                        <div>
-                            <label className="block text-sm text-slate-300 mb-1">عنوان</label>
-                            <input className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.title} onChange={e => setForm(p => ({...p, title: e.target.value}))} required/>
-                        </div>
                         <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-sm text-slate-300 mb-1">عنوان</label>
+                                <input className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.title} onChange={e => setForm(p => ({...p, title: e.target.value}))} required/>
+                            </div>
                             <div>
                                 <label className="block text-sm text-slate-300 mb-1">مبلغ (تومان)</label>
                                 <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.amount} onChange={e => setForm(p => ({...p, amount: Number(e.target.value)}))} required/>
                             </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-sm text-slate-300 mb-1">تاریخ</label>
                                 <input type="date" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none"
                                     value={moment(form.date).format('YYYY-MM-DD')}
                                     onChange={e => setForm(p => ({...p, date: moment(e.target.value, 'YYYY-MM-DD').toISOString()}))} required/>
                             </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm text-slate-300 mb-1">تگ‌ها</label>
-                            <input className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                                value={(form.tags || []).join(' ')} onChange={e => handleTagInput(e.target.value)} placeholder="#مصالح #دستمزد" />
+                            <div>
+                                <label className="block text-sm text-slate-300 mb-1">تگ‌ها</label>
+                                <input className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+                                    value={(form.tags || []).join(' ')} onChange={e => handleTagInput(e.target.value)} placeholder="#مصالح #دستمزد" />
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm text-slate-300 mb-1">تصویر فاکتور (اختیاری)</label>
