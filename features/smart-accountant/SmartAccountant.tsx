@@ -165,6 +165,28 @@ const JalaliDatePicker = ({ value, onChange, id, label }) => {
     );
 };
 
+// Reusable Confirm Dialog (styled)
+const ConfirmDialog = ({ open, title = 'تایید عملیات', message, confirmText = 'تایید', cancelText = 'لغو', tone = 'warning', onConfirm, onClose }: { open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void; onClose: () => void; }) => {
+    if (!open) return null;
+    const confirmClasses = tone === 'danger' ? 'bg-rose-600 hover:bg-rose-500' : tone === 'success' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-amber-600 hover:bg-amber-500';
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={onClose}>
+            <div className="absolute inset-0 bg-black/70" />
+            <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+                    <h3 className="text-slate-100 font-bold text-lg">{title}</h3>
+                    <button onClick={onClose} className="text-slate-400 hover:text-white"><CloseIcon /></button>
+                </div>
+                <div className="p-5 text-slate-200 leading-7">{message}</div>
+                <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
+                    <button onClick={onClose} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">{cancelText}</button>
+                    <button onClick={() => { onConfirm(); onClose(); }} className={`px-4 py-2 rounded-md text-white text-sm font-bold ${confirmClasses}`}>{confirmText}</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const SocialInsuranceView = () => {
     const { socialInsurance } = useAccountantStore();
     const { saveSocialInsurance, deleteSocialInsurance, settleSocialInsurance, settleSocialInsuranceMonth } = useAccountantStore.getState();
@@ -173,6 +195,7 @@ const SocialInsuranceView = () => {
     const [editing, setEditing] = useState<any | null>(null);
     const [selectedYear, setSelectedYear] = useState<number | null>(null);
     const [yearQuery, setYearQuery] = useState<string>("");
+    const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void } | null>(null);
 
     useEffect(() => {
         const handler = () => { setEditing(null); setModalOpen(true); };
@@ -314,7 +337,7 @@ const SocialInsuranceView = () => {
                                                     {!rec.isSettled && <button onClick={() => { setEditing(rec); setModalOpen(true); }} className="hover:text-sky-400 text-xs">ویرایش</button>}
                                                     {!rec.isSettled && <button onClick={() => deleteSocialInsurance(rec.id)} className="hover:text-rose-400 text-xs">حذف</button>}
                                                     {!rec.isSettled ? (
-                                                        <button onClick={() => { if (window.confirm('تسویه این ماه غیرقابل بازگشت است. تایید می‌کنید؟')) settleSocialInsurance(rec.id); }} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs" title="تسویه (غیرقابل بازگشت)">✓✓ تسویه</button>
+                                                        <button onClick={() => setConfirmState({ open: true, title: 'تسویه نهایی', message: 'تسویه این ماه غیرقابل بازگشت است. تایید می‌کنید؟', confirmText: '✓✓ تسویه نهایی', tone: 'success', onConfirm: () => settleSocialInsurance(rec.id) })} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs" title="تسویه (غیرقابل بازگشت)">✓✓ تسویه</button>
                                                     ) : (
                                                         <span className="px-2 py-1 bg-emerald-700 text-white rounded-md text-xs" title="تسویه شده">✓✓ تسویه‌شده</span>
                                                     )}
@@ -322,7 +345,7 @@ const SocialInsuranceView = () => {
                                             ) : (
                                                 <>
                                                     <button onClick={() => openNewFor(selectedYear, m)} className="px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs">ثبت</button>
-                                                    <button onClick={() => { if (window.confirm('این ماه را بدون ثبت پرداخت تسویه می‌کنید. غیرقابل بازگشت است. تایید؟')) settleSocialInsuranceMonth(selectedYear, m); }} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs" title="تسویه بدون ثبت">✓✓ تسویه</button>
+                                                    <button onClick={() => setConfirmState({ open: true, title: 'تسویه بدون ثبت پرداخت', message: 'این ماه را بدون ثبت پرداخت تسویه می‌کنید. این اقدام غیرقابل بازگشت است. تایید می‌کنید؟', confirmText: '✓✓ تسویه', tone: 'success', onConfirm: () => settleSocialInsuranceMonth(selectedYear, m) })} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs" title="تسویه بدون ثبت">✓✓ تسویه</button>
                                                 </>
                                             )}
                                         </div>
@@ -336,6 +359,7 @@ const SocialInsuranceView = () => {
 
             <SocialInsuranceModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={(payload) => { saveSocialInsurance(payload); setModalOpen(false); }} payment={editing} />
             <ReceiptPreview refOrUrl={previewRef} onClose={() => setPreviewRef(null)} />
+            <ConfirmDialog open={!!confirmState?.open} title={confirmState?.title || 'تایید عملیات'} message={confirmState?.message || ''} confirmText={confirmState?.confirmText || 'تایید'} cancelText={confirmState?.cancelText || 'لغو'} tone={confirmState?.tone || 'warning'} onConfirm={() => { try { confirmState?.onConfirm?.(); } finally { /* handled in dialog */ } }} onClose={() => setConfirmState(null)} />
         </div>
     );
 };
