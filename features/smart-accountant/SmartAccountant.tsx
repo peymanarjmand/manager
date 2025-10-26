@@ -294,7 +294,14 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
     const monthNames = useMemo(() => Array.from({ length: 12 }, (_, i) => moment().jMonth(i).locale('fa').format('jMMMM')), []);
 
     const computeDaysCovered = (year: number, month: number) => {
-        return moment.jDaysInMonth(year, month - 1);
+        // Robust jalaali month lengths with leap-year handling for Esfand
+        if (month >= 1 && month <= 6) return 31;
+        if (month >= 7 && month <= 11) return 30;
+        // month === 12 → Esfand
+        // Use jalali-moment's leap check
+        // @ts-ignore
+        const isLeap = (moment as any).jIsLeapYear ? (moment as any).jIsLeapYear(year) : moment.jDaysInMonth(year, 11) === 30;
+        return isLeap ? 30 : 29;
     };
 
     useEffect(() => {
