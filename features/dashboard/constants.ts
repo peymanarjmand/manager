@@ -1,6 +1,6 @@
 import React from 'react';
 import { DashboardItem } from '../../types';
-import { KeyIcon, CalculatorIcon, PhoneBookIcon, TodoIcon, SettingsIcon, HomeBuildIcon } from '../../components/Icons';
+import { KeyIcon, CalculatorIcon, PhoneBookIcon, TodoIcon, SettingsIcon, HomeBuildIcon, AssetsIcon } from '../../components/Icons';
 
 export const DASHBOARD_ITEMS: DashboardItem[] = [
   {
@@ -10,10 +10,10 @@ export const DASHBOARD_ITEMS: DashboardItem[] = [
     description: 'رمزهای عبور خود را به صورت ایمن ذخیره و مدیریت کنید.',
   },
   {
-    id: 'darfak',
-    icon: React.createElement(HomeBuildIcon),
-    title: 'درفک (ساخت‌وساز)',
-    description: 'پیگیری هزینه‌های ساخت خانه با تگ‌ها و گزارش‌ها.',
+    id: 'assets',
+    icon: React.createElement(AssetsIcon),
+    title: 'دارایی‌ها',
+    description: 'مدیریت و پیگیری دارایی‌های شخصی و ارزش آنها.',
   },
   {
     id: 'smart-accountant',

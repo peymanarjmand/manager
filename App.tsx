@@ -4,12 +4,13 @@ import { Header } from './components/Header';
 import { PasswordManager } from './features/password-manager/PasswordManager';
 import { PhoneBook } from './features/phone-book/PhoneBook';
 import { SmartAccountant } from './features/smart-accountant/SmartAccountant';
+import { Assets } from './features/assets/Assets';
 import { DailyTasks } from './features/daily-tasks/DailyTasks';
 import { Darfak } from './features/darfak/Darfak';
 import { SUPABASE_ENABLED } from './lib/supabase';
 import { supabase } from './lib/supabase';
 
-export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phone-book' | 'daily-tasks' | 'darfak';
+export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phone-book' | 'daily-tasks' | 'assets' | 'darfak';
 
 function App(): React.ReactNode {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -77,6 +78,7 @@ function App(): React.ReactNode {
         {currentView === 'smart-accountant' && <SmartAccountant onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'phone-book' && <PhoneBook onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'daily-tasks' && <DailyTasks onNavigateBack={() => handleNavigate('dashboard')} />}
+        {currentView === 'assets' && <Assets onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'darfak' && <Darfak onNavigateBack={() => handleNavigate('dashboard')} />}
       </main>
       <footer className="text-center py-6 text-slate-500 text-sm">

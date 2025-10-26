@@ -10,7 +10,7 @@ import { isImageRef, saveImageDataURL, getObjectURLByRef, deleteImageByRef } fro
 import { supabase } from '../../lib/supabase';
 
  // CONFIG
- type AccountantTab = 'summary' | 'transactions' | 'assets' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
+ type AccountantTab = 'summary' | 'transactions' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
 type ModalConfig = { isOpen: boolean; type?: 'transaction' | 'asset' | 'person' | 'ledger' | 'installmentPlan' | 'installmentPayment' | 'check'; payload?: any };
 
 // HELPERS
@@ -614,7 +614,7 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
         } else {
              switch(type) {
                 case 'transaction': defaultData = {date: isoNow, type: 'expense', category: TRANSACTION_CATEGORIES.expense[0]}; break;
-                case 'asset': defaultData = {purchaseDate: isoNow}; break;
+                // assets moved to dedicated module
                 case 'person': defaultData = {}; break;
                 case 'ledger': defaultData = {date: isoNow, type: 'debt'}; break;
                 case 'installmentPlan': defaultData = {firstPaymentDate: isoNow}; break;
@@ -678,7 +678,7 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
         const action = payload?.id ? "ویرایش" : "افزودن";
         switch (type) {
             case 'transaction': return `${action} تراکنش`;
-            case 'asset': return `${action} دارایی`;
+            // assets moved out
             case 'person': return `${action} شخص`;
             case 'ledger': return `${action} حساب`;
             case 'installmentPlan': return `${action} قسط`;
@@ -851,9 +851,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
             case 'transaction':
                 actions.saveTransaction({ ...itemData, id, amount: parseFloat(itemData.amount) || 0 });
                 break;
-            case 'asset':
-                actions.saveAsset({ ...itemData, id, currentValue: parseFloat(itemData.currentValue) || 0, quantity: parseFloat(itemData.quantity) || 0 });
-                break;
+            // assets moved out
             case 'person':
                 actions.savePerson({ ...itemData, id });
                 break;
@@ -901,9 +899,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
             case 'transaction':
                 actions.deleteTransaction(id);
                 break;
-            case 'asset':
-                actions.deleteAsset(id);
-                break;
+            // assets moved out
             case 'person':
                 actions.deletePerson(id);
                 break;
@@ -940,9 +936,6 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
             case 'summary':
             case 'transactions':
                 modalType = 'transaction';
-                break;
-            case 'assets':
-                modalType = 'asset';
                 break;
             case 'people':
                 if (currentPerson) {
@@ -1000,7 +993,6 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                             const all = [
                                 { id: 'summary', title: 'خلاصه', icon: <SummaryIcon /> },
                                 { id: 'transactions', title: 'تراکنش‌ها', icon: <TransactionsIcon /> },
-                                { id: 'assets', title: 'دارایی‌ها', icon: <AssetsIcon /> },
                                 { id: 'people', title: 'حساب با دیگران', icon: <PeopleIcon /> },
                                 { id: 'installments', title: 'اقساط', icon: <InstallmentsIcon /> },
                                 { id: 'checks', title: 'چک‌ها', icon: <ChecksIcon /> },
@@ -1048,7 +1040,6 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                 {activeTab === 'transactions' && <TransactionsView transactions={data.transactions} onEdit={(t) => openModal('transaction', t)} onDelete={(id) => handleDelete('transaction', id)} />}
                 {activeTab === 'checks' && <ChecksView checks={data.checks} onEdit={(c) => openModal('check', c)} onDelete={(id) => handleDelete('check', id)} onStatusChange={handleUpdateCheckStatus} />}
                 {activeTab === 'installments' && <InstallmentsView installments={data.installments} currentInstallment={currentInstallment} setCurrentInstallment={setCurrentInstallment} onEditPlan={(plan) => openModal('installmentPlan', plan)} onDeletePlan={(id) => handleDelete('installmentPlan', id)} onEditPayment={(p) => openModal('installmentPayment', p)} onTogglePaidStatus={handleTogglePaidStatus} />}
-                {activeTab === 'assets' && <AssetsView assets={data.assets} onEdit={(a) => openModal('asset', a)} onDelete={(id) => handleDelete('asset', id)} />}
                 {activeTab === 'people' && <PeopleView data={data} onEditPerson={(p) => openModal('person', p)} onDeletePerson={(id) => handleDelete('person', id)} onEditLedger={(l) => openModal('ledger', l)} onDeleteLedger={(personId, ledgerId) => handleDelete('ledger', ledgerId, personId)} onSettle={handleSettle} currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} />}
                 {activeTab === 'social_insurance' && <SocialInsuranceView />}
                 {activeTab === 'darfak' && <DarfakView />}

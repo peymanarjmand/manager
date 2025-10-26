@@ -6,8 +6,8 @@ import { encryptedStateStorage } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 import moment from 'jalali-moment';
 
-// Keep in sync with AccountantTab in SmartAccountant.tsx
-type AccountantTab = 'summary' | 'transactions' | 'assets' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
+// Keep in sync with AccountantTab in SmartAccountant.tsx (assets moved to its own module)
+type AccountantTab = 'summary' | 'transactions' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
 
 const STORAGE_KEY = 'lifeManagerAccountant';
 
@@ -65,7 +65,7 @@ export const useAccountantStore = create<AccountantState>()(
             checks: [],
             darfak: [],
             socialInsurance: [],
-            tabsOrder: ['summary','transactions','checks','installments','assets','people','social_insurance','darfak'],
+            tabsOrder: ['summary','transactions','checks','installments','people','social_insurance','darfak'],
             installmentsSortMode: 'nearest',
             installmentsCustomOrder: [],
             setInstallmentsSortMode: (mode) => set({ installmentsSortMode: mode }),
