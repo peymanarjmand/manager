@@ -3,6 +3,7 @@ import moment from 'jalali-moment';
 import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense } from './types';
 import { TRANSACTION_CATEGORIES } from './constants';
 import { SummaryIcon, TransactionsIcon, AssetsIcon, PeopleIcon, InstallmentsIcon, ChecksIcon, BackIcon, PlusIcon, EditIcon, DeleteIcon, CloseIcon, DefaultImageIcon, UserCircleIcon, CheckCircleIcon, UncheckedCircleIcon, ArrowRightIcon, SearchIcon, WalletIcon, EyeIcon } from '../../components/Icons';
+import { SI_RATES } from './constants';
 import DarfakView from './DarfakView';
 import { useAccountantStore } from './store';
 import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
@@ -281,6 +282,8 @@ const SocialInsuranceView = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
                             const rec = socialInsurance.find(p => p.year === selectedYear && p.month === m);
+                            const salary = rec?.registeredSalary || 0;
+                            const payPercent = salary > 0 ? Math.round((rec.amount / salary) * 100) : 0;
                             return (
                                 <div key={m} className={`rounded-xl p-4 ring-1 ${rec ? 'ring-emerald-700 bg-emerald-900/10' : 'ring-slate-700 bg-slate-800/50'}`}>
                                     <div className="flex justify-between items-start">
@@ -293,6 +296,11 @@ const SocialInsuranceView = () => {
                                                     <div className="text-xs text-slate-500">تاریخ پرداخت: {moment(rec.payDate).locale('fa').format('jD jMMMM jYYYY')}</div>
                                                     {typeof rec.registeredSalary === 'number' && rec.registeredSalary > 0 && (
                                                         <div className="text-xs text-slate-400">حقوق ثبت‌شده: {rec.registeredSalary.toLocaleString('fa-IR')} تومان</div>
+                                                    )}
+                                                    {salary > 0 && (
+                                                        <div className="mt-2 text-[11px] text-slate-300 bg-slate-800/60 rounded p-2 ring-1 ring-slate-700 w-fit">
+                                                            درصد نسبت به حقوق ثبت‌شده: <span className="font-bold">{payPercent}%</span>
+                                                        </div>
                                                     )}
                                                 </>
                                             ) : (
