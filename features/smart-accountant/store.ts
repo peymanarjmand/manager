@@ -12,6 +12,10 @@ interface AccountantState extends AccountantData {
     darfak: DarfakExpense[];
     loadDarfak: () => Promise<void>;
     loadInstallments: () => Promise<void>;
+    loadTransactions: () => Promise<void>;
+    loadAssets: () => Promise<void>;
+    loadPeopleAndLedger: () => Promise<void>;
+    loadChecks: () => Promise<void>;
     saveDarfak: (exp: DarfakExpense) => void;
     deleteDarfak: (id: string) => void;
     saveTransaction: (transaction: Transaction) => void;
@@ -166,6 +170,308 @@ export const useAccountantStore = create<AccountantState>()(
 
                 set({ installments: assembled });
             },
+            loadTransactions: async () => {
+                const { data, error } = await supabase
+                    .from('transactions')
+                    .select('id,type,amount,description,category,date,receipt_ref')
+                    .order('date', { ascending: false });
+                if (error) {
+                    console.warn('Transactions load error', error);
+                } else {
+                    const mapped: Transaction[] = (data || []).map((r: any) => ({
+                        id: r.id,
+                        type: r.type,
+                        amount: Number(r.amount) || 0,
+                        description: r.description,
+                        category: r.category,
+                        date: r.date,
+                        receiptImage: r.receipt_ref || undefined,
+                    }));
+                    set({ transactions: mapped });
+                }
+
+                // One-time migration from local/encrypted
+                try {
+                    const runtime = (useAccountantStore.getState().transactions || []);
+                    let enc: Transaction[] = [];
+                    try {
+                        const raw = await encryptedStateStorage.getItem(STORAGE_KEY);
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (parsed && Array.isArray(parsed.transactions)) enc = parsed.transactions as Transaction[];
+                        }
+                    } catch {}
+                    const merged = [...runtime];
+                    for (const t of enc) if (!merged.some(x => x.id === t.id)) merged.push(t);
+
+                    const supabaseIds = (data || []).map((r: any) => r.id);
+                    const missing = merged.filter(t => !supabaseIds.includes(t.id));
+                    if (missing.length > 0) {
+                        const rows = missing.map(t => ({
+                            id: t.id,
+                            type: t.type,
+                            amount: Number(t.amount) || 0,
+                            description: t.description,
+                            category: t.category,
+                            date: t.date,
+                            receipt_ref: t.receiptImage || null,
+                        }));
+                        const { error: upErr } = await supabase.from('transactions').upsert(rows);
+                        if (upErr) console.error('Transactions migrate upsert error', upErr);
+                        else {
+                            const { data: again } = await supabase
+                                .from('transactions')
+                                .select('id,type,amount,description,category,date,receipt_ref')
+                                .order('date', { ascending: false });
+                            const mappedAgain: Transaction[] = (again || []).map((r: any) => ({
+                                id: r.id,
+                                type: r.type,
+                                amount: Number(r.amount) || 0,
+                                description: r.description,
+                                category: r.category,
+                                date: r.date,
+                                receiptImage: r.receipt_ref || undefined,
+                            }));
+                            set({ transactions: mappedAgain });
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Transactions migration exception', e);
+                }
+            },
+            loadAssets: async () => {
+                const { data, error } = await supabase
+                    .from('assets')
+                    .select('id,name,current_value,quantity,purchase_date,notes')
+                    .order('purchase_date', { ascending: false });
+                if (error) {
+                    console.warn('Assets load error', error);
+                } else {
+                    const mapped: Asset[] = (data || []).map((r: any) => ({
+                        id: r.id,
+                        name: r.name,
+                        currentValue: Number(r.current_value) || 0,
+                        quantity: Number(r.quantity) || 0,
+                        purchaseDate: r.purchase_date,
+                        notes: r.notes || undefined,
+                    }));
+                    set({ assets: mapped });
+                }
+
+                try {
+                    const runtime = (useAccountantStore.getState().assets || []);
+                    let enc: Asset[] = [];
+                    try {
+                        const raw = await encryptedStateStorage.getItem(STORAGE_KEY);
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (parsed && Array.isArray(parsed.assets)) enc = parsed.assets as Asset[];
+                        }
+                    } catch {}
+                    const merged = [...runtime];
+                    for (const a of enc) if (!merged.some(x => x.id === a.id)) merged.push(a);
+
+                    const supabaseIds = (data || []).map((r: any) => r.id);
+                    const missing = merged.filter(a => !supabaseIds.includes(a.id));
+                    if (missing.length > 0) {
+                        const rows = missing.map(a => ({
+                            id: a.id,
+                            name: a.name,
+                            current_value: Number(a.currentValue) || 0,
+                            quantity: Number(a.quantity) || 0,
+                            purchase_date: a.purchaseDate,
+                            notes: a.notes || null,
+                        }));
+                        const { error: upErr } = await supabase.from('assets').upsert(rows);
+                        if (upErr) console.error('Assets migrate upsert error', upErr);
+                        else {
+                            const { data: again } = await supabase
+                                .from('assets')
+                                .select('id,name,current_value,quantity,purchase_date,notes')
+                                .order('purchase_date', { ascending: false });
+                            const mappedAgain: Asset[] = (again || []).map((r: any) => ({
+                                id: r.id,
+                                name: r.name,
+                                currentValue: Number(r.current_value) || 0,
+                                quantity: Number(r.quantity) || 0,
+                                purchaseDate: r.purchase_date,
+                                notes: r.notes || undefined,
+                            }));
+                            set({ assets: mappedAgain });
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Assets migration exception', e);
+                }
+            },
+            loadPeopleAndLedger: async () => {
+                const { data: peopleData, error: peopleError } = await supabase
+                    .from('people')
+                    .select('id,name,avatar_ref');
+                if (peopleError) {
+                    console.warn('People load error', peopleError);
+                    return;
+                }
+                const people: Person[] = (peopleData || []).map((r: any) => ({ id: r.id, name: r.name, avatar: r.avatar_ref || undefined }));
+
+                const personIds = people.map(p => p.id);
+                let ledger: Record<string, LedgerEntry[]> = {};
+                if (personIds.length > 0) {
+                    const { data: ledgerData, error: ledgerError } = await supabase
+                        .from('ledger_entries')
+                        .select('id,person_id,type,amount,description,date,is_settled')
+                        .in('person_id', personIds);
+                    if (ledgerError) {
+                        console.warn('Ledger load error', ledgerError);
+                        return;
+                    }
+                    ledger = (ledgerData || []).reduce((acc: Record<string, LedgerEntry[]>, row: any) => {
+                        const entry: LedgerEntry = {
+                            id: row.id,
+                            personId: row.person_id,
+                            type: row.type,
+                            amount: Number(row.amount) || 0,
+                            description: row.description,
+                            date: row.date,
+                            isSettled: !!row.is_settled,
+                        };
+                        const list = acc[row.person_id] || [];
+                        list.push(entry);
+                        acc[row.person_id] = list;
+                        return acc;
+                    }, {});
+                    Object.keys(ledger).forEach(pid => {
+                        ledger[pid] = ledger[pid].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                    });
+                }
+                set({ people, ledger });
+
+                // Migration from local/encrypted
+                try {
+                    const runtimePeople = (useAccountantStore.getState().people || []);
+                    const runtimeLedger = (useAccountantStore.getState().ledger || {});
+                    let encPeople: Person[] = [];
+                    let encLedger: Record<string, LedgerEntry[]> = {} as any;
+                    try {
+                        const raw = await encryptedStateStorage.getItem(STORAGE_KEY);
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (parsed && Array.isArray(parsed.people)) encPeople = parsed.people as Person[];
+                            if (parsed && parsed.ledger && typeof parsed.ledger === 'object') encLedger = parsed.ledger as Record<string, LedgerEntry[]>;
+                        }
+                    } catch {}
+                    const mergedPeople = [...runtimePeople];
+                    for (const p of encPeople) if (!mergedPeople.some(x => x.id === p.id)) mergedPeople.push(p);
+
+                    const supPeopleIds = (peopleData || []).map((r: any) => r.id);
+                    const missingPeople = mergedPeople.filter(p => !supPeopleIds.includes(p.id));
+                    if (missingPeople.length > 0) {
+                        const rows = missingPeople.map(p => ({ id: p.id, name: p.name, avatar_ref: p.avatar || null }));
+                        const { error: upErr } = await supabase.from('people').upsert(rows);
+                        if (upErr) console.error('People migrate upsert error', upErr);
+                    }
+
+                    // Merge runtime + encrypted ledger
+                    const mergedLedger: Record<string, LedgerEntry[]> = JSON.parse(JSON.stringify(runtimeLedger || {}));
+                    Object.keys(encLedger || {}).forEach(pid => {
+                        const arr = encLedger[pid] || [];
+                        const existing = mergedLedger[pid] || [];
+                        for (const e of arr) if (!existing.some(x => x.id === e.id)) existing.push(e);
+                        mergedLedger[pid] = existing;
+                    });
+
+                    // Determine present ledger IDs in supabase
+                    const supLedgerIds: string[] = [];
+                    const { data: allLedgerIds } = await supabase
+                        .from('ledger_entries')
+                        .select('id');
+                    (allLedgerIds || []).forEach((r: any) => supLedgerIds.push(r.id));
+
+                    const missingLedgerRows = Object.values(mergedLedger).flat().filter(e => !supLedgerIds.includes(e.id)).map(e => ({
+                        id: e.id,
+                        person_id: e.personId,
+                        type: e.type,
+                        amount: Number(e.amount) || 0,
+                        description: e.description,
+                        date: e.date,
+                        is_settled: !!e.isSettled,
+                    }));
+                    if (missingLedgerRows.length > 0) {
+                        const { error: upErr } = await supabase.from('ledger_entries').upsert(missingLedgerRows);
+                        if (upErr) console.error('Ledger migrate upsert error', upErr);
+                    }
+
+                    // Reload
+                    await useAccountantStore.getState().loadPeopleAndLedger();
+                } catch (e) {
+                    console.warn('People/Ledger migration exception', e);
+                }
+            },
+            loadChecks: async () => {
+                const { data, error } = await supabase
+                    .from('checks')
+                    .select('id,type,amount,due_date,status,subject,sayyad_id,payee_name,payee_national_id,drawer_name,drawer_national_id,description,cashed_date')
+                    .order('due_date', { ascending: true });
+                if (error) {
+                    console.warn('Checks load error', error);
+                } else {
+                    const mapped: Check[] = (data || []).map((r: any) => ({
+                        id: r.id,
+                        type: r.type,
+                        amount: Number(r.amount) || 0,
+                        dueDate: r.due_date,
+                        subject: r.subject,
+                        sayyadId: r.sayyad_id,
+                        status: r.status,
+                        description: r.description || undefined,
+                        payeeName: r.payee_name || undefined,
+                        payeeNationalId: r.payee_national_id || undefined,
+                        drawerName: r.drawer_name || undefined,
+                        drawerNationalId: r.drawer_national_id || undefined,
+                        cashedDate: r.cashed_date || undefined,
+                    }));
+                    set({ checks: mapped });
+                }
+
+                try {
+                    const runtime = (useAccountantStore.getState().checks || []);
+                    let enc: Check[] = [];
+                    try {
+                        const raw = await encryptedStateStorage.getItem(STORAGE_KEY);
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (parsed && Array.isArray(parsed.checks)) enc = parsed.checks as Check[];
+                        }
+                    } catch {}
+                    const merged = [...runtime];
+                    for (const c of enc) if (!merged.some(x => x.id === c.id)) merged.push(c);
+
+                    const supabaseIds = (data || []).map((r: any) => r.id);
+                    const missing = merged.filter(c => !supabaseIds.includes(c.id));
+                    if (missing.length > 0) {
+                        const rows = missing.map(c => ({
+                            id: c.id,
+                            type: c.type,
+                            amount: Number(c.amount) || 0,
+                            due_date: c.dueDate,
+                            status: c.status || 'pending',
+                            subject: c.subject,
+                            sayyad_id: c.sayyadId,
+                            payee_name: c.payeeName || null,
+                            payee_national_id: c.payeeNationalId || null,
+                            drawer_name: c.drawerName || null,
+                            drawer_national_id: c.drawerNationalId || null,
+                            description: c.description || null,
+                            cashed_date: c.cashedDate || null,
+                        }));
+                        const { error: upErr } = await supabase.from('checks').upsert(rows);
+                        if (upErr) console.error('Checks migrate upsert error', upErr);
+                        else await useAccountantStore.getState().loadChecks();
+                    }
+                } catch (e) {
+                    console.warn('Checks migration exception', e);
+                }
+            },
             saveDarfak: (exp) => {
                 set(state => {
                     const rest = state.darfak.filter(e => e.id !== exp.id);
@@ -196,37 +502,122 @@ export const useAccountantStore = create<AccountantState>()(
                     if (error) console.error('Darfak delete error', error);
                 })();
             },
-            saveTransaction: (transaction) => set((state) => {
-                const items = state.transactions.filter(t => t.id !== transaction.id);
-                return { transactions: [...items, transaction].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
-            }),
-            deleteTransaction: (id) => set(state => ({ transactions: state.transactions.filter(t => t.id !== id) })),
-            saveAsset: (asset) => set(state => {
-                const items = state.assets.filter(a => a.id !== asset.id);
-                return { assets: [...items, asset] };
-            }),
-            deleteAsset: (id) => set(state => ({ assets: state.assets.filter(a => a.id !== id) })),
-            savePerson: (person) => set(state => {
-                 const items = state.people.filter(p => p.id !== person.id);
-                 const newLedger = state.ledger[person.id] ? {} : {[person.id]: []};
-                 return { people: [...items, person], ledger: {...state.ledger, ...newLedger} };
-            }),
-            deletePerson: (id) => set(state => {
-                const newLedger = {...state.ledger};
-                delete newLedger[id];
-                return { people: state.people.filter(p => p.id !== id), ledger: newLedger };
-            }),
-            saveLedgerEntry: (entry) => set(state => {
-                const { personId } = entry;
-                const personLedger = (state.ledger[personId] || []).filter(l => l.id !== entry.id);
-                const newLedgerForPerson = [...personLedger, entry].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                return { ledger: {...state.ledger, [personId]: newLedgerForPerson } };
-            }),
-            deleteLedgerEntry: (personId, entryId) => set(state => {
-                if (!state.ledger[personId]) return state;
-                const personLedger = state.ledger[personId].filter(l => l.id !== entryId);
-                return { ledger: {...state.ledger, [personId]: personLedger } };
-            }),
+            saveTransaction: (transaction) => {
+                set((state) => {
+                    const items = state.transactions.filter(t => t.id !== transaction.id);
+                    return { transactions: [...items, transaction].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
+                });
+                (async () => {
+                    const t = transaction;
+                    const { error } = await supabase
+                        .from('transactions')
+                        .upsert({
+                            id: t.id,
+                            type: t.type,
+                            amount: Number(t.amount) || 0,
+                            description: t.description,
+                            category: t.category,
+                            date: t.date,
+                            receipt_ref: t.receiptImage || null,
+                        });
+                    if (error) console.error('Transaction upsert error', error);
+                })();
+            },
+            deleteTransaction: (id) => {
+                set(state => ({ transactions: state.transactions.filter(t => t.id !== id) }));
+                (async () => {
+                    const { error } = await supabase.from('transactions').delete().eq('id', id);
+                    if (error) console.error('Transaction delete error', error);
+                })();
+            },
+            saveAsset: (asset) => {
+                set(state => {
+                    const items = state.assets.filter(a => a.id !== asset.id);
+                    return { assets: [...items, asset] };
+                });
+                (async () => {
+                    const a = asset;
+                    const { error } = await supabase
+                        .from('assets')
+                        .upsert({
+                            id: a.id,
+                            name: a.name,
+                            current_value: Number(a.currentValue) || 0,
+                            quantity: Number(a.quantity) || 0,
+                            purchase_date: a.purchaseDate,
+                            notes: a.notes || null,
+                        });
+                    if (error) console.error('Asset upsert error', error);
+                })();
+            },
+            deleteAsset: (id) => {
+                set(state => ({ assets: state.assets.filter(a => a.id !== id) }));
+                (async () => {
+                    const { error } = await supabase.from('assets').delete().eq('id', id);
+                    if (error) console.error('Asset delete error', error);
+                })();
+            },
+            savePerson: (person) => {
+                set(state => {
+                    const items = state.people.filter(p => p.id !== person.id);
+                    const newLedger = state.ledger[person.id] ? {} : {[person.id]: []};
+                    return { people: [...items, person], ledger: {...state.ledger, ...newLedger} };
+                });
+                (async () => {
+                    const p = person;
+                    const { error } = await supabase
+                        .from('people')
+                        .upsert({ id: p.id, name: p.name, avatar_ref: p.avatar || null });
+                    if (error) console.error('Person upsert error', error);
+                })();
+            },
+            deletePerson: (id) => {
+                set(state => {
+                    const newLedger = {...state.ledger};
+                    delete newLedger[id];
+                    return { people: state.people.filter(p => p.id !== id), ledger: newLedger };
+                });
+                (async () => {
+                    const { error: delLedger } = await supabase.from('ledger_entries').delete().eq('person_id', id);
+                    if (delLedger) console.error('Ledger delete by person error', delLedger);
+                    const { error } = await supabase.from('people').delete().eq('id', id);
+                    if (error) console.error('Person delete error', error);
+                })();
+            },
+            saveLedgerEntry: (entry) => {
+                set(state => {
+                    const { personId } = entry;
+                    const personLedger = (state.ledger[personId] || []).filter(l => l.id !== entry.id);
+                    const newLedgerForPerson = [...personLedger, entry].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                    return { ledger: {...state.ledger, [personId]: newLedgerForPerson } };
+                });
+                (async () => {
+                    const e = entry;
+                    const { error } = await supabase
+                        .from('ledger_entries')
+                        .upsert({
+                            id: e.id,
+                            person_id: e.personId,
+                            type: e.type,
+                            amount: Number(e.amount) || 0,
+                            description: e.description,
+                            date: e.date,
+                            is_settled: !!e.isSettled,
+                        });
+                    if (error) console.error('Ledger entry upsert error', error);
+                })();
+            },
+            deleteLedgerEntry: (personId, entryId) => {
+                set(state => {
+                    if (!state.ledger[personId]) return state as any;
+                    const personLedger = state.ledger[personId].filter(l => l.id !== entryId);
+                    return { ledger: {...state.ledger, [personId]: personLedger } };
+                });
+                (async () => {
+                    const { error } = await supabase.from('ledger_entries').delete().eq('id', entryId);
+                    if (error) console.error('Ledger entry delete error', error);
+                })();
+            },
             toggleSettle: (personId, entryId) => set(state => {
                 const personLedger = [...state.ledger[personId]];
                 const entryIndex = personLedger.findIndex(e => e.id === entryId);
@@ -350,16 +741,32 @@ export const useAccountantStore = create<AccountantState>()(
                 const items = state.checks.filter(c => c.id !== check.id);
                 return { checks: [...items, check] };
             }),
-            deleteCheck: (id) => set(state => ({ checks: state.checks.filter(c => c.id !== id) })),
-            updateCheckStatus: (id, status) => set(state => {
-                const newChecks = state.checks.map(c => {
-                    if (c.id === id) {
-                        return { ...c, status, cashedDate: (status === 'cashed' || status === 'bounced') ? new Date().toISOString() : c.cashedDate };
-                    }
-                    return c;
+            deleteCheck: (id) => {
+                set(state => ({ checks: state.checks.filter(c => c.id !== id) }));
+                (async () => {
+                    const { error } = await supabase.from('checks').delete().eq('id', id);
+                    if (error) console.error('Check delete error', error);
+                })();
+            },
+            updateCheckStatus: (id, status) => {
+                set(state => {
+                    const newChecks = state.checks.map(c => {
+                        if (c.id === id) {
+                            return { ...c, status, cashedDate: (status === 'cashed' || status === 'bounced') ? new Date().toISOString() : c.cashedDate };
+                        }
+                        return c;
+                    });
+                    return { checks: newChecks };
                 });
-                return { checks: newChecks };
-            }),
+                (async () => {
+                    const cashedDate = (status === 'cashed' || status === 'bounced') ? new Date().toISOString() : null;
+                    const { error } = await supabase
+                        .from('checks')
+                        .update({ status, cashed_date: cashedDate })
+                        .eq('id', id);
+                    if (error) console.error('Check status update error', error);
+                })();
+            },
         }),
         {
             name: STORAGE_KEY,

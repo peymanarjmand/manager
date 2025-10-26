@@ -383,8 +383,14 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     const actions = useAccountantStore.getState();
 
     useEffect(() => {
-        const { loadInstallments } = useAccountantStore.getState();
-        loadInstallments().catch(() => {});
+        const { loadInstallments, loadTransactions, loadAssets, loadPeopleAndLedger, loadChecks } = useAccountantStore.getState();
+        Promise.all([
+            loadTransactions(),
+            loadAssets(),
+            loadPeopleAndLedger(),
+            loadChecks(),
+            loadInstallments(),
+        ]).catch(() => {});
     }, []);
 
     useEffect(() => {
