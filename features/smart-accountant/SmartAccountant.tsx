@@ -1061,6 +1061,77 @@ const PlanStats = ({ plan }: { plan: InstallmentPlan }) => {
 const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallment, onEditPlan, onDeletePlan, onEditPayment, onTogglePaidStatus }) => {
     const [showPaymentsList, setShowPaymentsList] = useState(false);
 
+    // Access sorting preferences and actions
+    const { installmentsSortMode, installmentsCustomOrder } = useAccountantStore();
+    const { setInstallmentsSortMode, setInstallmentsCustomOrder } = useAccountantStore.getState();
+
+    // Compute helper metrics for sorting modes
+    const today = useMemo(() => new Date(), []);
+    const startOfThisJMonth = useMemo(() => moment().startOf('jMonth'), []);
+    const endOfThisJMonth = useMemo(() => moment().endOf('jMonth'), []);
+
+    const getPlanNearestDueDate = (plan: InstallmentPlan): Date | null => {
+        const upcoming = plan.payments
+            .filter(p => !p.isPaid)
+            .map(p => new Date(p.dueDate))
+            .sort((a, b) => a.getTime() - b.getTime());
+        return upcoming[0] || null;
+    };
+
+    const getPlanFirstDueDate = (plan: InstallmentPlan): Date | null => {
+        const first = [...plan.payments]
+            .map(p => new Date(p.dueDate))
+            .sort((a, b) => a.getTime() - b.getTime())[0];
+        return first || null;
+    };
+
+    const getPlanThisMonthAmount = (plan: InstallmentPlan): number => {
+        return plan.payments
+            .filter(p => moment(p.dueDate).isBetween(startOfThisJMonth, endOfThisJMonth, undefined, '[]'))
+            .reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
+    };
+
+    const applySorting = (list: InstallmentPlan[]): InstallmentPlan[] => {
+        if (installmentsSortMode === 'custom') {
+            const orderMap = new Map(installmentsCustomOrder.map((id, idx) => [id, idx] as const));
+            return [...list].sort((a, b) => (orderMap.get(a.id) ?? 1e9) - (orderMap.get(b.id) ?? 1e9));
+        }
+        if (installmentsSortMode === 'nearest') {
+            return [...list].sort((a, b) => {
+                const aDue = getPlanNearestDueDate(a);
+                const bDue = getPlanNearestDueDate(b);
+                if (!aDue && !bDue) return 0;
+                if (!aDue) return 1;
+                if (!bDue) return -1;
+                const cmp = aDue.getTime() - bDue.getTime();
+                if (cmp !== 0) return cmp;
+                // tie-breaker: earliest first installment
+                const aFirst = getPlanFirstDueDate(a) || today;
+                const bFirst = getPlanFirstDueDate(b) || today;
+                return aFirst.getTime() - bFirst.getTime();
+            });
+        }
+        if (installmentsSortMode === 'highest_month') {
+            return [...list].sort((a, b) => {
+                const aAmt = getPlanThisMonthAmount(a);
+                const bAmt = getPlanThisMonthAmount(b);
+                if (bAmt !== aAmt) return bAmt - aAmt; // desc
+                // tie-breaker: nearest due date
+                const aDue = getPlanNearestDueDate(a) || new Date(8640000000000000);
+                const bDue = getPlanNearestDueDate(b) || new Date(8640000000000000);
+                return aDue.getTime() - bDue.getTime();
+            });
+        }
+        if (installmentsSortMode === 'earliest_loan') {
+            return [...list].sort((a, b) => {
+                const aFirst = getPlanFirstDueDate(a) || today;
+                const bFirst = getPlanFirstDueDate(b) || today;
+                return aFirst.getTime() - bFirst.getTime();
+            });
+        }
+        return list;
+    };
+
     if (currentInstallment) {
         const isCompleted = currentInstallment.payments.length > 0 && currentInstallment.payments.every(p => p.isPaid);
 
@@ -1329,8 +1400,9 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
     }
 
 
-    const activePlans = installments.filter(plan => plan.payments.some(p => !p.isPaid));
-    const completedPlans = installments.filter(plan => plan.payments.length > 0 && plan.payments.every(p => p.isPaid));
+    const sortedInstallments = useMemo(() => applySorting(installments), [installments, installmentsSortMode, installmentsCustomOrder]);
+    const activePlans = sortedInstallments.filter(plan => plan.payments.some(p => !p.isPaid));
+    const completedPlans = sortedInstallments.filter(plan => plan.payments.length > 0 && plan.payments.every(p => p.isPaid));
 
     if (installments.length === 0) {
         return <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">هنوز برنامه قسطی ثبت نشده است.</p>;
@@ -1387,10 +1459,56 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
     return (
         <div className="space-y-12">
             <div>
+                {/* Sorting Controls */}
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <button onClick={() => setInstallmentsSortMode('nearest')} className={`px-3 py-1 rounded-full text-xs border ${installmentsSortMode==='nearest' ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>نزدیک‌ترین اقساط</button>
+                    <button onClick={() => setInstallmentsSortMode('highest_month')} className={`px-3 py-1 rounded-full text-xs border ${installmentsSortMode==='highest_month' ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>بیشترین مبلغ ماه</button>
+                    <button onClick={() => setInstallmentsSortMode('earliest_loan')} className={`px-3 py-1 rounded-full text-xs border ${installmentsSortMode==='earliest_loan' ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>زودترین وام</button>
+                    <button onClick={() => setInstallmentsSortMode('custom')} className={`px-3 py-1 rounded-full text-xs border ${installmentsSortMode==='custom' ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>شخصی‌سازی</button>
+                    {installmentsSortMode === 'custom' && <span className="text-xs text-slate-400">برای تغییر ترتیب کارت‌ها را بکشید و رها کنید</span>}
+                </div>
                 <h3 className="text-2xl font-bold mb-4 text-slate-200">اقساط فعال</h3>
                 {activePlans.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {activePlans.map(plan => <PlanCard key={plan.id} plan={plan} />)}
+                        {activePlans.map((plan, idx) => (
+                            <div key={plan.id}
+                                 draggable={installmentsSortMode==='custom'}
+                                 onDragStart={(e) => { if (installmentsSortMode==='custom') e.dataTransfer.setData('text/plain', String(idx)); }}
+                                 onDragOver={(e) => { if (installmentsSortMode==='custom') e.preventDefault(); }}
+                                 onDrop={(e) => {
+                                     if (installmentsSortMode!=='custom') return;
+                                     e.preventDefault();
+                                     const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                                     if (isNaN(fromIdx)) return;
+                                     const currentOrder = [...installmentsCustomOrder];
+                                     const activeIds = activePlans.map(p => p.id);
+                                     const indices = currentOrder.filter(id => activeIds.includes(id));
+                                     const fromId = activePlans[fromIdx]?.id;
+                                     const toId = plan.id;
+                                     if (!fromId || !toId) return;
+                                     const working = [...indices];
+                                     const fi = working.indexOf(fromId);
+                                     const ti = working.indexOf(toId);
+                                     if (fi === -1 || ti === -1) return;
+                                     working.splice(ti, 0, working.splice(fi, 1)[0]);
+                                     // Rebuild full order keeping non-active ids in their relative order
+                                     const nonActive = currentOrder.filter(id => !activeIds.includes(id));
+                                     const newOrder: string[] = [];
+                                     const activeSet = new Set(activeIds);
+                                     for (const id of currentOrder) {
+                                         if (activeSet.has(id)) continue;
+                                         newOrder.push(id);
+                                     }
+                                     // Insert active area in place of first active appearance
+                                     const firstActiveIndex = currentOrder.findIndex(id => activeSet.has(id));
+                                     const before = currentOrder.slice(0, firstActiveIndex).filter(id => !activeSet.has(id));
+                                     const after = currentOrder.slice(firstActiveIndex).filter(id => !activeSet.has(id));
+                                     const reconstructed = [...before, ...working, ...after];
+                                     setInstallmentsCustomOrder(reconstructed);
+                                 }}>
+                                <PlanCard plan={plan} />
+                            </div>
+                        ))}
                     </div>
                 ) : (
                     <div className="text-center py-10 px-6 bg-slate-800/40 rounded-xl ring-1 ring-slate-700">

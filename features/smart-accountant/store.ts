@@ -16,6 +16,11 @@ interface AccountantState extends AccountantData {
     loadAssets: () => Promise<void>;
     loadPeopleAndLedger: () => Promise<void>;
     loadChecks: () => Promise<void>;
+    // Installments sorting preferences (persisted online via state_accountant)
+    installmentsSortMode: 'nearest' | 'highest_month' | 'earliest_loan' | 'custom';
+    installmentsCustomOrder: string[]; // array of plan ids
+    setInstallmentsSortMode: (mode: 'nearest' | 'highest_month' | 'earliest_loan' | 'custom') => void;
+    setInstallmentsCustomOrder: (order: string[]) => void;
     saveDarfak: (exp: DarfakExpense) => void;
     deleteDarfak: (id: string) => void;
     saveTransaction: (transaction: Transaction) => void;
@@ -47,6 +52,10 @@ export const useAccountantStore = create<AccountantState>()(
             installments: [],
             checks: [],
             darfak: [],
+            installmentsSortMode: 'nearest',
+            installmentsCustomOrder: [],
+            setInstallmentsSortMode: (mode) => set({ installmentsSortMode: mode }),
+            setInstallmentsCustomOrder: (order) => set({ installmentsCustomOrder: order }),
             loadDarfak: async () => {
                 const { data, error } = await supabase
                     .from('darfak_expenses')
@@ -168,7 +177,14 @@ export const useAccountantStore = create<AccountantState>()(
                     payments: (paymentsMap[pl.id] || []).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()),
                 }));
 
-                set({ installments: assembled });
+                // Ensure custom order contains all current plan ids and no stale ones
+                set((state) => {
+                    const existing = state.installmentsCustomOrder || [];
+                    const ids = assembled.map(p => p.id);
+                    const merged = [...existing.filter(id => ids.includes(id))];
+                    ids.forEach(id => { if (!merged.includes(id)) merged.push(id); });
+                    return { installments: assembled, installmentsCustomOrder: merged };
+                });
             },
             loadTransactions: async () => {
                 const { data, error } = await supabase
@@ -627,7 +643,13 @@ export const useAccountantStore = create<AccountantState>()(
                 return { ledger: {...state.ledger, [personId]: personLedger } };
             }),
             saveInstallmentPlan: (plan) => {
-                set(state => ({ installments: [...state.installments, plan] }));
+                set(state => {
+                    const nextList = [...state.installments, plan];
+                    const nextOrder = state.installmentsCustomOrder.includes(plan.id)
+                        ? state.installmentsCustomOrder
+                        : [...state.installmentsCustomOrder, plan.id];
+                    return { installments: nextList, installmentsCustomOrder: nextOrder };
+                });
                 (async () => {
                     const { error: planErr } = await supabase
                         .from('installment_plans')
@@ -668,7 +690,10 @@ export const useAccountantStore = create<AccountantState>()(
                 return { installments: newInstallments };
             }),
             deleteInstallmentPlan: (id) => {
-                set(state => ({ installments: state.installments.filter(p => p.id !== id) }));
+                set(state => ({ 
+                    installments: state.installments.filter(p => p.id !== id),
+                    installmentsCustomOrder: state.installmentsCustomOrder.filter(pid => pid !== id)
+                }));
                 (async () => {
                     const { error: delPaysErr } = await supabase
                         .from('installment_payments')
