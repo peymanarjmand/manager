@@ -111,4 +111,5 @@ export interface SocialInsurancePayment {
     payDate: string; // ISO
     receiptRef?: string; // Supabase storage ref or URL
     note?: string;
+    isSettled?: boolean; // if true, lock editing/deleting
 }

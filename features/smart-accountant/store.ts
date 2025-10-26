@@ -504,7 +504,7 @@ export const useAccountantStore = create<AccountantState>()(
             loadSocialInsurance: async () => {
                 const { data, error } = await supabase
                     .from('social_insurance')
-                    .select('id,year,month,days_covered,amount,registered_salary,pay_date,receipt_ref,note')
+                    .select('id,year,month,days_covered,amount,registered_salary,pay_date,receipt_ref,note,is_settled')
                     .order('pay_date', { ascending: false });
                 if (error) {
                     console.warn('Social insurance load error', error);
@@ -520,6 +520,7 @@ export const useAccountantStore = create<AccountantState>()(
                     payDate: r.pay_date,
                     receiptRef: r.receipt_ref || undefined,
                     note: r.note || undefined,
+                    isSettled: !!r.is_settled,
                 }));
                 set({ socialInsurance: mapped });
             },
@@ -845,9 +846,16 @@ export const useAccountantStore = create<AccountantState>()(
                             pay_date: p.payDate,
                             receipt_ref: p.receiptRef || null,
                             note: p.note || null,
+                            is_settled: !!p.isSettled,
                         });
                     if (error) console.error('Social insurance upsert error', error);
                 })();
+            },
+            settleSocialInsurance: async (id: string) => {
+                // Irreversible: mark as settled in DB and local state
+                set(state => ({ socialInsurance: state.socialInsurance.map(x => x.id === id ? { ...x, isSettled: true } : x) }));
+                const { error } = await supabase.from('social_insurance').update({ is_settled: true }).eq('id', id);
+                if (error) console.error('Social insurance settle error', error);
             },
             deleteSocialInsurance: (id) => {
                 set(state => ({ socialInsurance: state.socialInsurance.filter(x => x.id !== id) }));

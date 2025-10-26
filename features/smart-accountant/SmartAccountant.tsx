@@ -167,7 +167,7 @@ const JalaliDatePicker = ({ value, onChange, id, label }) => {
 
 const SocialInsuranceView = () => {
     const { socialInsurance } = useAccountantStore();
-    const { saveSocialInsurance, deleteSocialInsurance } = useAccountantStore.getState();
+    const { saveSocialInsurance, deleteSocialInsurance, settleSocialInsurance } = useAccountantStore.getState();
     const [previewRef, setPreviewRef] = useState<string | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<any | null>(null);
@@ -311,8 +311,13 @@ const SocialInsuranceView = () => {
                                             {rec ? (
                                                 <>
                                                     {rec.receiptRef && <button onClick={() => setPreviewRef(rec.receiptRef!)} className="hover:text-sky-400" title="مشاهده فیش"><EyeIcon/></button>}
-                                                    <button onClick={() => { setEditing(rec); setModalOpen(true); }} className="hover:text-sky-400 text-xs">ویرایش</button>
-                                                    <button onClick={() => deleteSocialInsurance(rec.id)} className="hover:text-rose-400 text-xs">حذف</button>
+                                                    {!rec.isSettled && <button onClick={() => { setEditing(rec); setModalOpen(true); }} className="hover:text-sky-400 text-xs">ویرایش</button>}
+                                                    {!rec.isSettled && <button onClick={() => deleteSocialInsurance(rec.id)} className="hover:text-rose-400 text-xs">حذف</button>}
+                                                    {!rec.isSettled ? (
+                                                        <button onClick={() => { if (window.confirm('تسویه این ماه غیرقابل بازگشت است. تایید می‌کنید؟')) settleSocialInsurance(rec.id); }} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs" title="تسویه (غیرقابل بازگشت)">✓✓ تسویه</button>
+                                                    ) : (
+                                                        <span className="px-2 py-1 bg-emerald-700 text-white rounded-md text-xs" title="تسویه شده">✓✓ تسویه‌شده</span>
+                                                    )}
                                                 </>
                                             ) : (
                                                 <button onClick={() => openNewFor(selectedYear, m)} className="px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs">ثبت</button>
