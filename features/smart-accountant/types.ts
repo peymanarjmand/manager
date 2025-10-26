@@ -107,6 +107,7 @@ export interface SocialInsurancePayment {
     month: number; // 1-12 (jalali)
     daysCovered: number; // number of insured days this month (0-31)
     amount: number; // Rial or Toman depending on app (we use Toman as elsewhere)
+    registeredSalary?: number; // حقوق ثبت‌شده مبنا
     payDate: string; // ISO
     receiptRef?: string; // Supabase storage ref or URL
     note?: string;

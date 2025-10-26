@@ -504,7 +504,7 @@ export const useAccountantStore = create<AccountantState>()(
             loadSocialInsurance: async () => {
                 const { data, error } = await supabase
                     .from('social_insurance')
-                    .select('id,year,month,days_covered,amount,pay_date,receipt_ref,note')
+                    .select('id,year,month,days_covered,amount,registered_salary,pay_date,receipt_ref,note')
                     .order('pay_date', { ascending: false });
                 if (error) {
                     console.warn('Social insurance load error', error);
@@ -516,6 +516,7 @@ export const useAccountantStore = create<AccountantState>()(
                     month: Number(r.month) || 0,
                     daysCovered: Number(r.days_covered) || 0,
                     amount: Number(r.amount) || 0,
+                    registeredSalary: r.registered_salary != null ? Number(r.registered_salary) : undefined,
                     payDate: r.pay_date,
                     receiptRef: r.receipt_ref || undefined,
                     note: r.note || undefined,
@@ -840,6 +841,7 @@ export const useAccountantStore = create<AccountantState>()(
                             month: p.month,
                             days_covered: p.daysCovered,
                             amount: p.amount,
+                            registered_salary: p.registeredSalary ?? null,
                             pay_date: p.payDate,
                             receipt_ref: p.receiptRef || null,
                             note: p.note || null,

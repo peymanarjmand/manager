@@ -291,6 +291,9 @@ const SocialInsuranceView = () => {
                                                     <div className="text-sky-300 font-extrabold mt-1">{rec.amount.toLocaleString('fa-IR')} تومان</div>
                                                     <div className="text-xs text-slate-400 mt-1">روزهای پوشش: {rec.daysCovered}</div>
                                                     <div className="text-xs text-slate-500">تاریخ پرداخت: {moment(rec.payDate).locale('fa').format('jD jMMMM jYYYY')}</div>
+                                                    {typeof rec.registeredSalary === 'number' && rec.registeredSalary > 0 && (
+                                                        <div className="text-xs text-slate-400">حقوق ثبت‌شده: {rec.registeredSalary.toLocaleString('fa-IR')} تومان</div>
+                                                    )}
                                                 </>
                                             ) : (
                                                 <div className="text-xs text-slate-400 mt-1">پرداختی ثبت نشده</div>
@@ -447,6 +450,10 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
                                     {monthNames.map((name, idx) => <option key={idx+1} value={idx+1}>{name}</option>)}
                                 </select>
                             </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm text-slate-300 mb-1">حقوق ثبت‌شده (اختیاری)</label>
+                            <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.registeredSalary || ''} onChange={e => setForm(p => ({...p, registeredSalary: Number((e.target as HTMLInputElement).value) || 0 }))} placeholder="مثلا 15,000,000" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
