@@ -1132,6 +1132,11 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
         return list;
     };
 
+    // Keep hooks before any early returns to avoid hook order mismatches
+    const sortedInstallments = useMemo(() => applySorting(installments), [installments, installmentsSortMode, installmentsCustomOrder]);
+    const activePlans = sortedInstallments.filter(plan => plan.payments.some(p => !p.isPaid));
+    const completedPlans = sortedInstallments.filter(plan => plan.payments.length > 0 && plan.payments.every(p => p.isPaid));
+
     if (currentInstallment) {
         const isCompleted = currentInstallment.payments.length > 0 && currentInstallment.payments.every(p => p.isPaid);
 
@@ -1398,12 +1403,6 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
             );
         }
     }
-
-
-    const sortedInstallments = useMemo(() => applySorting(installments), [installments, installmentsSortMode, installmentsCustomOrder]);
-    const activePlans = sortedInstallments.filter(plan => plan.payments.some(p => !p.isPaid));
-    const completedPlans = sortedInstallments.filter(plan => plan.payments.length > 0 && plan.payments.every(p => p.isPaid));
-
     if (installments.length === 0) {
         return <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">هنوز برنامه قسطی ثبت نشده است.</p>;
     }
