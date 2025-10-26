@@ -70,6 +70,26 @@ const FormImageUpload = ({ label, preview, onChange }) => (
 );
 
 // Helper to render images that may be base64 or IndexedDB refs
+const InlineReceiptLink = ({ refId }: { refId: string }) => {
+  const [url, setUrl] = React.useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const u = await getObjectURLByRef(refId);
+      if (!active) return;
+      setUrl(u);
+    })();
+    return () => { active = false; };
+  }, [refId]);
+  if (!url) return null;
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="p-1.5 text-slate-400 hover:bg-slate-700 rounded-full hover:text-sky-400 transition" title="مشاهده رسید">
+      <EyeIcon />
+    </a>
+  );
+};
+
+// Helper to render images that may be base64 or IndexedDB refs
 const ImageFromRef = ({ srcOrRef, alt, className }: { srcOrRef?: string; alt?: string; className?: string }) => {
   const [url, setUrl] = React.useState<string | null>(null);
   React.useEffect(() => {
@@ -573,6 +593,7 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
 
     const [formData, setFormData] = useState(payload || {});
     const [imagePreview, setImagePreview] = useState(payload?.receiptImage || payload?.avatar || null);
+    const [isUploading, setIsUploading] = useState(false);
 
      useEffect(() => {
         const isoNow = new Date().toISOString();
@@ -625,6 +646,7 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
     const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const reader = new FileReader();
+            setIsUploading(true);
             reader.onloadend = async () => {
                 const base64String = reader.result as string;
                 try {
@@ -636,6 +658,8 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
                 } catch (err) {
                     console.error('Failed to save image to IDB', err);
                     setImagePreview(base64String);
+                } finally {
+                    setIsUploading(false);
                 }
             };
             reader.readAsDataURL(e.target.files[0]);
@@ -700,7 +724,7 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
             <FormInput label="مبلغ" id="amount" type="number" value={formData.amount} onChange={handleChange} required />
             <FormInput label="توضیحات" id="description" value={formData.description} onChange={handleChange} required />
             <JalaliDatePicker label="تاریخ" id="date" value={formData.date} onChange={(isoDate) => setFormData(p => ({...p, date: isoDate}))} />
-            <FormImageUpload label="رسید" preview={imagePreview} onChange={handleImageChange} />
+            <FormImageUpload label="رسید (اختیاری)" preview={imagePreview} onChange={handleImageChange} />
         </>
     );
     const renderInstallmentPlanFields = () => (
@@ -766,8 +790,8 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
                       {type === 'check' && renderCheckFields()}
                   </div>
                   <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
-                      <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-slate-500 transition">لغو</button>
-                      <button type="submit" className="py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-sky-400">ذخیره</button>
+                      <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 transition">لغو</button>
+                      <button type="submit" disabled={isUploading} className={`py-2 px-4 rounded-md text-sm font-bold transition ${isUploading ? 'bg-slate-600 text-slate-300 cursor-not-allowed' : 'bg-sky-500 hover:bg-sky-600 text-white'}`}>ذخیره</button>
                   </div>
               </form>
           </div>
@@ -973,10 +997,10 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                             const all = [
                                 { id: 'summary', title: 'خلاصه', icon: <SummaryIcon /> },
                                 { id: 'transactions', title: 'تراکنش‌ها', icon: <TransactionsIcon /> },
-                                { id: 'checks', title: 'چک‌ها', icon: <ChecksIcon /> },
-                                { id: 'installments', title: 'اقساط', icon: <InstallmentsIcon /> },
                                 { id: 'assets', title: 'دارایی‌ها', icon: <AssetsIcon /> },
                                 { id: 'people', title: 'حساب با دیگران', icon: <PeopleIcon /> },
+                                { id: 'installments', title: 'اقساط', icon: <InstallmentsIcon /> },
+                                { id: 'checks', title: 'چک‌ها', icon: <ChecksIcon /> },
                                 { id: 'social_insurance', title: 'تامین اجتماعی', icon: <WalletIcon /> },
                                 { id: 'darfak', title: 'درفک (ساخت‌وساز)', icon: <TransactionsIcon /> },
                             ] as { id: AccountantTab; title: string; icon: React.ReactNode }[];
@@ -1225,6 +1249,40 @@ const AssetsView = ({ assets, onEdit, onDelete }) => {
 };
 
 const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDeleteLedger, onSettle, currentPerson, setCurrentPerson }) => {
+    // Quick add ledger state (must be top-level to honor React rules of hooks)
+    const { saveLedgerEntry } = useAccountantStore.getState();
+    const [qType, setQType] = useState<'debt' | 'credit'>('debt');
+    const [qAmount, setQAmount] = useState<string>('');
+    const [qDesc, setQDesc] = useState<string>('');
+    const [qDate, setQDate] = useState<string>(() => new Date().toISOString());
+    const [showOnlyOpen, setShowOnlyOpen] = useState<boolean>(true);
+    const [qReceiptRef, setQReceiptRef] = useState<string | undefined>(undefined);
+    const [qReceiptURL, setQReceiptURL] = useState<string | null>(null);
+    const [qUploading, setQUploading] = useState<boolean>(false);
+
+    const handleQuickAdd = () => {
+        if (!currentPerson) return;
+        const amountNum = parseFloat(String(qAmount));
+        if (!amountNum || !qDesc) return;
+        const newEntry = {
+            id: Date.now().toString(),
+            personId: currentPerson.id,
+            type: qType,
+            amount: amountNum,
+            description: qDesc,
+            date: qDate,
+            isSettled: false,
+            receiptImage: qReceiptRef,
+        } as LedgerEntry;
+        saveLedgerEntry(newEntry);
+        setQAmount('');
+        setQDesc('');
+        setQType('debt');
+        setQDate(new Date().toISOString());
+        setQReceiptRef(undefined);
+        setQReceiptURL(null);
+    };
+
     if (currentPerson) {
         const ledger = data.ledger[currentPerson.id] || [];
         const { balance } = ledger.reduce((acc, entry) => {
@@ -1234,6 +1292,8 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
             }
             return acc;
         }, { balance: 0 });
+
+        const safeLedger = showOnlyOpen ? ledger.filter(l => !l.isSettled) : ledger;
 
         return (
             <div>
@@ -1249,9 +1309,68 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                         </p>
                     </div>
                 </div>
-                {ledger.length === 0 ? <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">هنوز حسابی با {currentPerson.name} ثبت نشده.</p> :
+
+                {/* Quick add bar */}
+                <div className="mb-5 p-4 bg-slate-900/50 rounded-lg ring-1 ring-slate-700">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <button onClick={() => setQType('debt')} className={`px-3 py-1 rounded-full text-xs border ${qType==='debt' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>طلب (او به من)</button>
+                        <button onClick={() => setQType('credit')} className={`px-3 py-1 rounded-full text-xs border ${qType==='credit' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>بدهی (من به او)</button>
+                        <div className="ml-auto flex items-center gap-2 text-xs text-slate-400">
+                            <label className="flex items-center gap-1 cursor-pointer select-none">
+                                <input type="checkbox" checked={showOnlyOpen} onChange={(e) => setShowOnlyOpen(e.target.checked)} />
+                                فقط موارد تسویه‌نشده
+                            </label>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+                        <div className="md:col-span-1">
+                            <FormInput label="مبلغ" id="qAmount" type="number" value={qAmount} onChange={(e) => setQAmount((e.target as HTMLInputElement).value)} required />
+                        </div>
+                        <div className="md:col-span-2">
+                            <FormInput label="توضیحات" id="qDesc" value={qDesc} onChange={(e) => setQDesc((e.target as HTMLInputElement).value)} required />
+                        </div>
+                        <div className="md:col-span-2">
+                            <JalaliDatePicker label="تاریخ" id="qDate" value={qDate} onChange={(iso) => setQDate(iso)} />
+                        </div>
+                        <div className="md:col-span-1">
+                            <label className="block text-sm font-medium text-slate-300 mb-1">رسید</label>
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="q-ledger-receipt-upload" className={`cursor-pointer px-3 py-2 rounded-md text-sm ${qUploading ? 'bg-slate-600 text-slate-300' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'}`}>
+                                    {qUploading ? 'در حال آپلود...' : 'بارگذاری'}
+                                </label>
+                                <input id="q-ledger-receipt-upload" type="file" accept="image/*" className="sr-only" onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (!f) return;
+                                    const reader = new FileReader();
+                                    setQUploading(true);
+                                    reader.onloadend = async () => {
+                                        try {
+                                            const dataUrl = reader.result as string;
+                                            const ref = await saveImageDataURL(dataUrl);
+                                            setQReceiptRef(ref);
+                                            const url = await getObjectURLByRef(ref);
+                                            setQReceiptURL(url);
+                                        } catch (err) {
+                                            console.error('Quick ledger receipt upload failed', err);
+                                        } finally {
+                                            setQUploading(false);
+                                        }
+                                    };
+                                    reader.readAsDataURL(f);
+                                }} />
+                                {qReceiptURL && (
+                                    <a href={qReceiptURL} target="_blank" rel="noreferrer" className="text-sky-400 text-xs">دانلود</a>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-left mt-3">
+                        <button onClick={handleQuickAdd} className="py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled={!qAmount || !qDesc || qUploading}>ثبت سریع</button>
+                    </div>
+                </div>
+                {safeLedger.length === 0 ? <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">موردی یافت نشد.</p> :
                 <div className="space-y-3">
-                    {ledger.map(entry => (
+                    {safeLedger.map(entry => (
                         <div key={entry.id} className={`bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 ${entry.isSettled ? 'opacity-50' : ''}`}>
                             <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
                                 <div className="min-w-0">
@@ -1261,6 +1380,7 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                             </div>
                             <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
                                 <p className={`font-bold text-sm sm:text-base ${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(entry.amount)}</p>
+                                {entry.receiptImage && <InlineReceiptLink refId={entry.receiptImage} />}
                                 <button onClick={() => onSettle(currentPerson.id, entry.id)} className="p-1.5 hover:bg-slate-700 rounded-full" title={entry.isSettled ? 'لغو تسویه' : 'تسویه'}>
                                    {entry.isSettled ? <CloseIcon /> : <CheckCircleIcon />}
                                 </button>
@@ -1648,143 +1768,6 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
                 paymentCount: currentInstallment.payments.length,
             };
 
-// Darfak tab (house build expenses)
-function DarfakView() {
-    const { darfak } = useAccountantStore();
-    const { saveDarfak, deleteDarfak } = useAccountantStore.getState();
-    const [modalOpen, setModalOpen] = useState(false);
-    const [editing, setEditing] = useState<DarfakExpense | null>(null);
-    const [search, setSearch] = useState('');
-    const [tags, setTags] = useState<string[]>([]);
-
-    const allTags = useMemo(() => {
-        const s = new Set<string>();
-        darfak.forEach(e => (e.tags || []).forEach(t => s.add(t)));
-        return Array.from(s).sort();
-    }, [darfak]);
-
-    const filtered = useMemo(() => {
-        let list = [...darfak];
-        if (search) {
-            const q = search.toLowerCase();
-            list = list.filter(e => e.title.toLowerCase().includes(q) || (e.note || '').toLowerCase().includes(q));
-        }
-        if (tags.length > 0) list = list.filter(e => tags.every(t => e.tags?.includes(t)));
-        return list;
-    }, [darfak, search, tags]);
-
-    const total = useMemo(() => filtered.reduce((s, e) => s + (e.amount || 0), 0), [filtered]);
-
-    const openNew = () => { setEditing(null); setModalOpen(true); };
-    const openEdit = (e: DarfakExpense) => { setEditing(e); setModalOpen(true); };
-
-    return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between gap-3">
-                <div className="relative md:w-1/2">
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><SearchIcon /></span>
-                    <input type="search" placeholder="جستجو هزینه..." value={search} onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-slate-800/60 text-white rounded-md py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    {["#مصالح", "#دستمزد", ...allTags.filter(t => t !== '#مصالح' && t !== '#دستمزد')].map(tag => (
-                        <button key={tag} onClick={() => setTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
-                            className={`px-3 py-1 rounded-full text-xs border ${tags.includes(tag) ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>{tag}</button>
-                    ))}
-                    {tags.length > 0 && <button onClick={() => setTags([])} className="text-slate-400 text-sm">پاک کردن فیلتر</button>}
-                    <button onClick={openNew} className="ml-auto bg-sky-600 hover:bg-sky-500 text-white rounded-md px-3 py-2 text-sm flex items-center gap-1"><PlusIcon />افزودن</button>
-                </div>
-            </div>
-
-            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
-                <h3 className="text-slate-300 text-sm mb-1">مجموع هزینه‌های فیلتر شده</h3>
-                <p className="text-2xl font-extrabold text-sky-400">{total.toLocaleString('fa-IR')} تومان</p>
-            </div>
-
-            <div className="space-y-3">
-                {filtered.map(e => (
-                    <div key={e.id} className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50">
-                        <div className="min-w-0">
-                            <p className="font-bold text-slate-100 truncate">{e.title}</p>
-                            <p className="text-sm text-slate-400 truncate">{moment(e.date).locale('fa').format('jD jMMMM jYYYY')} • {(e.tags||[]).join(' ')}</p>
-                            {e.note && <p className="text-slate-300 text-sm mt-1">{e.note}</p>}
-                        </div>
-                        <div className="text-left">
-                            <p className="font-bold text-sky-300 text-lg">{e.amount.toLocaleString('fa-IR')} تومان</p>
-                            <div className="flex gap-2 mt-2">
-                                <button onClick={() => openEdit(e)} className="text-slate-400 hover:text-sky-400 text-sm">ویرایش</button>
-                                <button onClick={() => deleteDarfak(e.id)} className="text-rose-400 hover:text-rose-300 text-sm">حذف</button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-                {filtered.length === 0 && (
-                    <div className="text-center py-10 text-slate-400 bg-slate-800/20 rounded-lg">هیچ هزینه‌ای یافت نشد.</div>
-                )}
-            </div>
-
-            <DarfakModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={(payload) => { saveDarfak(payload); setModalOpen(false); }} expense={editing} />
-        </div>
-    );
-}
-
-const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; onClose: () => void; onSave: (e: DarfakExpense) => void; expense: DarfakExpense | null; }) => {
-    const [form, setForm] = useState<DarfakExpense>(() => expense || ({ id: Date.now().toString(), title: '', amount: 0, date: new Date().toISOString(), tags: ['#مصالح'] } as DarfakExpense));
-
-    React.useEffect(() => {
-        if (expense) setForm(expense);
-        else setForm({ id: Date.now().toString(), title: '', amount: 0, date: new Date().toISOString(), tags: ['#مصالح'] } as DarfakExpense);
-    }, [expense, isOpen]);
-
-    if (!isOpen) return null;
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSave({ ...form, amount: parseFloat(String(form.amount)) || 0 });
-    };
-
-    const handleTagInput = (raw: string) => {
-        const parts = raw.split(/[\s,]+/).map(p => p.trim()).filter(Boolean);
-        const normalized = parts.map(t => t.startsWith('#') ? t : `#${t}`);
-        setForm(p => ({ ...p, tags: Array.from(new Set(normalized)) }));
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-slate-700 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <form onSubmit={handleSubmit}>
-                    <div className="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
-                        <h3 className="text-xl font-bold text-slate-100">{expense ? 'ویرایش هزینه درفک' : 'افزودن هزینه درفک'}</h3>
-                        <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">بستن</button>
-                    </div>
-                    <div className="p-6 space-y-4">
-                        <FormInput label="عنوان" id="title" value={form.title} onChange={e => setForm(p => ({...p, title: (e.target as HTMLInputElement).value}))} required />
-                        <div className="grid grid-cols-2 gap-3">
-                            <FormInput label="مبلغ (تومان)" id="amount" type="number" value={form.amount} onChange={e => setForm(p => ({...p, amount: Number((e.target as HTMLInputElement).value)}))} required />
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1">تاریخ</label>
-                                <input type="date" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                                    value={moment(form.date).format('YYYY-MM-DD')}
-                                    onChange={e => setForm(p => ({...p, date: moment((e.target as HTMLInputElement).value, 'YYYY-MM-DD').toISOString()}))} required/>
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm text-slate-300 mb-1">تگ‌ها</label>
-                            <input className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                                value={(form.tags || []).join(' ')} onChange={e => handleTagInput((e.target as HTMLInputElement).value)} placeholder="#مصالح #دستمزد" />
-                        </div>
-                        <FormTextarea label="یادداشت" id="note" value={form.note} onChange={e => setForm(p => ({...p, note: (e.target as HTMLTextAreaElement).value}))} />
-                    </div>
-                    <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
-                        <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 transition">لغو</button>
-                        <button type="submit" className="py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition">ذخیره</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
-            
             return (
                 <div>
                      <div className="flex justify-between items-center mb-6 p-4 bg-slate-800 rounded-lg">

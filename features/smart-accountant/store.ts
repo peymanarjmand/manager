@@ -350,7 +350,7 @@ export const useAccountantStore = create<AccountantState>()(
                 if (personIds.length > 0) {
                     const { data: ledgerData, error: ledgerError } = await supabase
                         .from('ledger_entries')
-                        .select('id,person_id,type,amount,description,date,is_settled')
+                        .select('id,person_id,type,amount,description,date,is_settled,receipt_ref')
                         .in('person_id', personIds);
                     if (ledgerError) {
                         console.warn('Ledger load error', ledgerError);
@@ -365,6 +365,7 @@ export const useAccountantStore = create<AccountantState>()(
                             description: row.description,
                             date: row.date,
                             isSettled: !!row.is_settled,
+                            receiptImage: row.receipt_ref || undefined,
                         };
                         const list = acc[row.person_id] || [];
                         list.push(entry);
@@ -657,6 +658,7 @@ export const useAccountantStore = create<AccountantState>()(
                             description: e.description,
                             date: e.date,
                             is_settled: !!e.isSettled,
+                            receipt_ref: e.receiptImage || null,
                         });
                     if (error) console.error('Ledger entry upsert error', error);
                 })();
@@ -676,7 +678,15 @@ export const useAccountantStore = create<AccountantState>()(
                 const personLedger = [...state.ledger[personId]];
                 const entryIndex = personLedger.findIndex(e => e.id === entryId);
                 if(entryIndex > -1) {
-                    personLedger[entryIndex] = { ...personLedger[entryIndex], isSettled: !personLedger[entryIndex].isSettled };
+                    const isNowSettled = !personLedger[entryIndex].isSettled;
+                    personLedger[entryIndex] = { ...personLedger[entryIndex], isSettled: isNowSettled };
+                    (async () => {
+                        const { error } = await supabase
+                            .from('ledger_entries')
+                            .update({ is_settled: isNowSettled })
+                            .eq('id', entryId);
+                        if (error) console.error('Ledger entry settle toggle error', error);
+                    })();
                 }
                 return { ledger: {...state.ledger, [personId]: personLedger } };
             }),
