@@ -171,7 +171,8 @@ export const useAccountantStore = create<AccountantState>()(
                     if (paymentIndex > -1) {
                         const isNowPaid = !newPayments[paymentIndex].isPaid;
                         newPayments[paymentIndex].isPaid = isNowPaid;
-                        newPayments[paymentIndex].paidDate = isNowPaid ? new Date().toISOString() : undefined;
+                        // Use the scheduled due date as the payment date (not the current click time)
+                        newPayments[paymentIndex].paidDate = isNowPaid ? newPayments[paymentIndex].dueDate : undefined;
                         newInstallments[planIndex] = { ...newInstallments[planIndex], payments: newPayments };
                     }
                 }

@@ -1118,7 +1118,9 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
                 totalInterest: totalPaidPrincipal - loanAmount,
                 totalPenalty: currentInstallment.payments.reduce((sum, p) => sum + (p.penalty || 0), 0),
                 startDate: currentInstallment.payments[0]?.dueDate,
-                endDate: [...currentInstallment.payments].sort((a,b) => new Date(b.paidDate).getTime() - new Date(a.paidDate).getTime())[0]?.paidDate,
+                endDate: [...currentInstallment.payments]
+                    .filter(p => p.paidDate)
+                    .sort((a,b) => new Date(b.paidDate).getTime() - new Date(a.paidDate).getTime())[0]?.paidDate,
                 paymentCount: currentInstallment.payments.length,
             };
 
