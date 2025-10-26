@@ -2,13 +2,14 @@ import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import moment from 'jalali-moment';
 import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense } from './types';
 import { TRANSACTION_CATEGORIES } from './constants';
-import { SummaryIcon, TransactionsIcon, AssetsIcon, PeopleIcon, InstallmentsIcon, ChecksIcon, BackIcon, PlusIcon, EditIcon, DeleteIcon, CloseIcon, DefaultImageIcon, UserCircleIcon, CheckCircleIcon, UncheckedCircleIcon, ArrowRightIcon } from '../../components/Icons';
+import { SummaryIcon, TransactionsIcon, AssetsIcon, PeopleIcon, InstallmentsIcon, ChecksIcon, BackIcon, PlusIcon, EditIcon, DeleteIcon, CloseIcon, DefaultImageIcon, UserCircleIcon, CheckCircleIcon, UncheckedCircleIcon, ArrowRightIcon, SearchIcon, WalletIcon } from '../../components/Icons';
 import DarfakView from './DarfakView';
 import { useAccountantStore } from './store';
 import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
+import { supabase } from '../../lib/supabase';
 
 // CONFIG
-type AccountantTab = 'summary' | 'transactions' | 'assets' | 'people' | 'installments' | 'checks' | 'darfak';
+ type AccountantTab = 'summary' | 'transactions' | 'assets' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
 type ModalConfig = { isOpen: boolean; type?: 'transaction' | 'asset' | 'person' | 'ledger' | 'installmentPlan' | 'installmentPayment' | 'check'; payload?: any };
 
 // HELPERS
@@ -163,6 +164,168 @@ const JalaliDatePicker = ({ value, onChange, id, label }) => {
     );
 };
 
+const SocialInsuranceView = () => {
+    const { socialInsurance } = useAccountantStore();
+    const { saveSocialInsurance, deleteSocialInsurance } = useAccountantStore.getState();
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editing, setEditing] = useState<any | null>(null);
+
+    useEffect(() => {
+        const handler = () => { setEditing(null); setModalOpen(true); };
+        window.addEventListener('open-social-insurance-modal', handler);
+        return () => window.removeEventListener('open-social-insurance-modal', handler);
+    }, []);
+
+    const totalThisYear = useMemo(() => {
+        const jy = moment().jYear();
+        return socialInsurance.filter(p => p.year === jy).reduce((s, p) => s + (p.amount || 0), 0);
+    }, [socialInsurance]);
+
+    const totalDays = useMemo(() => socialInsurance.reduce((s, p) => s + (p.daysCovered || 0), 0), [socialInsurance]);
+    const yearsMonthsDays = useMemo(() => {
+        const years = Math.floor(totalDays / 365);
+        const rem = totalDays % 365;
+        const months = Math.floor(rem / 30);
+        const days = rem % 30;
+        return { years, months, days };
+    }, [totalDays]);
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                    <h3 className="text-slate-300 text-sm">مجموع پرداختی سال جاری</h3>
+                    <p className="text-2xl font-extrabold text-emerald-400">{totalThisYear.toLocaleString('fa-IR')} تومان</p>
+                </div>
+                <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                    <h3 className="text-slate-300 text-sm">کل سابقه محاسبه‌شده</h3>
+                    <p className="text-2xl font-extrabولد text-sky-400">{yearsMonthsDays.years} سال، {yearsMonthsDays.months} ماه، {yearsMonthsDays.days} روز</p>
+                </div>
+                <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                    <h3 className="text-slate-300 text-sm">مجموع روزهای سال جاری</h3>
+                    <p className="text-2xl font-extrabold text-amber-400">{socialInsurance.filter(p => p.year === moment().jYear()).reduce((s, p) => s + (p.daysCovered || 0), 0)} روز</p>
+                </div>
+            </div>
+
+            <div className="space-y-3">
+                {socialInsurance.map(p => (
+                    <div key={p.id} className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50">
+                        <div className="min-w-0">
+                            <p className="font-bold text-slate-100 truncate">{moment().locale('fa').jMonth(p.month - 1).format('jMMMM')} {p.year}</p>
+                            <p className="text-sm text-slate-400 truncate">روزهای پوشش: {p.daysCovered} • تاریخ پرداخت: {moment(p.payDate).locale('fa').format('jD jMMMM jYYYY')}</p>
+                            {p.note && <p className="text-slate-300 text-sm mt-1">{p.note}</p>}
+                        </div>
+                        <div className="text-left">
+                            <p className="font-bold text-sky-300 text-lg">{p.amount.toLocaleString('fa-IR')} تومان</p>
+                            <div className="flex gap-2 mt-2">
+                                <button onClick={() => { setEditing(p); setModalOpen(true); }} className="text-slate-400 hover:text-sky-400 text-sm">ویرایش</button>
+                                <button onClick={() => deleteSocialInsurance(p.id)} className="text-rose-400 hover:text-rose-300 text-sm">حذف</button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+                {socialInsurance.length === 0 && (
+                    <div className="text-center py-10 text-slate-400 bg-slate-800/20 rounded-lg">هنوز سابقه‌ای ثبت نشده است.</div>
+                )}
+            </div>
+
+            <SocialInsuranceModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={(payload) => { saveSocialInsurance(payload); setModalOpen(false); }} payment={editing} />
+        </div>
+    );
+};
+
+const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: boolean; onClose: () => void; onSave: (p: any) => void; payment: any | null; }) => {
+    const [form, setForm] = useState<any>(() => payment || ({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: 30, amount: 0, payDate: new Date().toISOString() }));
+    const [receiptURL, setReceiptURL] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
+    useEffect(() => {
+        if (payment) setForm(payment);
+        else setForm({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: 30, amount: 0, payDate: new Date().toISOString() });
+        setReceiptURL(null);
+    }, [payment, isOpen]);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave({ ...form, amount: Number(form.amount) || 0, daysCovered: Number(form.daysCovered) || 0 });
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
+            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-slate-700 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <form onSubmit={handleSubmit}>
+                    <div className="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
+                        <h3 className="text-xl font-bold text-slate-100">{payment ? 'ویرایش پرداخت بیمه' : 'ثبت پرداخت بیمه'}</h3>
+                        <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">بستن</button>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-sm text-slate-300 mb-1">سال</label>
+                                <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.year} onChange={e => setForm(p => ({...p, year: Number((e.target as HTMLInputElement).value)}))} required />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-slate-300 mb-1">ماه (۱-۱۲)</label>
+                                <input type="number" min={1} max={12} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.month} onChange={e => setForm(p => ({...p, month: Number((e.target as HTMLInputElement).value)}))} required />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-sm text-slate-300 mb-1">روزهای پوشش</label>
+                                <input type="number" min={0} max={31} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.daysCovered} onChange={e => setForm(p => ({...p, daysCovered: Number((e.target as HTMLInputElement).value)}))} required />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-slate-300 mb-1">مبلغ (تومان)</label>
+                                <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.amount} onChange={e => setForm(p => ({...p, amount: Number((e.target as HTMLInputElement).value)}))} required />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-sm text-slate-300 mb-1">تاریخ پرداخت</label>
+                                <input type="date" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={moment(form.payDate).format('YYYY-MM-DD')} onChange={e => setForm(p => ({...p, payDate: moment((e.target as HTMLInputElement).value, 'YYYY-MM-DD').toISOString()}))} required />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-slate-300 mb-1">یادداشت (اختیاری)</label>
+                                <input className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.note || ''} onChange={e => setForm(p => ({...p, note: (e.target as HTMLInputElement).value}))} />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm text-slate-300 mb-1">تصویر فیش (اختیاری)</label>
+                            <input type="file" accept="image/*" onChange={async (e) => {
+                                const f = e.target.files?.[0];
+                                if (!f) return;
+                                const reader = new FileReader();
+                                reader.onloadend = async () => {
+                                    const dataUrl = String(reader.result);
+                                    setIsUploading(true);
+                                    try {
+                                        // Upload to Supabase storage bucket 'receipts' (create if needed in Supabase UI)
+                                        const fileName = `si/${form.id}-${Date.now()}.jpg`;
+                                        const { error: upErr } = await supabase.storage.from('receipts').upload(fileName, dataUrl, { upsert: true, contentType: 'image/jpeg' } as any);
+                                        if (upErr) { console.error('Upload error', upErr); }
+                                        else {
+                                            setForm(p => ({...p, receiptRef: fileName}));
+                                        }
+                                    } finally {
+                                        setIsUploading(false);
+                                    }
+                                };
+                                reader.readAsDataURL(f);
+                            }} />
+                            {isUploading && <p className="text-xs text-slate-400 mt-1">در حال آپلود…</p>}
+                        </div>
+                    </div>
+                    <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
+                        <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 transition">لغو</button>
+                        <button type="submit" disabled={isUploading} className={`py-2 px-4 rounded-md text-sm font-bold transition ${isUploading ? 'bg-slate-600 text-slate-300 cursor-not-allowed' : 'bg-sky-500 hover:bg-sky-600 text-white'}`}>ذخیره</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 // Form Modal Component
 const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen: boolean, onClose: () => void, onSave: (type:string, data:any)=>void, type?:string, payload?:any}) => {
@@ -383,12 +546,13 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     const actions = useAccountantStore.getState();
 
     useEffect(() => {
-        const { loadInstallments, loadTransactions, loadAssets, loadPeopleAndLedger, loadChecks } = useAccountantStore.getState();
+        const { loadInstallments, loadTransactions, loadAssets, loadPeopleAndLedger, loadChecks, loadSocialInsurance } = useAccountantStore.getState();
         Promise.all([
             loadTransactions(),
             loadAssets(),
             loadPeopleAndLedger(),
             loadChecks(),
+            loadSocialInsurance(),
             loadInstallments(),
         ]).catch(() => {});
     }, []);
@@ -527,6 +691,11 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
             case 'checks':
                 modalType = 'check';
                 break;
+            case 'social_insurance':
+                // open inline modal in SocialInsuranceView via event
+                const evt = new CustomEvent('open-social-insurance-modal');
+                window.dispatchEvent(evt);
+                break;
         }
         if (modalType) {
             openModal(modalType, payload);
@@ -565,6 +734,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                             { id: 'installments', title: 'اقساط', icon: <InstallmentsIcon /> },
                             { id: 'assets', title: 'دارایی‌ها', icon: <AssetsIcon /> },
                             { id: 'people', title: 'حساب با دیگران', icon: <PeopleIcon /> },
+                            { id: 'social_insurance', title: 'تامین اجتماعی', icon: <WalletIcon /> },
                             { id: 'darfak', title: 'درفک (ساخت‌وساز)', icon: <TransactionsIcon /> },
                         ].map(tab => (
                             <button key={tab.id} onClick={() => setActiveTab(tab.id as AccountantTab)}
@@ -587,6 +757,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                 {activeTab === 'installments' && <InstallmentsView installments={data.installments} currentInstallment={currentInstallment} setCurrentInstallment={setCurrentInstallment} onEditPlan={(plan) => openModal('installmentPlan', plan)} onDeletePlan={(id) => handleDelete('installmentPlan', id)} onEditPayment={(p) => openModal('installmentPayment', p)} onTogglePaidStatus={handleTogglePaidStatus} />}
                 {activeTab === 'assets' && <AssetsView assets={data.assets} onEdit={(a) => openModal('asset', a)} onDelete={(id) => handleDelete('asset', id)} />}
                 {activeTab === 'people' && <PeopleView data={data} onEditPerson={(p) => openModal('person', p)} onDeletePerson={(id) => handleDelete('person', id)} onEditLedger={(l) => openModal('ledger', l)} onDeleteLedger={(personId, ledgerId) => handleDelete('ledger', ledgerId, personId)} onSettle={handleSettle} currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} />}
+                {activeTab === 'social_insurance' && <SocialInsuranceView />}
                 {activeTab === 'darfak' && <DarfakView />}
             </div>
         </div>

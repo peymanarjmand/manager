@@ -99,3 +99,15 @@ export interface DarfakExpense {
     note?: string;
     attachment?: string; // ref to image in storage
 }
+
+// Social Insurance (Tamin Ejtemaei) monthly payment record
+export interface SocialInsurancePayment {
+    id: string;
+    year: number; // e.g., 1404
+    month: number; // 1-12 (jalali)
+    daysCovered: number; // number of insured days this month (0-31)
+    amount: number; // Rial or Toman depending on app (we use Toman as elsewhere)
+    payDate: string; // ISO
+    receiptRef?: string; // Supabase storage ref or URL
+    note?: string;
+}

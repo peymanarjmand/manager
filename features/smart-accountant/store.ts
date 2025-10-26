@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense } from './types';
+import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense, SocialInsurancePayment } from './types';
 import { createSupabaseTableStateStorage } from '../../lib/supabaseStorage';
 import { encryptedStateStorage } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
@@ -10,12 +10,14 @@ const STORAGE_KEY = 'lifeManagerAccountant';
 
 interface AccountantState extends AccountantData {
     darfak: DarfakExpense[];
+    socialInsurance: SocialInsurancePayment[];
     loadDarfak: () => Promise<void>;
     loadInstallments: () => Promise<void>;
     loadTransactions: () => Promise<void>;
     loadAssets: () => Promise<void>;
     loadPeopleAndLedger: () => Promise<void>;
     loadChecks: () => Promise<void>;
+    loadSocialInsurance: () => Promise<void>;
     // Installments sorting preferences (persisted online via state_accountant)
     installmentsSortMode: 'nearest' | 'highest_month' | 'earliest_loan' | 'custom';
     installmentsCustomOrder: string[]; // array of plan ids
@@ -40,6 +42,8 @@ interface AccountantState extends AccountantData {
     saveCheck: (check: Check) => void;
     deleteCheck: (id: string) => void;
     updateCheckStatus: (id: string, status: CheckStatus) => void;
+    saveSocialInsurance: (p: SocialInsurancePayment) => void;
+    deleteSocialInsurance: (id: string) => void;
 }
 
 export const useAccountantStore = create<AccountantState>()(
@@ -52,6 +56,7 @@ export const useAccountantStore = create<AccountantState>()(
             installments: [],
             checks: [],
             darfak: [],
+            socialInsurance: [],
             installmentsSortMode: 'nearest',
             installmentsCustomOrder: [],
             setInstallmentsSortMode: (mode) => set({ installmentsSortMode: mode }),
@@ -488,6 +493,27 @@ export const useAccountantStore = create<AccountantState>()(
                     console.warn('Checks migration exception', e);
                 }
             },
+            loadSocialInsurance: async () => {
+                const { data, error } = await supabase
+                    .from('social_insurance')
+                    .select('id,year,month,days_covered,amount,pay_date,receipt_ref,note')
+                    .order('pay_date', { ascending: false });
+                if (error) {
+                    console.warn('Social insurance load error', error);
+                    return;
+                }
+                const mapped: SocialInsurancePayment[] = (data || []).map((r: any) => ({
+                    id: r.id,
+                    year: Number(r.year) || 0,
+                    month: Number(r.month) || 0,
+                    daysCovered: Number(r.days_covered) || 0,
+                    amount: Number(r.amount) || 0,
+                    payDate: r.pay_date,
+                    receiptRef: r.receipt_ref || undefined,
+                    note: r.note || undefined,
+                }));
+                set({ socialInsurance: mapped });
+            },
             saveDarfak: (exp) => {
                 set(state => {
                     const rest = state.darfak.filter(e => e.id !== exp.id);
@@ -790,6 +816,34 @@ export const useAccountantStore = create<AccountantState>()(
                         .update({ status, cashed_date: cashedDate })
                         .eq('id', id);
                     if (error) console.error('Check status update error', error);
+                })();
+            },
+            saveSocialInsurance: (p) => {
+                set(state => {
+                    const rest = state.socialInsurance.filter(x => x.id !== p.id);
+                    return { socialInsurance: [p, ...rest].sort((a,b) => new Date(b.payDate).getTime() - new Date(a.payDate).getTime()) };
+                });
+                (async () => {
+                    const { error } = await supabase
+                        .from('social_insurance')
+                        .upsert({
+                            id: p.id,
+                            year: p.year,
+                            month: p.month,
+                            days_covered: p.daysCovered,
+                            amount: p.amount,
+                            pay_date: p.payDate,
+                            receipt_ref: p.receiptRef || null,
+                            note: p.note || null,
+                        });
+                    if (error) console.error('Social insurance upsert error', error);
+                })();
+            },
+            deleteSocialInsurance: (id) => {
+                set(state => ({ socialInsurance: state.socialInsurance.filter(x => x.id !== id) }));
+                (async () => {
+                    const { error } = await supabase.from('social_insurance').delete().eq('id', id);
+                    if (error) console.error('Social insurance delete error', error);
                 })();
             },
         }),
