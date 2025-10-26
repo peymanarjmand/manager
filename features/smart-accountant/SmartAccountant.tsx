@@ -170,6 +170,7 @@ const SocialInsuranceView = () => {
     const [previewRef, setPreviewRef] = useState<string | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<any | null>(null);
+    const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
     useEffect(() => {
         const handler = () => { setEditing(null); setModalOpen(true); };
@@ -191,6 +192,20 @@ const SocialInsuranceView = () => {
         return { years, months, days };
     }, [totalDays]);
 
+    const years = useMemo(() => {
+        const set = new Set<number>();
+        socialInsurance.forEach(p => set.add(p.year));
+        return Array.from(set).sort((a,b) => b - a);
+    }, [socialInsurance]);
+
+    const monthNames = useMemo(() => Array.from({ length: 12 }, (_, i) => moment().jMonth(i).locale('fa').format('jMMMM')), []);
+
+    const openNewFor = (year: number, month: number) => {
+        const defaultObj = { id: Date.now().toString(), year, month, daysCovered: 0, amount: 0, payDate: new Date().toISOString() };
+        setEditing(defaultObj);
+        setModalOpen(true);
+    };
+
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -208,30 +223,62 @@ const SocialInsuranceView = () => {
                 </div>
             </div>
 
-            <div className="space-y-3">
-                {socialInsurance.map(p => (
-                    <div key={p.id} className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50">
-                        <div className="min-w-0">
-                            <p className="font-bold text-slate-100 truncate">{moment().locale('fa').jMonth(p.month - 1).format('jMMMM')} {p.year}</p>
-                            <p className="text-sm text-slate-400 truncate">روزهای پوشش: {p.daysCovered} • تاریخ پرداخت: {moment(p.payDate).locale('fa').format('jD jMMMM jYYYY')}</p>
-                            {p.note && <p className="text-slate-300 text-sm mt-1">{p.note}</p>}
-                        </div>
-                        <div className="text-left">
-                            <p className="font-bold text-sky-300 text-lg">{p.amount.toLocaleString('fa-IR')} تومان</p>
-                            <div className="flex gap-2 mt-2">
-                                <button onClick={() => { setEditing(p); setModalOpen(true); }} className="text-slate-400 hover:text-sky-400 text-sm">ویرایش</button>
-                                <button onClick={() => deleteSocialInsurance(p.id)} className="text-rose-400 hover:text-rose-300 text-sm">حذف</button>
-                                {p.receiptRef && (
-                                    <button onClick={() => setPreviewRef(p.receiptRef!)} className="text-slate-400 hover:text-sky-400 text-sm inline-flex items-center gap-1"><EyeIcon/> مشاهده فیش</button>
-                                )}
-                            </div>
-                        </div>
+            {selectedYear == null ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    {years.map(y => (
+                        <button key={y} onClick={() => setSelectedYear(y)} className="bg-slate-800/60 hover:bg-slate-800 rounded-xl p-5 ring-1 ring-slate-700 text-center transition">
+                            <div className="text-2xl font-extrabold text-slate-100">{y}</div>
+                            <div className="text-xs text-slate-400 mt-1">مشاهده سوابق</div>
+                        </button>
+                    ))}
+                    {years.length === 0 && (
+                        <div className="text-center py-10 text-slate-400 bg-slate-800/20 rounded-lg col-span-full">هنوز سابقه‌ای ثبت نشده است.</div>
+                    )}
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <button onClick={() => setSelectedYear(null)} className="flex items-center gap-2 text-slate-300 hover:text-sky-400 transition-colors">
+                            <ArrowRightIcon /> بازگشت به سال‌ها
+                        </button>
+                        <h3 className="text-xl font-bold text-white">سوابق سال {selectedYear}</h3>
                     </div>
-                ))}
-                {socialInsurance.length === 0 && (
-                    <div className="text-center py-10 text-slate-400 bg-slate-800/20 rounded-lg">هنوز سابقه‌ای ثبت نشده است.</div>
-                )}
-            </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
+                            const rec = socialInsurance.find(p => p.year === selectedYear && p.month === m);
+                            return (
+                                <div key={m} className={`rounded-xl p-4 ring-1 ${rec ? 'ring-emerald-700 bg-emerald-900/10' : 'ring-slate-700 bg-slate-800/50'}`}>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <div className="text-slate-100 font-bold">{monthNames[m-1]}</div>
+                                            {rec ? (
+                                                <>
+                                                    <div className="text-sky-300 font-extrabold mt-1">{rec.amount.toLocaleString('fa-IR')} تومان</div>
+                                                    <div className="text-xs text-slate-400 mt-1">روزهای پوشش: {rec.daysCovered}</div>
+                                                    <div className="text-xs text-slate-500">تاریخ پرداخت: {moment(rec.payDate).locale('fa').format('jD jMMMM jYYYY')}</div>
+                                                </>
+                                            ) : (
+                                                <div className="text-xs text-slate-400 mt-1">پرداختی ثبت نشده</div>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-slate-400">
+                                            {rec ? (
+                                                <>
+                                                    {rec.receiptRef && <button onClick={() => setPreviewRef(rec.receiptRef!)} className="hover:text-sky-400" title="مشاهده فیش"><EyeIcon/></button>}
+                                                    <button onClick={() => { setEditing(rec); setModalOpen(true); }} className="hover:text-sky-400 text-xs">ویرایش</button>
+                                                    <button onClick={() => deleteSocialInsurance(rec.id)} className="hover:text-rose-400 text-xs">حذف</button>
+                                                </>
+                                            ) : (
+                                                <button onClick={() => openNewFor(selectedYear, m)} className="px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs">ثبت</button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             <SocialInsuranceModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={(payload) => { saveSocialInsurance(payload); setModalOpen(false); }} payment={editing} />
             <ReceiptPreview refOrUrl={previewRef} onClose={() => setPreviewRef(null)} />
