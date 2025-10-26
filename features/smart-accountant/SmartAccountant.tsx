@@ -383,6 +383,11 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     const actions = useAccountantStore.getState();
 
     useEffect(() => {
+        const { loadInstallments } = useAccountantStore.getState();
+        loadInstallments().catch(() => {});
+    }, []);
+
+    useEffect(() => {
         if(activeTab !== 'people') setCurrentPerson(null);
         if(activeTab !== 'installments') setCurrentInstallment(null);
     }, [activeTab]);
