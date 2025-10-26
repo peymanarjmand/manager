@@ -1,4 +1,6 @@
-// IndexedDB image store for offline usage
+// Supabase-backed image store (replacing previous IndexedDB implementation)
+import { supabase } from './supabase';
+
 export const IMAGE_REF_PREFIX = 'lmimg:';
 
 function genId() {
@@ -9,75 +11,55 @@ function genId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('lifeManagerDB', 1);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains('images')) {
-        db.createObjectStore('images', { keyPath: 'id' });
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
 export function isImageRef(value?: string | null): boolean {
   return !!value && value.startsWith(IMAGE_REF_PREFIX);
 }
 
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
-  // Works in modern browsers; avoids manual base64 parsing
   const res = await fetch(dataUrl);
   return await res.blob();
 }
 
+function getExtFromMime(mime: string): string {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'image/svg+xml': 'svg',
+  };
+  return map[mime] || 'bin';
+}
+
 export async function saveImageDataURL(dataUrl: string): Promise<string> {
   const blob = await dataUrlToBlob(dataUrl);
+  const mime = blob.type || 'application/octet-stream';
+  const ext = getExtFromMime(mime);
   const id = genId();
-  const db = await openDB();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction('images', 'readwrite');
-    const store = tx.objectStore('images');
-    const putReq = store.put({ id, blob, type: blob.type });
-    putReq.onsuccess = () => resolve();
-    putReq.onerror = () => reject(putReq.error);
-  });
-  return IMAGE_REF_PREFIX + id;
+  const path = `${id}.${ext}`;
+  const { error } = await supabase.storage.from('lm-images').upload(path, blob, { contentType: mime, upsert: false });
+  if (error) throw error;
+  return IMAGE_REF_PREFIX + path;
 }
 
 export async function getBlobByRef(ref: string): Promise<Blob | null> {
   if (!isImageRef(ref)) return null;
-  const id = ref.slice(IMAGE_REF_PREFIX.length);
-  const db = await openDB();
-  return await new Promise<Blob | null>((resolve, reject) => {
-    const tx = db.transaction('images', 'readonly');
-    const store = tx.objectStore('images');
-    const getReq = store.get(id);
-    getReq.onsuccess = () => {
-      const record = getReq.result as { id: string; blob: Blob } | undefined;
-      resolve(record ? record.blob : null);
-    };
-    getReq.onerror = () => reject(getReq.error);
-  });
+  const path = ref.slice(IMAGE_REF_PREFIX.length);
+  const { data, error } = await supabase.storage.from('lm-images').download(path);
+  if (error) return null;
+  return data as Blob;
 }
 
 export async function getObjectURLByRef(ref: string): Promise<string | null> {
-  const blob = await getBlobByRef(ref);
-  if (!blob) return null;
-  return URL.createObjectURL(blob);
+  if (!isImageRef(ref)) return null;
+  const path = ref.slice(IMAGE_REF_PREFIX.length);
+  const { data } = supabase.storage.from('lm-images').getPublicUrl(path);
+  return data.publicUrl || null;
 }
 
 export async function deleteImageByRef(ref: string): Promise<void> {
   if (!isImageRef(ref)) return;
-  const id = ref.slice(IMAGE_REF_PREFIX.length);
-  const db = await openDB();
-  await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction('images', 'readwrite');
-    const store = tx.objectStore('images');
-    const delReq = store.delete(id);
-    delReq.onsuccess = () => resolve();
-    delReq.onerror = () => reject(delReq.error);
-  });
+  const path = ref.slice(IMAGE_REF_PREFIX.length);
+  await supabase.storage.from('lm-images').remove([path]);
 }

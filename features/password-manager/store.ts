@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AnyPasswordEntry, PasswordCategory } from './types';
-import { supabaseStateStorage } from '../../lib/supabaseStorage';
+import { createSupabaseTableStateStorage } from '../../lib/supabaseStorage';
 
 const STORAGE_KEY = 'lifeManagerPasswords';
 
@@ -43,7 +43,7 @@ export const usePasswordStore = create<PasswordState>()(
         }),
         {
             name: STORAGE_KEY,
-            storage: createJSONStorage(() => supabaseStateStorage as unknown as Storage),
+            storage: createJSONStorage(() => createSupabaseTableStateStorage('state_password_manager') as unknown as Storage),
         }
     )
 );

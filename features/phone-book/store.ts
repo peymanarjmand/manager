@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Contact } from './types';
-import { supabaseStateStorage } from '../../lib/supabaseStorage';
+import { createSupabaseTableStateStorage } from '../../lib/supabaseStorage';
 
 const STORAGE_KEY = 'lifeManagerPhoneBook';
 
@@ -41,7 +41,7 @@ export const usePhoneBookStore = create<PhoneBookState>()(
         }),
         {
             name: STORAGE_KEY,
-            storage: createJSONStorage(() => supabaseStateStorage as unknown as Storage),
+            storage: createJSONStorage(() => createSupabaseTableStateStorage('state_phone_book') as unknown as Storage),
         }
     )
 );

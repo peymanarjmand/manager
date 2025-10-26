@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserIcon, LockIcon, AlertIcon } from '../../components/Icons';
 import { webStorage } from '../../lib/storage';
+import { supabaseStateStorage } from '../../lib/supabaseStorage';
 import { deriveKeyFromPassword, encryptString, decryptString, base64ToBytes, bytesToBase64, randomBytes } from '../../lib/crypto';
 import { setMasterKey } from '../../lib/crypto-session';
 
@@ -24,7 +25,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             return;
         }
 
-        const paramsRaw = webStorage.getItem('lifeManagerMasterParams');
+        const paramsRaw = webStorage.getItem('lifeManagerMasterParams') || await supabaseStateStorage.getItem('lifeManagerMasterParams');
 
         try {
             if (paramsRaw) {
@@ -41,11 +42,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 const salt = randomBytes(16);
                 const key = await deriveKeyFromPassword(password, salt, iterations);
                 const check = await encryptString('ok', key);
-                webStorage.setItem('lifeManagerMasterParams', JSON.stringify({
+                const payload = {
                     salt: bytesToBase64(salt),
                     iterations,
                     check,
-                }));
+                };
+                webStorage.setItem('lifeManagerMasterParams', JSON.stringify(payload));
+                await supabaseStateStorage.setItem('lifeManagerMasterParams', JSON.stringify(payload));
                 // Clean up any legacy plaintext credentials if present
                 if (typeof localStorage !== 'undefined' && localStorage.getItem('lifeManagerCredentials')) {
                     localStorage.removeItem('lifeManagerCredentials');
