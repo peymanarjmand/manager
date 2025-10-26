@@ -6,7 +6,7 @@ import { SummaryIcon, TransactionsIcon, AssetsIcon, PeopleIcon, InstallmentsIcon
 import { SI_RATES } from './constants';
 import DarfakView from './DarfakView';
 import { useAccountantStore } from './store';
-import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
+import { isImageRef, saveImageDataURL, getObjectURLByRef, deleteImageByRef } from '../../lib/idb-images';
 import { supabase } from '../../lib/supabase';
 
  // CONFIG
@@ -384,7 +384,7 @@ const SocialInsuranceView = () => {
     );
 };
 
-const ReceiptPreview = ({ refOrUrl, onClose }: { refOrUrl: string | null; onClose: () => void; }) => {
+const ReceiptPreview = ({ refOrUrl, onClose, title, downloadLabel = 'دانلود', onDelete }: { refOrUrl: string | null; onClose: () => void; title?: string; downloadLabel?: string; onDelete?: () => void; }) => {
     const [url, setUrl] = useState<string | null>(null);
     useEffect(() => {
         let active = true;
@@ -408,7 +408,7 @@ const ReceiptPreview = ({ refOrUrl, onClose }: { refOrUrl: string | null; onClos
             <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
                 <div className="bg-slate-900/90 rounded-2xl ring-1 ring-slate-700 shadow-2xl p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-slate-100 font-bold text-lg">فیش پرداخت بیمه</h3>
+                        <h3 className="text-slate-100 font-bold text-lg">{title || 'پیش‌نمایش تصویر'}</h3>
                         <button onClick={onClose} className="text-slate-400 hover:text-white">بستن</button>
                     </div>
                     <div className="rounded-xl bg-slate-100 text-slate-900 p-4 shadow-inner">
@@ -422,7 +422,10 @@ const ReceiptPreview = ({ refOrUrl, onClose }: { refOrUrl: string | null; onClos
                         )}
                     </div>
                     <div className="mt-4 flex justify-end gap-3">
-                        {url && <a href={url} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-md text-sm font-medium bg-slate-800 text-white hover:bg-slate-700">دانلود</a>}
+                        {onDelete && (
+                            <button onClick={onDelete} className="px-4 py-2 rounded-md text-sm font-bold bg-rose-600 text-white hover:bg-rose-500">حذف تصویر</button>
+                        )}
+                        {url && <a href={url} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-md text-sm font-medium bg-slate-800 text-white hover:bg-slate-700">{downloadLabel}</a>}
                         <button onClick={onClose} className="px-4 py-2 rounded-md text-sm font-medium border border-slate-400 text-slate-700 bg-white hover:bg-slate-100">بستن</button>
                     </div>
                 </div>
@@ -1259,6 +1262,7 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
     const [qReceiptRef, setQReceiptRef] = useState<string | undefined>(undefined);
     const [qReceiptURL, setQReceiptURL] = useState<string | null>(null);
     const [qUploading, setQUploading] = useState<boolean>(false);
+    const [receiptPreviewRef, setReceiptPreviewRef] = useState<string | null>(null);
 
     const handleQuickAdd = () => {
         if (!currentPerson) return;
@@ -1361,7 +1365,7 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                                 {qReceiptURL && (
                                     <>
                                         <img src={qReceiptURL} alt="رسید" className="h-10 w-10 rounded-md object-cover hidden sm:block" />
-                                        <a href={qReceiptURL} target="_blank" rel="noreferrer" className="text-sky-400 text-xs">دانلود</a>
+                                        <button type="button" onClick={() => setReceiptPreviewRef(qReceiptRef || null)} className="text-sky-400 text-xs hover:underline">نمایش</button>
                                     </>
                                 )}
                             </div>
@@ -1376,9 +1380,6 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                     {safeLedger.map(entry => (
                         <div key={entry.id} className={`bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 ${entry.isSettled ? 'opacity-50' : ''}`}>
                             <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
-                                {entry.receiptImage && (
-                                    <ImageFromRef srcOrRef={entry.receiptImage} className="h-12 w-12 rounded-md object-cover hidden sm:block" />
-                                )}
                                 <div className="min-w-0">
                                     <p className="font-bold text-slate-100 truncate">{entry.description}</p>
                                     <p className="text-sm text-slate-400 truncate">{formatDate(entry.date)}</p>
@@ -1386,7 +1387,11 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                             </div>
                             <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
                                 <p className={`font-bold text-sm sm:text-base ${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(entry.amount)}</p>
-                                {entry.receiptImage && <InlineReceiptLink refId={entry.receiptImage} />}
+                                {entry.receiptImage && (
+                                    <button onClick={() => setReceiptPreviewRef(entry.receiptImage!)} className="p-1.5 text-slate-400 hover:bg-slate-700 rounded-full hover:text-sky-400 transition" title="مشاهده رسید">
+                                        <EyeIcon />
+                                    </button>
+                                )}
                                 <button onClick={() => onSettle(currentPerson.id, entry.id)} className="p-1.5 hover:bg-slate-700 rounded-full" title={entry.isSettled ? 'لغو تسویه' : 'تسویه'}>
                                    {entry.isSettled ? <CloseIcon /> : <CheckCircleIcon />}
                                 </button>
@@ -1399,6 +1404,35 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                     ))}
                 </div>
                 }
+                {receiptPreviewRef && (
+                    <ReceiptPreview
+                        refOrUrl={receiptPreviewRef}
+                        title="رسید هزینه"
+                        downloadLabel="دانلود تصویر"
+                        onDelete={async () => {
+                            try {
+                                if (isImageRef(receiptPreviewRef || '')) {
+                                    await deleteImageByRef(receiptPreviewRef!);
+                                }
+                                // اگر پیش‌نمایش متعلق به ثبت سریع بود
+                                if (receiptPreviewRef === qReceiptRef) {
+                                    setQReceiptRef(undefined);
+                                    setQReceiptURL(null);
+                                    setReceiptPreviewRef(null);
+                                    return;
+                                }
+                                // در غیراینصورت تلاش برای پاک کردن رسید ردیف انتخابی از DB
+                                const entry = (data.ledger[currentPerson!.id] || []).find(e => e.receiptImage === receiptPreviewRef);
+                                if (entry) {
+                                    useAccountantStore.getState().saveLedgerEntry({ ...entry, receiptImage: undefined });
+                                }
+                            } finally {
+                                setReceiptPreviewRef(null);
+                            }
+                        }}
+                        onClose={() => setReceiptPreviewRef(null)}
+                    />
+                )}
             </div>
         )
     }
