@@ -314,8 +314,9 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
     }, [payment, isOpen]);
 
     useEffect(() => {
-        // Auto-update daysCovered when year/month changes
-        setForm((p: any) => ({ ...p, daysCovered: computeDaysCovered(p.year, p.month) }));
+        // Auto-update daysCovered when year/month changes (user can edit afterwards)
+        const autoDays = computeDaysCovered(form.year, form.month);
+        setForm((p: any) => (p.daysCovered === autoDays ? p : { ...p, daysCovered: autoDays }));
     }, [form.year, form.month]);
 
     if (!isOpen) return null;
@@ -329,9 +330,13 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
             alert('برای این سال/ماه قبلا پرداخت ثبت شده است.');
             return;
         }
-        const days = computeDaysCovered(form.year, form.month);
+        const maxDays = computeDaysCovered(form.year, form.month);
+        const days = Math.max(0, Math.min(Number(form.daysCovered) || 0, maxDays));
         onSave({ ...form, amount: Number(form.amount) || 0, daysCovered: days });
     };
+
+    const maxDaysForCurrent = computeDaysCovered(form.year, form.month);
+    const isLeapEsfand = form.month === 12 && maxDaysForCurrent === 30;
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
@@ -356,8 +361,12 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-sm text-slate-300 mb-1">روزهای پوشش (اتوماتیک)</label>
-                                <input type="number" min={0} max={31} disabled className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none opacity-70" value={computeDaysCovered(form.year, form.month)} />
+                                <label className="block text-sm text-slate-300 mb-1">روزهای پوشش (قابل ویرایش)</label>
+                                <input type="number" min={0} max={maxDaysForCurrent} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.daysCovered} onChange={e => setForm(p => ({...p, daysCovered: Number((e.target as HTMLInputElement).value)}))} />
+                                <div className="mt-1 text-xs text-slate-400 flex items-center gap-2">
+                                    <span>حداکثر این ماه: {maxDaysForCurrent} روز</span>
+                                    {isLeapEsfand && <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30">سال کبیسه</span>}
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm text-slate-300 mb-1">مبلغ (تومان)</label>
