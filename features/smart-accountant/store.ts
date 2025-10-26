@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus } from './types';
-import { encryptedStateStorage } from '../../lib/storage';
+import { supabaseStateStorage } from '../../lib/supabaseStorage';
 import moment from 'jalali-moment';
 
 const STORAGE_KEY = 'lifeManagerAccountant';
@@ -138,7 +138,7 @@ export const useAccountantStore = create<AccountantState>()(
         }),
         {
             name: STORAGE_KEY,
-            storage: createJSONStorage(() => encryptedStateStorage as unknown as Storage),
+            storage: createJSONStorage(() => supabaseStateStorage as unknown as Storage)
         }
     )
 );

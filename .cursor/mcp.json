@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "supabase-cli": {
+      "type": "http",
+      "url": "http://localhost:54321/mcp?read_only=true&features=database,docs"
+    }
+  }
+}

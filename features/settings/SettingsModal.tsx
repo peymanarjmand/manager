@@ -6,9 +6,7 @@ import { usePasswordStore } from '../password-manager/store';
 import { usePhoneBookStore } from '../phone-book/store';
 import { useDailyTasksStore } from '../daily-tasks/store';
 import { useAccountantStore } from '../smart-accountant/store';
-import { encryptString } from '../../lib/crypto';
-import { getMasterKey } from '../../lib/crypto-session';
-import { webStorage } from '../../lib/storage';
+
 
 const FormInput = ({ label, id, value, onChange, type = 'number', min = 1, step = 1, unit }) => (
     <div>
@@ -127,40 +125,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
         downloadText(JSON.stringify(data, null, 2), fname);
     };
 
-    const exportEncrypted = async () => {
-        const key = getMasterKey();
-        if (!key) {
-            alert('برای گرفتن بکاپ رمزنگاری‌شده، ابتدا باید وارد شده باشید.');
-            return;
-        }
-        const modules = buildModulesData();
-        const plaintext = JSON.stringify(modules);
-        try {
-            const payload = await encryptString(plaintext, key);
-            let kdf: { salt?: string; iterations?: number } | undefined = undefined;
-            try {
-                const paramsRaw = webStorage.getItem('lifeManagerMasterParams');
-                if (paramsRaw) {
-                    const params = JSON.parse(paramsRaw);
-                    kdf = { salt: params.salt, iterations: params.iterations };
-                }
-            } catch {}
-            const wrapper = {
-                format: 'life-manager-backup',
-                version: 1,
-                encrypted: true,
-                alg: 'AES-GCM-256',
-                kdf,
-                createdAt: new Date().toISOString(),
-                payload,
-            };
-            const fname = `life-manager-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.lmbkp.json`;
-            downloadText(JSON.stringify(wrapper), fname);
-        } catch (e) {
-            console.error('Export encryption error', e);
-            alert('خطا در رمزنگاری و ساخت بکاپ رخ داد.');
-        }
-    };
+
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
@@ -221,14 +186,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             <h4 className="font-semibold text-slate-200 mb-3">امنیت</h4>
                             <div className="space-y-6">
                                 <div className="space-y-3">
-                                    <FormToggle label="قفل خودکار پس از عدم فعالیت" id="autoLockEnabled" checked={localSettings.autoLockEnabled} onChange={() => handleToggle('autoLockEnabled')} description="در صورت عدم فعالیت کاربر، کلید اصلی از حافظه پاک می‌شود." />
-                                    {localSettings.autoLockEnabled && (
-                                        <div className="grid grid-cols-2 gap-4 pl-4 border-r-2 border-slate-700 animate-fade-in">
-                                            <FormInput label="زمان عدم فعالیت" id="autoLockMinutes" value={localSettings.autoLockMinutes} onChange={handleChange} unit="دقیقه" min={1} />
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="space-y-3">
                                     <FormToggle label="پاک‌سازی خودکار کلیپ‌بورد" id="clipboardAutoClearEnabled" checked={localSettings.clipboardAutoClearEnabled} onChange={() => handleToggle('clipboardAutoClearEnabled')} description="پس از کپی رمزها، کلیپ‌بورد به صورت خودکار پاک می‌شود." />
                                     {localSettings.clipboardAutoClearEnabled && (
                                         <div className="grid grid-cols-2 gap-4 pl-4 border-r-2 border-slate-700 animate-fade-in">
@@ -243,13 +200,12 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
                         <section>
                             <h4 className="font-semibold text-slate-200 mb-3">پشتیبان‌گیری</h4>
-                            <p className="text-xs text-slate-400 mb-3">فایل بکاپ شامل تمام داده‌های ماژول‌ها و تنظیمات است. پیشنهاد می‌شود از بکاپ رمزنگاری‌شده استفاده کنید.</p>
+                            <p className="text-xs text-slate-400 mb-3">فایل بکاپ شامل تمام داده‌های ماژول‌ها و تنظیمات است.</p>
                             <div className="flex flex-col sm:flex-row gap-3">
-                                <button type="button" onClick={exportEncrypted} className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-semibold transition">دریافت بکاپ رمزنگاری‌شده</button>
-                                <button type="button" onClick={exportPlain} className="py-2 px-4 bg-slate-600 hover:bg-slate-700 text-white rounded-md text-sm transition">دریافت بکاپ ساده (JSON)</button>
+                                <button type="button" onClick={exportPlain} className="py-2 px-4 bg-slate-600 hover:bg-slate-700 text-white rounded-md text-sm transition">دریافت بکاپ (JSON)</button>
                             </div>
-                            <div className="mt-3 bg-rose-500/10 p-3 rounded-lg ring-1 ring-rose-500/30 text-xs text-rose-200">
-                                هشدار: بکاپ ساده به‌صورت رمزنگاری‌نشده است و فقط برای شرایط اضطراری توصیه می‌شود.
+                            <div className="mt-3 bg-amber-500/10 p-3 rounded-lg ring-1 ring-amber-500/30 text-xs text-amber-200">
+                                توجه: بکاپ به‌صورت رمزنگاری‌نشده است؛ آن را در مکان امن نگهداری کنید.
                             </div>
                         </section>
 
