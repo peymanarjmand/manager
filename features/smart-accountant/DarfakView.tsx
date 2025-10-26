@@ -290,11 +290,46 @@ const ReceiptPreview = ({ refOrUrl, onClose }: { refOrUrl: string | null; onClos
         return () => { active = false; };
     }, [refOrUrl]);
     if (!refOrUrl) return null;
+
+    const handleDownload = () => {
+        if (!url) return;
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'receipt.jpg';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
     return (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="max-w-3xl w-full" onClick={e => e.stopPropagation()}>
-                {url ? <img src={url} className="w-full h-auto rounded-md"/> : <div className="text-white">در حال بارگذاری...</div>}
-                <div className="text-center mt-3"><button onClick={onClose} className="text-slate-300 hover:text-white">بستن</button></div>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+                <div className="bg-slate-900/90 rounded-2xl ring-1 ring-slate-700 shadow-2xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-slate-100 font-bold text-lg">رسید هزینه</h3>
+                        <button onClick={onClose} className="text-slate-400 hover:text-white">بستن</button>
+                    </div>
+                    <div className="rounded-xl bg-slate-100 text-slate-900 p-4 shadow-inner">
+                        <div className="mb-3 flex items-center justify-between">
+                            <div className="text-xs font-semibold tracking-widest text-slate-500">INVOICE</div>
+                            <div className="h-4 w-24 bg-gradient-to-r from-sky-400 to-emerald-400 rounded-full opacity-70"></div>
+                        </div>
+                        <div className="rounded-lg border-2 border-dashed border-slate-300 bg-white overflow-hidden flex items-center justify-center min-h-[40vh]">
+                            {url ? (
+                                <img src={url} className="w-full h-auto max-h-[70vh] object-contain"/>
+                            ) : (
+                                <div className="py-16 flex flex-col items-center gap-3">
+                                    <div className="h-12 w-12 border-4 border-slate-300 border-t-sky-500 rounded-full animate-spin"></div>
+                                    <div className="text-slate-500 text-sm">در حال بارگذاری تصویر…</div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="mt-4 flex justify-end gap-3">
+                            <button onClick={handleDownload} disabled={!url} className={`px-4 py-2 rounded-md text-sm font-medium ${url ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}`}>دانلود تصویر</button>
+                            <button onClick={onClose} className="px-4 py-2 rounded-md text-sm font-medium border border-slate-400 text-slate-700 bg-white hover:bg-slate-100">بستن</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
