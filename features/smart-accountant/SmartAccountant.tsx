@@ -8,7 +8,7 @@ import { useAccountantStore } from './store';
 import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
 import { supabase } from '../../lib/supabase';
 
-// CONFIG
+ // CONFIG
  type AccountantTab = 'summary' | 'transactions' | 'assets' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
 type ModalConfig = { isOpen: boolean; type?: 'transaction' | 'asset' | 'person' | 'ledger' | 'installmentPlan' | 'installmentPayment' | 'check'; payload?: any };
 
@@ -916,28 +916,54 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                 </button>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs (draggable) */}
             <div className="mb-6">
                 <div className="border-b border-slate-700">
                     <nav className="-mb-px flex space-x-4 space-x-reverse overflow-x-auto" aria-label="Tabs">
-                        {[
-                            { id: 'summary', title: 'خلاصه', icon: <SummaryIcon /> },
-                            { id: 'transactions', title: 'تراکنش‌ها', icon: <TransactionsIcon /> },
-                            { id: 'checks', title: 'چک‌ها', icon: <ChecksIcon /> },
-                            { id: 'installments', title: 'اقساط', icon: <InstallmentsIcon /> },
-                            { id: 'assets', title: 'دارایی‌ها', icon: <AssetsIcon /> },
-                            { id: 'people', title: 'حساب با دیگران', icon: <PeopleIcon /> },
-                            { id: 'social_insurance', title: 'تامین اجتماعی', icon: <WalletIcon /> },
-                            { id: 'darfak', title: 'درفک (ساخت‌وساز)', icon: <TransactionsIcon /> },
-                        ].map(tab => (
-                            <button key={tab.id} onClick={() => setActiveTab(tab.id as AccountantTab)}
-                                className={`${activeTab === tab.id ? 'border-sky-400 text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'}
-                                whitespace-nowrap flex items-center py-3 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none`}
-                                aria-current={activeTab === tab.id ? 'page' : undefined}>
-                                <span className="ml-2">{tab.icon}</span>
-                                {tab.title}
-                            </button>
-                        ))}
+                        {(() => {
+                            const store = useAccountantStore.getState();
+                            const { tabsOrder, setTabsOrder } = store;
+                            const all = [
+                                { id: 'summary', title: 'خلاصه', icon: <SummaryIcon /> },
+                                { id: 'transactions', title: 'تراکنش‌ها', icon: <TransactionsIcon /> },
+                                { id: 'checks', title: 'چک‌ها', icon: <ChecksIcon /> },
+                                { id: 'installments', title: 'اقساط', icon: <InstallmentsIcon /> },
+                                { id: 'assets', title: 'دارایی‌ها', icon: <AssetsIcon /> },
+                                { id: 'people', title: 'حساب با دیگران', icon: <PeopleIcon /> },
+                                { id: 'social_insurance', title: 'تامین اجتماعی', icon: <WalletIcon /> },
+                                { id: 'darfak', title: 'درفک (ساخت‌وساز)', icon: <TransactionsIcon /> },
+                            ] as { id: AccountantTab; title: string; icon: React.ReactNode }[];
+                            const idToTab = new Map(all.map(t => [t.id, t] as const));
+                            const ordered = tabsOrder?.length ? tabsOrder.map(id => idToTab.get(id)).filter(Boolean) as typeof all : all;
+                            const handleDrop = (e: React.DragEvent<HTMLButtonElement>, toId: AccountantTab) => {
+                                e.preventDefault();
+                                const fromId = e.dataTransfer.getData('text/plain') as AccountantTab;
+                                if (!fromId || fromId === toId) return;
+                                const current = ordered.map(t => t.id);
+                                const fromIdx = current.indexOf(fromId);
+                                const toIdx = current.indexOf(toId);
+                                if (fromIdx === -1 || toIdx === -1) return;
+                                const next = [...current];
+                                next.splice(toIdx, 0, next.splice(fromIdx, 1)[0]);
+                                setTabsOrder(next as AccountantTab[]);
+                            };
+                            return ordered.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    draggable
+                                    onDragStart={(e) => { e.dataTransfer.setData('text/plain', tab.id); }}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={(e) => handleDrop(e, tab.id)}
+                                    onClick={() => setActiveTab(tab.id as AccountantTab)}
+                                    className={`${activeTab === tab.id ? 'border-sky-400 text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'} whitespace-nowrap flex items-center py-3 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none`}
+                                    aria-current={activeTab === tab.id ? 'page' : undefined}
+                                    title="برای جابجایی بکشید و رها کنید"
+                                >
+                                    <span className="ml-2">{tab.icon}</span>
+                                    {tab.title}
+                                </button>
+                            ));
+                        })()}
                     </nav>
                 </div>
             </div>

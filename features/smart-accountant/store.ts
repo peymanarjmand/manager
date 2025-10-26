@@ -6,11 +6,16 @@ import { encryptedStateStorage } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 import moment from 'jalali-moment';
 
+// Keep in sync with AccountantTab in SmartAccountant.tsx
+type AccountantTab = 'summary' | 'transactions' | 'assets' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
+
 const STORAGE_KEY = 'lifeManagerAccountant';
 
 interface AccountantState extends AccountantData {
     darfak: DarfakExpense[];
     socialInsurance: SocialInsurancePayment[];
+    // UI preferences
+    tabsOrder: AccountantTab[]; // persisted order of tabs in Smart Accountant
     loadDarfak: () => Promise<void>;
     loadInstallments: () => Promise<void>;
     loadTransactions: () => Promise<void>;
@@ -23,6 +28,7 @@ interface AccountantState extends AccountantData {
     installmentsCustomOrder: string[]; // array of plan ids
     setInstallmentsSortMode: (mode: 'nearest' | 'highest_month' | 'earliest_loan' | 'custom') => void;
     setInstallmentsCustomOrder: (order: string[]) => void;
+    setTabsOrder: (order: AccountantTab[]) => void;
     saveDarfak: (exp: DarfakExpense) => void;
     deleteDarfak: (id: string) => void;
     saveTransaction: (transaction: Transaction) => void;
@@ -57,10 +63,12 @@ export const useAccountantStore = create<AccountantState>()(
             checks: [],
             darfak: [],
             socialInsurance: [],
+            tabsOrder: ['summary','transactions','checks','installments','assets','people','social_insurance','darfak'],
             installmentsSortMode: 'nearest',
             installmentsCustomOrder: [],
             setInstallmentsSortMode: (mode) => set({ installmentsSortMode: mode }),
             setInstallmentsCustomOrder: (order) => set({ installmentsCustomOrder: order }),
+            setTabsOrder: (order) => set({ tabsOrder: order }),
             loadDarfak: async () => {
                 const { data, error } = await supabase
                     .from('darfak_expenses')
