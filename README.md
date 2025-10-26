@@ -80,6 +80,38 @@
 
 ---
 
+## دیپلوی روی Netlify
+
+برای استقرار نسخه وب:
+
+1) پیش‌نیازها
+- حساب Netlify و دسترسی به مخزن Git (GitHub/GitLab/Bitbucket)
+- مقداردهی متغیرهای محیطی پروژه (در Netlify → Site settings → Environment variables):
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+  - `GEMINI_API_KEY` (اختیاری)
+
+2) تنظیمات ساخت
+- این مخزن فایل `netlify.toml` دارد؛ نیازی به تنظیم دستی نیست. اما اگر خواستید دستی تنظیم کنید:
+  - Build command: `npm run build`
+  - Publish directory: `dist`
+  - Node Version: 20 (در `netlify.toml` و `package.json` تعیین شده است)
+- این پروژه یک SPA است و ریدایرکت 200 به `index.html` در `netlify.toml` تنظیم شده است.
+
+3) مراحل دیپلوی
+- در Netlify روی «Add new site → Import an existing project» کلیک کنید.
+- مخزن Git را انتخاب کنید.
+- متغیرهای محیطی را اضافه کنید و Deploy را بزنید.
+
+4) روش Drag & Drop (بدون اتصال Git)
+- به‌صورت محلی `npm run build` اجرا کنید و پوشه `dist` را در Netlify Deploys بکشید و رها کنید.
+
+نکته‌ها:
+- برای بارگذاری/دانلود تصاویر از باکت `lm-images` باید در Supabase ایجاد شده باشد (بخش «پیکربندی Supabase»).
+- اگر پس از دیپلوی پیام «Supabase is not configured» دیدید، متغیرهای محیطی سایت را در Netlify تنظیم و دیپلوی را مجدداً اجرا کنید.
+
+---
+
 ## پیکربندی Supabase
 
 این اپلیکیشن بدون احراز هویت کاربر، از کلید عمومی (Anon) برای خواندن/نوشتن استفاده می‌کند. برای راه‌اندازی سریع می‌توانید سیاست‌های RLS باز (صرفاً جهت توسعه) اعمال کنید؛ اما برای محیط واقعی حتماً سیاست‌های امن و احراز هویت کاربر را پیاده‌سازی کنید.
