@@ -16,8 +16,16 @@ export function isImageRef(value?: string | null): boolean {
 }
 
 async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
-  const res = await fetch(dataUrl);
-  return await res.blob();
+  const commaIdx = dataUrl.indexOf(',');
+  const header = dataUrl.slice(0, commaIdx);
+  const base64 = dataUrl.slice(commaIdx + 1);
+  const mimeMatch = header.match(/data:(.*?);base64/);
+  const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
 }
 
 function getExtFromMime(mime: string): string {
@@ -40,7 +48,7 @@ export async function saveImageDataURL(
   const mime = blob.type || 'application/octet-stream';
   const ext = getExtFromMime(mime);
   const id = genId();
-  const path = `${id}.${ext}`;
+  const path = `darfak/${id}.${ext}`;
 
   // Progress: slice into chunks and report
   const CHUNK_SIZE = 256 * 1024; // 256KB

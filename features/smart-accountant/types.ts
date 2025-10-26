@@ -97,4 +97,5 @@ export interface DarfakExpense {
     date: string; // ISO
     tags: string[]; // e.g., ['#مصالح', '#دستمزد']
     note?: string;
+    attachment?: string; // ref to image in storage
 }

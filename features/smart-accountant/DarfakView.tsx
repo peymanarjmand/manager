@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import { useAccountantStore } from './store';
 import { DarfakExpense } from './types';
-import { PlusIcon, SearchIcon } from '../../components/Icons';
+import { PlusIcon, SearchIcon, EyeIcon } from '../../components/Icons';
 import { saveImageDataURL, getObjectURLByRef, isImageRef } from '../../lib/idb-images';
 
 export default function DarfakView() {
@@ -12,6 +12,7 @@ export default function DarfakView() {
     const [editing, setEditing] = useState<DarfakExpense | null>(null);
     const [search, setSearch] = useState('');
     const [tags, setTags] = useState<string[]>([]);
+    const [previewRef, setPreviewRef] = useState<string | null>(null);
 
     const allTags = useMemo(() => {
         const s = new Set<string>();
@@ -72,6 +73,7 @@ export default function DarfakView() {
                             <div className="flex gap-2 mt-2">
                                 <button onClick={() => openEdit(e)} className="text-slate-400 hover:text-sky-400 text-sm">ویرایش</button>
                                 <button onClick={() => deleteDarfak(e.id)} className="text-rose-400 hover:text-rose-300 text-sm">حذف</button>
+                                {e.attachment && <button onClick={() => setPreviewRef(e.attachment!)} className="text-slate-400 hover:text-sky-400 text-sm inline-flex items-center gap-1"><EyeIcon/> مشاهده رسید</button>}
                             </div>
                         </div>
                     </div>
@@ -82,6 +84,7 @@ export default function DarfakView() {
             </div>
 
             <DarfakModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={(payload) => { saveDarfak(payload); setModalOpen(false); }} expense={editing} />
+            <ReceiptPreview refOrUrl={previewRef} onClose={() => setPreviewRef(null)} />
         </div>
     );
 }
@@ -196,9 +199,38 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
                     </div>
                     <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
                         <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 transition">لغو</button>
-                        <button type="submit" className="py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition">ذخیره</button>
+                        <button type="submit" disabled={isUploading} className={`py-2 px-4 rounded-md text-sm font-bold transition ${isUploading ? 'bg-slate-600 text-slate-300 cursor-not-allowed' : 'bg-sky-500 hover:bg-sky-600 text-white'}`}>
+                            {isUploading ? 'در حال آپلود تصویر…' : 'ذخیره'}
+                        </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    );
+}
+
+const ReceiptPreview = ({ refOrUrl, onClose }: { refOrUrl: string | null; onClose: () => void; }) => {
+    const [url, setUrl] = useState<string | null>(null);
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            if (!refOrUrl) { setUrl(null); return; }
+            if (isImageRef(refOrUrl)) {
+                const u = await getObjectURLByRef(refOrUrl);
+                if (!active) return;
+                setUrl(u);
+            } else {
+                setUrl(refOrUrl);
+            }
+        })();
+        return () => { active = false; };
+    }, [refOrUrl]);
+    if (!refOrUrl) return null;
+    return (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+                {url ? <img src={url} className="w-full h-auto rounded-md"/> : <div className="text-white">در حال بارگذاری...</div>}
+                <div className="text-center mt-3"><button onClick={onClose} className="text-slate-300 hover:text-white">بستن</button></div>
             </div>
         </div>
     );
