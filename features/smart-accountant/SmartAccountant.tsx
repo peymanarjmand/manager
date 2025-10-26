@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import moment from 'jalali-moment';
 import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense } from './types';
 import { TRANSACTION_CATEGORIES } from './constants';
-import { SummaryIcon, TransactionsIcon, AssetsIcon, PeopleIcon, InstallmentsIcon, ChecksIcon, BackIcon, PlusIcon, EditIcon, DeleteIcon, CloseIcon, DefaultImageIcon, UserCircleIcon, CheckCircleIcon, UncheckedCircleIcon, ArrowRightIcon, SearchIcon, WalletIcon } from '../../components/Icons';
+import { SummaryIcon, TransactionsIcon, AssetsIcon, PeopleIcon, InstallmentsIcon, ChecksIcon, BackIcon, PlusIcon, EditIcon, DeleteIcon, CloseIcon, DefaultImageIcon, UserCircleIcon, CheckCircleIcon, UncheckedCircleIcon, ArrowRightIcon, SearchIcon, WalletIcon, EyeIcon } from '../../components/Icons';
 import DarfakView from './DarfakView';
 import { useAccountantStore } from './store';
 import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
@@ -167,6 +167,7 @@ const JalaliDatePicker = ({ value, onChange, id, label }) => {
 const SocialInsuranceView = () => {
     const { socialInsurance } = useAccountantStore();
     const { saveSocialInsurance, deleteSocialInsurance } = useAccountantStore.getState();
+    const [previewRef, setPreviewRef] = useState<string | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<any | null>(null);
 
@@ -220,6 +221,9 @@ const SocialInsuranceView = () => {
                             <div className="flex gap-2 mt-2">
                                 <button onClick={() => { setEditing(p); setModalOpen(true); }} className="text-slate-400 hover:text-sky-400 text-sm">ویرایش</button>
                                 <button onClick={() => deleteSocialInsurance(p.id)} className="text-rose-400 hover:text-rose-300 text-sm">حذف</button>
+                                {p.receiptRef && (
+                                    <button onClick={() => setPreviewRef(p.receiptRef!)} className="text-slate-400 hover:text-sky-400 text-sm inline-flex items-center gap-1"><EyeIcon/> مشاهده فیش</button>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -230,6 +234,54 @@ const SocialInsuranceView = () => {
             </div>
 
             <SocialInsuranceModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={(payload) => { saveSocialInsurance(payload); setModalOpen(false); }} payment={editing} />
+            <ReceiptPreview refOrUrl={previewRef} onClose={() => setPreviewRef(null)} />
+        </div>
+    );
+};
+
+const ReceiptPreview = ({ refOrUrl, onClose }: { refOrUrl: string | null; onClose: () => void; }) => {
+    const [url, setUrl] = useState<string | null>(null);
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            if (!refOrUrl) { setUrl(null); return; }
+            if (isImageRef(refOrUrl)) {
+                const u = await getObjectURLByRef(refOrUrl);
+                if (!active) return;
+                setUrl(u);
+            } else {
+                // try public URL from supabase path
+                const { data } = supabase.storage.from('receipts').getPublicUrl(refOrUrl);
+                setUrl(data?.publicUrl || refOrUrl);
+            }
+        })();
+        return () => { active = false; };
+    }, [refOrUrl]);
+    if (!refOrUrl) return null;
+    return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+                <div className="bg-slate-900/90 rounded-2xl ring-1 ring-slate-700 shadow-2xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-slate-100 font-bold text-lg">فیش پرداخت بیمه</h3>
+                        <button onClick={onClose} className="text-slate-400 hover:text-white">بستن</button>
+                    </div>
+                    <div className="rounded-xl bg-slate-100 text-slate-900 p-4 shadow-inner">
+                        {url ? (
+                            <img src={url} className="w-full h-auto max-h-[70vh] object-contain"/>
+                        ) : (
+                            <div className="py-16 flex flex-col items-center gap-3">
+                                <div className="h-12 w-12 border-4 border-slate-300 border-top-sky-500 rounded-full animate-spin"></div>
+                                <div className="text-slate-500 text-sm">در حال بارگذاری تصویر…</div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="mt-4 flex justify-end gap-3">
+                        {url && <a href={url} target="_blank" rel="noreferrer" className="px-4 py-2 rounded-md text-sm font-medium bg-slate-800 text-white hover:bg-slate-700">دانلود</a>}
+                        <button onClick={onClose} className="px-4 py-2 rounded-md text-sm font-medium border border-slate-400 text-slate-700 bg-white hover:bg-slate-100">بستن</button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
@@ -246,9 +298,19 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
     };
 
     useEffect(() => {
-        if (payment) setForm(payment);
-        else setForm({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: moment.jDaysInMonth(moment().jYear(), moment().jMonth()), amount: 0, payDate: new Date().toISOString() });
-        setReceiptURL(null);
+        if (payment) {
+            setForm(payment);
+        } else {
+            setForm({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: moment.jDaysInMonth(moment().jYear(), moment().jMonth()), amount: 0, payDate: new Date().toISOString() });
+        }
+        (async () => {
+            if (payment?.receiptRef && isImageRef(payment.receiptRef)) {
+                const url = await getObjectURLByRef(payment.receiptRef);
+                setReceiptURL(url);
+            } else {
+                setReceiptURL(null);
+            }
+        })();
     }, [payment, isOpen]);
 
     useEffect(() => {
@@ -312,31 +374,40 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm text-slate-300 mb-1">تصویر فیش (اختیاری)</label>
-                            <input type="file" accept="image/*" onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                setIsUploading(true);
-                                try {
-                                    const path = `si/${form.id}-${Date.now()}-${file.name}`;
-                                    const { error: upErr } = await supabase.storage.from('receipts').upload(path, file, { upsert: true });
-                                    if (upErr) { console.error('Upload error', upErr); }
-                                    else {
-                                        setForm(p => ({...p, receiptRef: path}));
-                                        const { data } = supabase.storage.from('receipts').getPublicUrl(path);
-                                        setReceiptURL(data.publicUrl);
-                                    }
-                                } finally {
-                                    setIsUploading(false);
-                                }
-                            }} />
-                            {isUploading && <p className="text-xs text-slate-400 mt-1">در حال آپلود…</p>}
+                            <label className="block text-sm text-slate-300 mb-1">تصویر فاکتور (اختیاری)</label>
+                            <div className="mt-1 flex items-center gap-3">
+                                <div className="relative h-20 w-20 rounded-md bg-slate-700/50 overflow-hidden flex items-center justify-center">
+                                    {receiptURL ? <img src={receiptURL} className="h-full w-full object-cover"/> : <span className="text-slate-500 text-xs">بدون تصویر</span>}
+                                    {isUploading && (
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                            <div className="h-4 w-4 border-2 border-slate-300 border-t-sky-500 rounded-full animate-spin"></div>
+                                        </div>
+                                    )}
+                                </div>
+                                <input type="file" accept="image/*" onChange={async (e) => {
+                                    const f = e.target.files?.[0];
+                                    if (!f) return;
+                                    const reader = new FileReader();
+                                    reader.onloadend = async () => {
+                                        try {
+                                            setIsUploading(true);
+                                            const dataUrl = String(reader.result);
+                                            const ref = await saveImageDataURL(dataUrl);
+                                            setForm(p => ({ ...p, receiptRef: ref }));
+                                            const url = await getObjectURLByRef(ref);
+                                            setReceiptURL(url);
+                                        } catch (err) {
+                                            console.error('Receipt upload failed', err);
+                                        } finally {
+                                            setIsUploading(false);
+                                        }
+                                    };
+                                    reader.readAsDataURL(f);
+                                }} className="text-sm"/>
+                            </div>
                             {receiptURL && (
-                                <div className="mt-2 p-2 bg-slate-900/50 rounded">
-                                    <img src={receiptURL} className="max-h-48 rounded-md" />
-                                    <div className="mt-2 text-right">
-                                        <a href={receiptURL} target="_blank" rel="noreferrer" className="text-sky-400 text-sm">دانلود فیش</a>
-                                    </div>
+                                <div className="mt-2 text-right">
+                                    <a href={receiptURL} target="_blank" rel="noreferrer" className="text-sky-400 text-sm">دانلود فیش</a>
                                 </div>
                             )}
                         </div>
