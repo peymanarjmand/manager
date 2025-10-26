@@ -1441,6 +1441,7 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
                             const monthAmount = monthPays.reduce((s, p) => s + (p.amount || 0) + (p.penalty || 0), 0);
                             const monthPaid = monthPays.length > 0 ? monthPays.every(p => p.isPaid) : false;
                             const earliestMonthDue = monthPays.length > 0 ? monthPays.map(p => p.dueDate).sort((a,b) => new Date(a).getTime() - new Date(b).getTime())[0] : null;
+                            const daysUntil = earliestMonthDue ? Math.ceil((new Date(earliestMonthDue).getTime() - new Date().getTime()) / (1000*60*60*24)) : null;
                             return (
                                 <div className="mb-4">
                                     <div className="flex items-center justify-between">
@@ -1451,9 +1452,16 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
                                             {monthPays.length > 0 && <p className="text-xs text-slate-400 mt-0.5">قسط این ماه</p>}
                                         </div>
                                         {monthPays.length > 0 && (
-                                            <span className={`px-2 py-0.5 rounded-full text-xs ring-1 ${monthPaid ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30' : 'bg-rose-500/10 text-rose-400 ring-rose-500/30'}`}>
-                                                {monthPaid ? 'پرداخت شده' : 'پرداخت نشده'}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                {typeof daysUntil === 'number' && (
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-700/50 text-slate-300 ring-1 ring-slate-600">
+                                                        {daysUntil > 0 ? `${daysUntil} روز تا سررسید` : daysUntil === 0 ? 'امروز سررسید' : `${Math.abs(daysUntil)} روز گذشته`}
+                                                    </span>
+                                                )}
+                                                <span className={`px-2 py-0.5 rounded-full text-xs ring-1 ${monthPaid ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30' : 'bg-rose-500/10 text-rose-400 ring-rose-500/30'}`}>
+                                                    {monthPaid ? 'پرداخت شده' : 'پرداخت نشده'}
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                     <div className="mt-2 flex items-center justify-between text-sm">
@@ -1493,6 +1501,23 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
                     <button onClick={() => setInstallmentsSortMode('custom')} className={`px-3 py-1 rounded-full text-xs border ${installmentsSortMode==='custom' ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>شخصی‌سازی</button>
                     {installmentsSortMode === 'custom' && <span className="text-xs text-slate-400">برای تغییر ترتیب کارت‌ها را بکشید و رها کنید</span>}
                 </div>
+
+                {/* Monthly paid summary */}
+                {(() => {
+                    const active = installments.filter(plan => plan.payments.some(p => !p.isPaid));
+                    const monthPaid = active
+                        .flatMap(p => p.payments)
+                        .filter(p => p.isPaid && moment(p.dueDate).isBetween(startOfThisJMonth, endOfThisJMonth, undefined, '[]'))
+                        .reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
+                    return (
+                        <div className="bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700 mb-5">
+                            <div className="flex items-center justify-between">
+                                <span className="text-slate-300 text-sm">کل پرداختی این ماه</span>
+                                <span className="text-emerald-400 font-extrabold">{formatCurrency(monthPaid)}</span>
+                            </div>
+                        </div>
+                    );
+                })()}
                 <h3 className="text-2xl font-bold mb-4 text-slate-200">اقساط فعال</h3>
                 {activePlans.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
