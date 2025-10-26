@@ -50,6 +50,8 @@ interface AccountantState extends AccountantData {
     updateCheckStatus: (id: string, status: CheckStatus) => void;
     saveSocialInsurance: (p: SocialInsurancePayment) => void;
     deleteSocialInsurance: (id: string) => void;
+    settleSocialInsurance: (id: string) => Promise<void>;
+    settleSocialInsuranceMonth: (year: number, month: number) => Promise<void>;
 }
 
 export const useAccountantStore = create<AccountantState>()(
@@ -856,6 +858,39 @@ export const useAccountantStore = create<AccountantState>()(
                 set(state => ({ socialInsurance: state.socialInsurance.map(x => x.id === id ? { ...x, isSettled: true } : x) }));
                 const { error } = await supabase.from('social_insurance').update({ is_settled: true }).eq('id', id);
                 if (error) console.error('Social insurance settle error', error);
+            },
+            settleSocialInsuranceMonth: async (year: number, month: number) => {
+                // For months without a record, insert a locked/settled stub to prevent future edits
+                const id = `${year}-${month}`;
+                const stub: SocialInsurancePayment = {
+                    id,
+                    year,
+                    month,
+                    daysCovered: 0,
+                    amount: 0,
+                    payDate: new Date().toISOString(),
+                    isSettled: true,
+                };
+                set(state => {
+                    const exists = state.socialInsurance.some(x => x.year === year && x.month === month);
+                    if (exists) {
+                        return { socialInsurance: state.socialInsurance.map(x => (x.year === year && x.month === month) ? { ...x, isSettled: true } : x) };
+                    }
+                    return { socialInsurance: [stub, ...state.socialInsurance] };
+                });
+                const { error } = await supabase.from('social_insurance').upsert({
+                    id,
+                    year,
+                    month,
+                    days_covered: 0,
+                    amount: 0,
+                    registered_salary: null,
+                    pay_date: new Date().toISOString(),
+                    receipt_ref: null,
+                    note: 'settled_stub',
+                    is_settled: true,
+                });
+                if (error) console.error('Social insurance settle (no record) error', error);
             },
             deleteSocialInsurance: (id) => {
                 set(state => ({ socialInsurance: state.socialInsurance.filter(x => x.id !== id) }));

@@ -167,7 +167,7 @@ const JalaliDatePicker = ({ value, onChange, id, label }) => {
 
 const SocialInsuranceView = () => {
     const { socialInsurance } = useAccountantStore();
-    const { saveSocialInsurance, deleteSocialInsurance, settleSocialInsurance } = useAccountantStore.getState();
+    const { saveSocialInsurance, deleteSocialInsurance, settleSocialInsurance, settleSocialInsuranceMonth } = useAccountantStore.getState();
     const [previewRef, setPreviewRef] = useState<string | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<any | null>(null);
@@ -320,7 +320,10 @@ const SocialInsuranceView = () => {
                                                     )}
                                                 </>
                                             ) : (
-                                                <button onClick={() => openNewFor(selectedYear, m)} className="px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs">ثبت</button>
+                                                <>
+                                                    <button onClick={() => openNewFor(selectedYear, m)} className="px-2 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded-md text-xs">ثبت</button>
+                                                    <button onClick={() => { if (window.confirm('این ماه را بدون ثبت پرداخت تسویه می‌کنید. غیرقابل بازگشت است. تایید؟')) settleSocialInsuranceMonth(selectedYear, m); }} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs" title="تسویه بدون ثبت">✓✓ تسویه</button>
+                                                </>
                                             )}
                                         </div>
                                     </div>
