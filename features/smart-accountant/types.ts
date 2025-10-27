@@ -17,7 +17,7 @@ export interface Asset {
     quantity: number;
     purchaseDate: string; // ISO string
     notes?: string;
-    personId?: string; // owner person id (optional)
+    ownerId?: string; // owner (asset_people.id) optional
 }
 
 // A person for tracking debts and credits
