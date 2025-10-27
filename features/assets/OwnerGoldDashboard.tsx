@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
+import JalaliDatePicker from './components/JalaliDatePicker';
 import { useAssetsStore } from './store';
 import { GoldAsset, GoldSubtype } from './types';
-import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon } from '../../components/Icons';
+import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon, AssetsIcon, WalletIcon } from '../../components/Icons';
 import { saveImageDataURL, getObjectURLByRef, isImageRef } from '../../lib/idb-images';
 
 const LinkFromRef = ({ refId, label }: { refId?: string; label: string }) => {
@@ -29,16 +30,24 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     const [preview1, setPreview1] = useState<string | null>(null);
     const [preview2, setPreview2] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [view, setView] = useState<'overview' | GoldSubtype>('overview');
 
     useEffect(() => { (async () => { await loadGoldByOwner(ownerId); })(); }, [ownerId]);
 
     const j = (iso: string) => moment(iso).locale('fa').format('jD jMMMM jYYYY');
 
-    const totals = useMemo(() => {
-        const items = gold.filter(g => g.ownerId === ownerId);
-        const totalPaid = items.reduce((s, a) => s + (a as any).totalPaidToman || 0, 0);
-        return { totalPaid };
-    }, [gold, ownerId]);
+    const itemsAll = gold.filter(g => g.ownerId === ownerId);
+    const summarize = (arr: any[]) => {
+        const count = arr.length;
+        const totalPaid = arr.reduce((s, a) => s + (a.totalPaidToman || 0), 0);
+        const last = arr.length ? arr.map(a => a.purchaseDate).sort((a,b) => new Date(b).getTime() - new Date(a).getTime())[0] : undefined;
+        const invoices = arr.reduce((s, a) => s + (a.subtype === 'physical' ? ((a.invoiceRef1 ? 1 : 0) + (a.invoiceRef2 ? 1 : 0)) : (a.invoiceRef ? 1 : 0)), 0);
+        return { count, totalPaid, last };
+    };
+    const phys = itemsAll.filter(i => i.subtype === 'physical') as any[];
+    const tok = itemsAll.filter(i => i.subtype === 'token') as any[];
+    const dgi = itemsAll.filter(i => i.subtype === 'digikala') as any[];
+    const totals = useMemo(() => ({ totalPaid: itemsAll.reduce((s, a: any) => s + (a.totalPaidToman || 0), 0) }), [itemsAll]);
 
     const openNew = (s: GoldSubtype) => {
         setSubtype(s);
@@ -88,29 +97,64 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
         }
     };
 
-    const items = gold.filter(x => x.ownerId === ownerId);
+    const items = itemsAll; // alias for below rendering
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <button onClick={onBack} className="text-slate-300 hover:text-white"><BackIcon/></button>
                 <div className="text-2xl font-extrabold">طلا</div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => openNew('physical')} className="px-3 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm flex items-center gap-2"><PlusIcon/> طلای فیزیکی</button>
-                    <button onClick={() => openNew('token')} className="px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm flex items-center gap-2"><PlusIcon/> توکن طلا</button>
-                    <button onClick={() => openNew('digikala')} className="px-3 py-2 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-sm flex items-center gap-2"><PlusIcon/> طلای دیجی‌کالا</button>
-                </div>
+                <div />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
-                    <div className="text-slate-300 text-sm">مجموع پرداختی</div>
-                    <div className="text-2xl font-extrabold text-emerald-400">{(totals.totalPaid || 0).toLocaleString('fa-IR')} تومان</div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {items.map(it => (
+            {/* Overview summary and entry points */}
+            {view === 'overview' ? (
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                            <div className="text-slate-300 text-sm">مجموع پرداختی</div>
+                            <div className="text-2xl font-extrabold text-emerald-400">{(totals.totalPaid || 0).toLocaleString('fa-IR')} تومان</div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {(() => { const s = summarize(phys); return (
+                            <button onClick={() => setView('physical')} className="text-right bg-slate-800/50 rounded-xl p-5 ring-1 ring-slate-700 hover:ring-sky-400 transition">
+                                <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><AssetsIcon/></div>
+                                <div className="text-xl font-bold text-slate-100">طلای فیزیکی</div>
+                                <div className="text-slate-400 text-sm mt-1">{s.count} رکورد • مجموع {s.totalPaid.toLocaleString('fa-IR')} تومان</div>
+                                <div className="text-slate-500 text-xs mt-1">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
+                            </button>
+                        ); })()}
+                        {(() => { const s = summarize(tok); return (
+                            <button onClick={() => setView('token')} className="text-right bg-slate-800/50 rounded-xl p-5 ring-1 ring-slate-700 hover:ring-emerald-400 transition">
+                                <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><WalletIcon/></div>
+                                <div className="text-xl font-bold text-slate-100">توکن طلا</div>
+                                <div className="text-slate-400 text-sm mt-1">{s.count} رکورد • مجموع {s.totalPaid.toLocaleString('fa-IR')} تومان</div>
+                                <div className="text-slate-500 text-xs mt-1">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
+                            </button>
+                        ); })()}
+                        {(() => { const s = summarize(dgi); return (
+                            <button onClick={() => setView('digikala')} className="text-right bg-slate-800/50 rounded-xl p-5 ring-1 ring-slate-700 hover:ring-amber-400 transition">
+                                <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><AssetsIcon/></div>
+                                <div className="text-xl font-bold text-slate-100">طلای دیجی‌کالا</div>
+                                <div className="text-slate-400 text-sm mt-1">{s.count} رکورد • مجموع {s.totalPaid.toLocaleString('fa-IR')} تومان</div>
+                                <div className="text-slate-500 text-xs mt-1">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
+                            </button>
+                        ); })()}
+                    </div>
+                </>
+            ) : (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div className="text-lg font-bold text-slate-100">{view === 'physical' ? 'طلای فیزیکی' : view === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setView('overview')} className="px-3 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">بازگشت</button>
+                            <button onClick={() => openNew(view)} className="px-3 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm flex items-center gap-2"><PlusIcon/> افزودن</button>
+                        </div>
+                    </div>
+                    {/* filtered list */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {itemsAll.filter(it => it.subtype === view).map(it => (
                     <div key={it.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3">
                         <div className="flex items-start justify-between">
                             <div>
@@ -137,6 +181,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div>قیمت خرید: {(it as any).priceUsd} دلار / {(it as any).priceToman?.toLocaleString('fa-IR')} تومان</div>
                                 <div>کارمزد: {((it as any).feeToman || 0).toLocaleString('fa-IR')} تومان</div>
                                 <div>محل نگهداری: {(it as any).custodyLocation || '—'}</div>
+                                        <LinkFromRef refId={(it as any).invoiceRef} label="رسید" />
                             </div>
                         )}
                         {it.subtype === 'digikala' && (
@@ -144,12 +189,15 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div>مقدار: {(it as any).amountMg} میلی‌گرم</div>
                                 <div>قیمت هر میلی‌گرم: {(it as any).pricePerMg?.toLocaleString('fa-IR')} تومان</div>
                                 <div>کارمزد: {((it as any).feeManualToman || 0).toLocaleString('fa-IR')} تومان ({(it as any).feePercent ?? '—'}%)</div>
+                                        <LinkFromRef refId={(it as any).invoiceRef} label="رسید" />
                             </div>
                         )}
                         <div className="text-sky-400 font-extrabold">مجموع پرداختی: {((it as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان</div>
                     </div>
-                ))}
-            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setModalOpen(false)}>
@@ -160,10 +208,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white">×</button>
                         </div>
                         <div className="p-5 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1">تاریخ خرید</label>
-                                <input type="date" value={moment(form.purchaseDate || new Date().toISOString()).format('YYYY-MM-DD')} onChange={e => setForm((f: any) => ({ ...f, purchaseDate: moment((e.target as HTMLInputElement).value, 'YYYY-MM-DD').toISOString() }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition" />
-                            </div>
+                            <JalaliDatePicker id="gold-purchase" value={form.purchaseDate || new Date().toISOString()} onChange={(iso) => setForm((f: any) => ({ ...f, purchaseDate: iso }))} label="تاریخ خرید" />
                             {subtype === 'physical' && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -182,15 +227,21 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <label className="block text-sm font-medium text-slate-300 mb-1">مجموع پرداختی (تومان)</label>
                                         <input type="number" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400" />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-1">فاکتور 1</label>
-                                        <input type="file" accept="image/*" onChange={e => handleChooseImage(1, e)} className="block w-full text-sm" />
-                                        {preview1 && <img src={preview1} alt="invoice1" className="mt-2 h-24 rounded" />}
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-slate-300">فاکتور 1</label>
+                                        <div className="flex items-center gap-3">
+                                            <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-invoice-1')?.click()}>انتخاب تصویر</button>
+                                            {preview1 && <img src={preview1} alt="invoice1" className="h-16 rounded ring-1 ring-slate-700" />}
+                                        </div>
+                                        <input id="gold-invoice-1" type="file" accept="image/*" onChange={e => handleChooseImage(1, e)} className="hidden" />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-1">فاکتور 2</label>
-                                        <input type="file" accept="image/*" onChange={e => handleChooseImage(2, e)} className="block w-full text-sm" />
-                                        {preview2 && <img src={preview2} alt="invoice2" className="mt-2 h-24 rounded" />}
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-slate-300">فاکتور 2</label>
+                                        <div className="flex items-center gap-3">
+                                            <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-invoice-2')?.click()}>انتخاب تصویر</button>
+                                            {preview2 && <img src={preview2} alt="invoice2" className="h-16 rounded ring-1 ring-slate-700" />}
+                                        </div>
+                                        <input id="gold-invoice-2" type="file" accept="image/*" onChange={e => handleChooseImage(2, e)} className="hidden" />
                                     </div>
                                 </div>
                             )}
@@ -223,6 +274,14 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <label className="block text-sm font-medium text-slate-300 mb-1">محل نگهداری</label>
                                         <input value={form.custodyLocation || ''} onChange={e => setForm((f: any) => ({ ...f, custodyLocation: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">فاکتور/رسید</label>
+                                        <div className="flex items-center gap-3">
+                                            <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-token-invoice')?.click()}>انتخاب تصویر</button>
+                                            {form.invoicePreview && <img src={form.invoicePreview} className="h-16 rounded ring-1 ring-slate-700" />}
+                                        </div>
+                                        <input id="gold-token-invoice" type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { const ref = await saveImageDataURL(String(reader.result || '')); const url = await getObjectURLByRef(ref); setForm((f: any) => ({ ...f, invoiceRef: ref, invoicePreview: url })); }; reader.readAsDataURL(file); }} className="hidden" />
+                                    </div>
                                 </div>
                             )}
                             {subtype === 'digikala' && (
@@ -242,6 +301,14 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">کارمزد (تومان)</label>
                                         <input type="number" value={String(form.feeManualToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, feeManualToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">فاکتور/رسید</label>
+                                        <div className="flex items-center gap-3">
+                                            <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-dg-invoice')?.click()}>انتخاب تصویر</button>
+                                            {form.dgInvoicePreview && <img src={form.dgInvoicePreview} className="h-16 rounded ring-1 ring-slate-700" />}
+                                        </div>
+                                        <input id="gold-dg-invoice" type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { const ref = await saveImageDataURL(String(reader.result || '')); const url = await getObjectURLByRef(ref); setForm((f: any) => ({ ...f, invoiceRef: ref, dgInvoicePreview: url })); }; reader.readAsDataURL(file); }} className="hidden" />
                                     </div>
                                 </div>
                             )}

@@ -39,6 +39,7 @@ export interface GoldDigikala extends AssetGoldBase {
     orderDate?: string; // alias of purchaseDate
     feeManualToman?: number; // manually entered fee
     feePercent?: number; // derived percent
+    invoiceRef?: string; // optional invoice
 }
 
 export type GoldAsset = GoldPhysical | GoldToken | GoldDigikala;

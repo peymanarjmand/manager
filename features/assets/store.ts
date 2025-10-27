@@ -123,12 +123,14 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             row.total_paid_toman = a.totalPaidToman ?? 0;
             row.fee_toman = a.feeToman ?? null;
             row.custody_location = a.custodyLocation ?? null;
+            row.invoice_ref = a.invoiceRef ?? null;
         } else if (a.subtype === 'digikala') {
             row.amount_mg = a.amountMg;
             row.price_per_mg = a.pricePerMg;
             row.total_paid_toman = a.totalPaidToman ?? 0;
             row.fee_manual_toman = a.feeManualToman ?? null;
             row.fee_percent = a.feePercent ?? null;
+            row.invoice_ref = a.invoiceRef ?? null;
         }
         const { error } = await supabase.from('asset_gold').upsert(row);
         if (error) {
