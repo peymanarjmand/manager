@@ -36,6 +36,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     const [transferTo, setTransferTo] = useState<string>('');
     const [transferReason, setTransferReason] = useState<'gift' | 'debt'>('gift');
     const [transferHistory, setTransferHistory] = useState<any[]>([]);
+    const [detailTarget, setDetailTarget] = useState<any | null>(null);
+    const [detailTransfers, setDetailTransfers] = useState<any[]>([]);
 
     useEffect(() => { (async () => { await (loadOwners?.()); await loadGoldByOwner(ownerId); })(); }, [ownerId]);
 
@@ -51,7 +53,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     };
     const summarizePhysical = (arr: any[]) => {
         const s = summarize(arr);
-        const totalGrams = arr.reduce((g, a) => g + (Number(a.grams) || 0), 0);
+        const totalGrams = arr.reduce((g, a) => g + ((Number(a.grams) || 0) + (Number(a.soot) || 0) / 1000), 0);
         const avgPrice = arr.length ? Math.round(arr.reduce((sum, a) => sum + (Number(a.pricePerGram) || 0), 0) / arr.length) : 0;
         return { ...s, totalGrams, avgPrice };
     };
@@ -191,6 +193,18 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
         }
     };
 
+    const openDetails = async (item: any) => {
+        setDetailTarget(item);
+        try {
+            const list = await (getTransfersForGold?.(item.id));
+            setDetailTransfers(list || []);
+        } catch {
+            setDetailTransfers([]);
+        }
+    };
+
+    const toTotalGrams = (it: any) => (Number(it.grams || 0) + (Number(it.soot || 0) / 1000));
+
     const items = itemsAll; // alias for below rendering
     const filteredItems = useMemo(() => {
         let list = itemsAll.filter(it => it.subtype === view);
@@ -316,7 +330,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                     {/* filtered list */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredItems.map(it => (
-                    <div key={it.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3">
+                    <div key={it.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3 hover:ring-sky-600 transition cursor-pointer" onClick={() => openDetails(it)}>
                         <div className="flex items-start justify-between">
                             <div>
                                         <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? 'طلای فیزیکی' : it.subtype === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
@@ -330,7 +344,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         </div>
                                 {it.subtype === 'physical' && (
                             <div className="text-sm text-slate-300 space-y-1">
-                                <div>مقدار: {(it as any).grams || 0} گرم{(it as any).soot ? ` و ${(it as any).soot} سوت` : ''}</div>
+                                <div>مقدار: {(it as any).grams || 0} گرم{(it as any).soot ? ` و ${(it as any).soot} سوت` : ''} (جمع: {((Number((it as any).grams) || 0) + (Number((it as any).soot) || 0)/1000).toFixed(3)} گرم)</div>
                                 <div>قیمت هر گرم: {((it as any).pricePerGram || 0).toLocaleString('fa-IR')} تومان</div>
                                 <div>اجرت: {((it as any).wageToman || 0).toLocaleString('fa-IR')} تومان</div>
                                 <div className="flex items-center gap-3">
@@ -560,6 +574,83 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         </div>
                         <div className="p-4">
                             <img src={imageModal.url} className="w-full h-auto rounded-lg" />
+                        </div>
+                    </div>
+                </div>
+            )}
+            {detailTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setDetailTarget(null)}>
+                    <div className="absolute inset-0 bg-black/80" />
+                    <div className="relative w-full max-w-4xl bg-slate-900 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                            <div className="text-xl font-bold text-slate-100">جزئیات {detailTarget.subtype === 'physical' ? 'طلای فیزیکی' : detailTarget.subtype === 'token' ? 'توکن طلا' : 'طلای دیجیffffffffffffffffffffffffffffff'}</div>
+                            <button onClick={() => setDetailTarget(null)} className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm">بستن</button>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            {detailTarget.subtype === 'physical' && (() => {
+                                const grams = Number(detailTarget.grams || 0);
+                                const soot = Number(detailTarget.soot || 0);
+                                const totalGrams = grams + (soot / 1000);
+                                const totalPaid = Number(detailTarget.totalPaidToman || 0);
+                                const pricePerGram = Number(detailTarget.pricePerGram || 0);
+                                const wage = Number(detailTarget.wageToman || 0);
+                                const wagePercent = totalPaid ? Math.round((wage / totalPaid) * 10000) / 100 : 0;
+                                const sold = !!detailTarget.soldAt;
+                                const saleAmount = Number(detailTarget.saleTotalToman || 0);
+                                const salePerGram = sold && totalGrams ? Math.round(saleAmount / totalGrams) : undefined;
+                                const profit = sold ? (saleAmount - totalPaid) : undefined;
+                                const profitPercent = sold && totalPaid ? Math.round(((saleAmount - totalPaid) / totalPaid) * 10000) / 100 : undefined;
+                                return (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <div className="text-slate-300 text-sm">عنوان</div>
+                                            <div className="text-lg font-bold">{detailTarget.title || '—'}</div>
+                                            <div className="grid grid-cols-2 gap-3 text-sm text-slate-300 mt-2">
+                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">وزن: <span className="font-bold">{grams} گرم</span></div>
+                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">سوت: <span className="font-bold">{soot}</span></div>
+                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">جمع گرم: <span className="font-bold">{totalGrams.toFixed(3)}</span></div>
+                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت هر گرم (خرید): <span className="font-bold">{pricePerGram.toLocaleString('fa-IR')}</span></div>
+                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">اجرت: <span className="font-bold">{wage.toLocaleString('fa-IR')}</span> <span className="text-xs">({wagePercent}% از کل)</span></div>
+                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">تاریخ خرید: <span className="font-bold">{j(detailTarget.purchaseDate)}</span></div>
+                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">مجموع پرداختی: <span className="font-bold">{totalPaid.toLocaleString('fa-IR')}</span> تومان</div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <div className="text-slate-300 text-sm">تصاویر فاکتور</div>
+                                            <div className="flex items-center gap-3">
+                                                <button className="px-3 py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 text-sm disabled:opacity-50" disabled={!detailTarget.invoiceRef1} onClick={() => openImage(detailTarget.invoiceRef1)}>مشاهده فاکتور 1</button>
+                                                <button className="px-3 py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 text-sm disabled:opacity-50" disabled={!detailTarget.invoiceRef2} onClick={() => openImage(detailTarget.invoiceRef2)}>مشاهده فاکتور 2</button>
+                                            </div>
+                                            {sold && (
+                                                <div className="mt-4 space-y-2">
+                                                    <div className="text-slate-300 text-sm">اطلاعات فروش</div>
+                                                    <div className="grid grid-cols-2 gap-3 text-sm text-slate-300">
+                                                        <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">تاریخ فروش: <span className="font-bold">{j(detailTarget.soldAt)}</span></div>
+                                                        <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">مبلغ فروش: <span className="font-bold">{saleAmount.toLocaleString('fa-IR')}</span></div>
+                                                        <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت هر گرم در فروش: <span className="font-bold">{(salePerGram || 0).toLocaleString('fa-IR')}</span></div>
+                                                        <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">سود/زیان: <span className="font-bold">{(profit || 0).toLocaleString('fa-IR')}</span> <span className="text-xs">{profitPercent != null ? `(${profitPercent}%)` : ''}</span></div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <div className="text-slate-300 text-sm mb-2">تاریخچه انتقال</div>
+                                            {detailTransfers.length ? (
+                                                <div className="space-y-2 text-xs text-slate-300">
+                                                    {detailTransfers.map((t:any) => (
+                                                        <div key={t.id} className="flex items-center justify-between bg-slate-800/50 p-2 rounded-lg ring-1 ring-slate-700">
+                                                            <div>از {t.fromOwnerName || '—'} به {t.toOwnerName || '—'} • {t.reason==='gift'?'هدیه':'بدهی'}</div>
+                                                            <div className="text-slate-500">{j(t.date)}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-slate-500 text-sm">هیچ انتقالی ثبت نشده است.</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>
