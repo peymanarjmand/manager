@@ -3,6 +3,7 @@ import moment from 'jalali-moment';
 import { useAccountantStore } from '../smart-accountant/store';
 import { Asset } from '../smart-accountant/types';
 import { useAssetsStore } from './store';
+import OwnerAssetsDashboard from './OwnerAssetsDashboard';
 import { AssetsIcon, EditIcon, DeleteIcon, PlusIcon, BackIcon, UserCircleIcon } from '../../components/Icons';
 
 type AssetsModuleProps = { onNavigateBack: () => void };
@@ -25,6 +26,7 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
     const [ownerName, setOwnerName] = useState('');
     const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
     const [ownerError, setOwnerError] = useState<string | null>(null);
+    const [viewOwnerId, setViewOwnerId] = useState<string | null>(null);
 
     useEffect(() => {
         (async () => {
@@ -62,6 +64,14 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
         deleteAsset(id);
     };
 
+    if (viewOwnerId) {
+        return (
+            <div className="container mx-auto px-4 py-6">
+                <OwnerAssetsDashboard ownerId={viewOwnerId} onBack={() => setViewOwnerId(null)} />
+            </div>
+        );
+    }
+
     return (
         <div className="container mx-auto px-4 py-6">
             <div className="mb-6 flex items-center justify-between">
@@ -93,7 +103,7 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                         {owners.map(p => (
-                            <button key={p.id} onClick={() => setSelectedOwnerId(p.id)} className={`text-right rounded-xl ring-1 ring-slate-700 bg-slate-800/50 hover:bg-slate-800 p-3 transition flex items-center gap-3 ${selectedOwnerId === p.id ? 'outline outline-1 outline-sky-500' : ''}`}>
+                            <button key={p.id} onClick={() => setViewOwnerId(p.id)} className={`text-right rounded-xl ring-1 ring-slate-700 bg-slate-800/50 hover:bg-slate-800 p-3 transition flex items-center gap-3`}>
                                 <span className="h-9 w-9 rounded-full overflow-hidden bg-slate-700 flex items-center justify-center">
                                     <UserCircleIcon />
                                 </span>

@@ -5,6 +5,22 @@ import { GoldAsset, GoldSubtype } from './types';
 import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon } from '../../components/Icons';
 import { saveImageDataURL, getObjectURLByRef, isImageRef } from '../../lib/idb-images';
 
+const LinkFromRef = ({ refId, label }: { refId?: string; label: string }) => {
+    const [url, setUrl] = useState<string | null>(null);
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            if (!refId || !isImageRef(refId)) { setUrl(null); return; }
+            const u = await getObjectURLByRef(refId);
+            if (!active) return;
+            setUrl(u);
+        })();
+        return () => { active = false; };
+    }, [refId]);
+    if (!url) return null;
+    return <a className="inline-flex items-center gap-1 text-sky-400 text-xs" href={url} target="_blank" rel="noreferrer"><EyeIcon/> {label}</a>;
+};
+
 export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBack: () => void; }): React.ReactNode {
     const { gold, loadGoldByOwner, saveGold } = useAssetsStore();
     const [isModalOpen, setModalOpen] = useState(false);
@@ -111,7 +127,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div>مقدار: {(it as any).grams || 0} گرم{(it as any).soot ? ` و ${(it as any).soot} سوت` : ''}</div>
                                 <div>قیمت هر گرم: {((it as any).pricePerGram || 0).toLocaleString('fa-IR')} تومان</div>
                                 <div>اجرت: {((it as any).wageToman || 0).toLocaleString('fa-IR')} تومان</div>
-                                {(it as any).invoiceRef1 && <a className="inline-flex items-center gap-1 text-sky-400 text-xs" href={isImageRef((it as any).invoiceRef1) ? (await getObjectURLByRef((it as any).invoiceRef1)) || '#' : '#'} target="_blank" rel="noreferrer"><EyeIcon/> فاکتور 1</a>}
+                                <LinkFromRef refId={(it as any).invoiceRef1} label="فاکتور 1" />
                             </div>
                         )}
                         {it.subtype === 'token' && (
