@@ -42,7 +42,25 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
         const totalPaid = arr.reduce((s, a) => s + (a.totalPaidToman || 0), 0);
         const last = arr.length ? arr.map(a => a.purchaseDate).sort((a,b) => new Date(b).getTime() - new Date(a).getTime())[0] : undefined;
         const invoices = arr.reduce((s, a) => s + (a.subtype === 'physical' ? ((a.invoiceRef1 ? 1 : 0) + (a.invoiceRef2 ? 1 : 0)) : (a.invoiceRef ? 1 : 0)), 0);
-        return { count, totalPaid, last };
+        return { count, totalPaid, last, invoices };
+    };
+    const summarizePhysical = (arr: any[]) => {
+        const s = summarize(arr);
+        const totalGrams = arr.reduce((g, a) => g + (Number(a.grams) || 0), 0);
+        const avgPrice = arr.length ? Math.round(arr.reduce((sum, a) => sum + (Number(a.pricePerGram) || 0), 0) / arr.length) : 0;
+        return { ...s, totalGrams, avgPrice };
+    };
+    const summarizeToken = (arr: any[]) => {
+        const s = summarize(arr);
+        const totalAmount = arr.reduce((t, a) => t + (Number(a.tokenAmount) || 0), 0);
+        const avgPriceToman = arr.length ? Math.round(arr.reduce((sum, a) => sum + (Number(a.priceToman) || 0), 0) / arr.length) : 0;
+        return { ...s, totalAmount, avgPriceToman };
+    };
+    const summarizeDigi = (arr: any[]) => {
+        const s = summarize(arr);
+        const totalMg = arr.reduce((m, a) => m + (Number(a.amountMg) || 0), 0);
+        const avgPricePerMg = arr.length ? Math.round(arr.reduce((sum, a) => sum + (Number(a.pricePerMg) || 0), 0) / arr.length) : 0;
+        return { ...s, totalMg, avgPricePerMg };
     };
     const phys = itemsAll.filter(i => i.subtype === 'physical') as any[];
     const tok = itemsAll.filter(i => i.subtype === 'token') as any[];
@@ -117,28 +135,49 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {(() => { const s = summarize(phys); return (
-                            <button onClick={() => setView('physical')} className="text-right bg-slate-800/50 rounded-xl p-5 ring-1 ring-slate-700 hover:ring-sky-400 transition">
-                                <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><AssetsIcon/></div>
+                        {(() => { const s = summarizePhysical(phys); const state = s.count ? 'فعال' : 'خالی'; return (
+                            <button onClick={() => setView('physical')} className="text-right rounded-xl p-5 ring-1 ring-sky-700/60 hover:ring-sky-400 transition bg-gradient-to-br from-sky-900/20 to-slate-800/40">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="bg-sky-700/40 p-3 rounded-full inline-block"><AssetsIcon/></div>
+                                    <span className={`px-2 py-0.5 rounded-full text-xs ${s.count ? 'bg-emerald-600/40 text-emerald-200 ring-1 ring-emerald-500/40' : 'bg-slate-700 text-slate-300 ring-1 ring-slate-600'}`}>{state}</span>
+                                </div>
                                 <div className="text-xl font-bold text-slate-100">طلای فیزیکی</div>
                                 <div className="text-slate-400 text-sm mt-1">{s.count} رکورد • مجموع {s.totalPaid.toLocaleString('fa-IR')} تومان</div>
-                                <div className="text-slate-500 text-xs mt-1">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
+                                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
+                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">کل گرم: <span className="font-bold">{s.totalGrams}</span></div>
+                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">میانگین هر گرم: <span className="font-bold">{s.avgPrice.toLocaleString('fa-IR')}</span></div>
+                                </div>
+                                <div className="text-slate-500 text-xs mt-2">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
                             </button>
                         ); })()}
-                        {(() => { const s = summarize(tok); return (
-                            <button onClick={() => setView('token')} className="text-right bg-slate-800/50 rounded-xl p-5 ring-1 ring-slate-700 hover:ring-emerald-400 transition">
-                                <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><WalletIcon/></div>
+                        {(() => { const s = summarizeToken(tok); const state = s.count ? 'فعال' : 'خالی'; return (
+                            <button onClick={() => setView('token')} className="text-right rounded-xl p-5 ring-1 ring-emerald-700/60 hover:ring-emerald-400 transition bg-gradient-to-br from-emerald-900/20 to-slate-800/40">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="bg-emerald-700/40 p-3 rounded-full inline-block"><WalletIcon/></div>
+                                    <span className={`px-2 py-0.5 rounded-full text-xs ${s.count ? 'bg-emerald-600/40 text-emerald-200 ring-1 ring-emerald-500/40' : 'bg-slate-700 text-slate-300 ring-1 ring-slate-600'}`}>{state}</span>
+                                </div>
                                 <div className="text-xl font-bold text-slate-100">توکن طلا</div>
                                 <div className="text-slate-400 text-sm mt-1">{s.count} رکورد • مجموع {s.totalPaid.toLocaleString('fa-IR')} تومان</div>
-                                <div className="text-slate-500 text-xs mt-1">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
+                                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
+                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">کل مقدار: <span className="font-bold">{s.totalAmount}</span></div>
+                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">میانگین تومانی: <span className="font-bold">{s.avgPriceToman.toLocaleString('fa-IR')}</span></div>
+                                </div>
+                                <div className="text-slate-500 text-xs mt-2">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
                             </button>
                         ); })()}
-                        {(() => { const s = summarize(dgi); return (
-                            <button onClick={() => setView('digikala')} className="text-right bg-slate-800/50 rounded-xl p-5 ring-1 ring-slate-700 hover:ring-amber-400 transition">
-                                <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><AssetsIcon/></div>
+                        {(() => { const s = summarizeDigi(dgi); const state = s.count ? 'فعال' : 'خالی'; return (
+                            <button onClick={() => setView('digikala')} className="text-right rounded-xl p-5 ring-1 ring-amber-700/60 hover:ring-amber-400 transition bg-gradient-to-br from-amber-900/20 to-slate-800/40">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="bg-amber-700/40 p-3 rounded-full inline-block"><AssetsIcon/></div>
+                                    <span className={`px-2 py-0.5 rounded-full text-xs ${s.count ? 'bg-emerald-600/40 text-emerald-200 ring-1 ring-emerald-500/40' : 'bg-slate-700 text-slate-300 ring-1 ring-slate-600'}`}>{state}</span>
+                                </div>
                                 <div className="text-xl font-bold text-slate-100">طلای دیجی‌کالا</div>
                                 <div className="text-slate-400 text-sm mt-1">{s.count} رکورد • مجموع {s.totalPaid.toLocaleString('fa-IR')} تومان</div>
-                                <div className="text-slate-500 text-xs mt-1">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
+                                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
+                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">کل میلی‌گرم: <span className="font-bold">{s.totalMg}</span></div>
+                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">میانگین هر mg: <span className="font-bold">{s.avgPricePerMg.toLocaleString('fa-IR')}</span></div>
+                                </div>
+                                <div className="text-slate-500 text-xs mt-2">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
                             </button>
                         ); })()}
                     </div>
