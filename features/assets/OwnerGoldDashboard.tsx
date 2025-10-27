@@ -7,24 +7,15 @@ import { GoldAsset, GoldSubtype } from './types';
 import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon, AssetsIcon, WalletIcon } from '../../components/Icons';
 import { saveImageDataURL, getObjectURLByRef, isImageRef } from '../../lib/idb-images';
 
-const LinkFromRef = ({ refId, label }: { refId?: string; label: string }) => {
-    const [url, setUrl] = useState<string | null>(null);
-    useEffect(() => {
-        let active = true;
-        (async () => {
-            if (!refId || !isImageRef(refId)) { setUrl(null); return; }
-            const u = await getObjectURLByRef(refId);
-            if (!active) return;
-            setUrl(u);
-        })();
-        return () => { active = false; };
-    }, [refId]);
-    if (!url) return null;
-    return <a className="inline-flex items-center gap-1 text-sky-400 text-xs" href={url} target="_blank" rel="noreferrer"><EyeIcon/> {label}</a>;
+const LinkFromRef = ({ refId, label, onOpen }: { refId?: string; label: string; onOpen: (refId: string) => void }) => {
+    const [has, setHas] = useState<boolean>(false);
+    useEffect(() => { setHas(!!refId && isImageRef(String(refId))); }, [refId]);
+    if (!has || !refId) return null;
+    return <button type="button" className="inline-flex items-center gap-1 text-sky-400 text-xs hover:text-sky-300" onClick={() => onOpen(refId)} title="نمایش تصویر"><EyeIcon/> {label}</button>;
 };
 
 export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBack: () => void; }): React.ReactNode {
-    const { gold, loadGoldByOwner, saveGold } = useAssetsStore();
+    const { gold, loadGoldByOwner, saveGold, deleteGold } = useAssetsStore();
     const [isModalOpen, setModalOpen] = useState(false);
     const [subtype, setSubtype] = useState<GoldSubtype>('physical');
     const [form, setForm] = useState<any>({});
@@ -37,6 +28,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     const [minAmount, setMinAmount] = useState<number | undefined>(undefined);
     const [maxAmount, setMaxAmount] = useState<number | undefined>(undefined);
     const [symbol, setSymbol] = useState<string | undefined>(undefined);
+    const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+    const [imageModal, setImageModal] = useState<{open: boolean; url: string | null; fileName?: string}>({ open: false, url: null });
 
     useEffect(() => { (async () => { await loadGoldByOwner(ownerId); })(); }, [ownerId]);
 
@@ -78,6 +71,45 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
         setForm({ id: undefined, ownerId, subtype: s, purchaseDate: new Date().toISOString() });
         setPreview1(null); setPreview2(null); setError(null);
         setModalOpen(true);
+    };
+
+    const openEdit = async (item: any) => {
+        setSubtype(item.subtype);
+        const draft: any = { ...item };
+        if (item.subtype === 'token') {
+            if (item.invoiceRef) {
+                draft.invoicePreview = await getObjectURLByRef(item.invoiceRef);
+            }
+        }
+        if (item.subtype === 'digikala') {
+            if (item.invoiceRef) {
+                draft.dgInvoicePreview = await getObjectURLByRef(item.invoiceRef);
+            }
+        }
+        if (item.subtype === 'physical') {
+            setPreview1(item.invoiceRef1 ? await getObjectURLByRef(item.invoiceRef1) : null);
+            setPreview2(item.invoiceRef2 ? await getObjectURLByRef(item.invoiceRef2) : null);
+        } else {
+            setPreview1(null); setPreview2(null);
+        }
+        setForm(draft);
+        setError(null);
+        setModalOpen(true);
+    };
+
+    const openImage = async (refId: string) => {
+        const url = await getObjectURLByRef(refId);
+        setImageModal({ open: true, url, fileName: `invoice-${refId}.jpg` });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+        try {
+            await deleteGold(deleteTarget.id, ownerId);
+            setDeleteTarget(null);
+        } catch (e: any) {
+            setError(e?.message || 'حذف با خطا مواجه شد');
+        }
     };
 
     const handleChooseImage = async (idx: 1 | 2, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -265,8 +297,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div className="text-xs text-slate-400">تاریخ خرید: {j(it.purchaseDate)}</div>
                             </div>
                             <div className="flex items-center gap-2 text-slate-400">
-                                <button className="hover:text-sky-400" title="ویرایش"><EditIcon/></button>
-                                <button className="hover:text-rose-400" title="حذف"><DeleteIcon/></button>
+                                        <button className="hover:text-sky-400" title="ویرایش" onClick={() => openEdit(it)}><EditIcon/></button>
+                                        <button className="hover:text-rose-400" title="حذف" onClick={() => setDeleteTarget(it)}><DeleteIcon/></button>
                             </div>
                         </div>
                         {it.subtype === 'physical' && (
@@ -274,7 +306,10 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div>مقدار: {(it as any).grams || 0} گرم{(it as any).soot ? ` و ${(it as any).soot} سوت` : ''}</div>
                                 <div>قیمت هر گرم: {((it as any).pricePerGram || 0).toLocaleString('fa-IR')} تومان</div>
                                 <div>اجرت: {((it as any).wageToman || 0).toLocaleString('fa-IR')} تومان</div>
-                                <LinkFromRef refId={(it as any).invoiceRef1} label="فاکتور 1" />
+                                        <div className="flex items-center gap-3">
+                                            <LinkFromRef refId={(it as any).invoiceRef1} label="فاکتور 1" onOpen={openImage} />
+                                            <LinkFromRef refId={(it as any).invoiceRef2} label="فاکتور 2" onOpen={openImage} />
+                                        </div>
                             </div>
                         )}
                         {it.subtype === 'token' && (
@@ -286,7 +321,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 {(it as any).gramsDerived != null && <div>گرم معادل: {Number((it as any).gramsDerived).toFixed(4)}</div>}
                                 <div>کارمزد: {((it as any).feeToman || 0).toLocaleString('fa-IR')} تومان</div>
                                 <div>محل نگهداری: {(it as any).custodyLocation || '—'}</div>
-                                        <LinkFromRef refId={(it as any).invoiceRef} label="رسید" />
+                                        <LinkFromRef refId={(it as any).invoiceRef} label="رسید" onOpen={openImage} />
                             </div>
                         )}
                         {it.subtype === 'digikala' && (
@@ -294,7 +329,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div>مقدار: {(it as any).amountMg} میلی‌گرم</div>
                                 <div>قیمت هر میلی‌گرم: {(it as any).pricePerMg?.toLocaleString('fa-IR')} تومان</div>
                                 <div>کارمزد: {((it as any).feeManualToman || 0).toLocaleString('fa-IR')} تومان ({(it as any).feePercent ?? '—'}%)</div>
-                                        <LinkFromRef refId={(it as any).invoiceRef} label="رسید" />
+                                        <LinkFromRef refId={(it as any).invoiceRef} label="رسید" onOpen={openImage} />
                             </div>
                         )}
                         <div className="text-sky-400 font-extrabold">مجموع پرداختی: {((it as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان</div>
@@ -340,6 +375,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <label className="block text-sm font-medium text-slate-300">فاکتور 1</label>
                                         <div className="flex items-center gap-3">
                                             <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-invoice-1')?.click()}>انتخاب تصویر</button>
+                                            {form.invoiceRef1 && <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-300 text-sm" onClick={() => { setForm((f:any)=>({...f, invoiceRef1: undefined})); setPreview1(null); }}>حذف تصویر</button>}
                                             {preview1 && <img src={preview1} alt="invoice1" className="h-16 rounded ring-1 ring-slate-700" />}
                                         </div>
                                         <input id="gold-invoice-1" type="file" accept="image/*" onChange={e => handleChooseImage(1, e)} className="hidden" />
@@ -348,6 +384,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <label className="block text-sm font-medium text-slate-300">فاکتور 2</label>
                                         <div className="flex items-center gap-3">
                                             <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-invoice-2')?.click()}>انتخاب تصویر</button>
+                                            {form.invoiceRef2 && <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-300 text-sm" onClick={() => { setForm((f:any)=>({...f, invoiceRef2: undefined})); setPreview2(null); }}>حذف تصویر</button>}
                                             {preview2 && <img src={preview2} alt="invoice2" className="h-16 rounded ring-1 ring-slate-700" />}
                                         </div>
                                         <input id="gold-invoice-2" type="file" accept="image/*" onChange={e => handleChooseImage(2, e)} className="hidden" />
@@ -399,6 +436,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <label className="block text-sm font-medium text-slate-300 mb-1">فاکتور/رسید</label>
                                         <div className="flex items-center gap-3">
                                             <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-token-invoice')?.click()}>انتخاب تصویر</button>
+                                            {form.invoiceRef && <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-300 text-sm" onClick={() => setForm((f:any)=> ({...f, invoiceRef: undefined, invoicePreview: undefined}))}>حذف تصویر</button>}
                                             {form.invoicePreview && <img src={form.invoicePreview} className="h-16 rounded ring-1 ring-slate-700" />}
                                         </div>
                                         <input id="gold-token-invoice" type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { const ref = await saveImageDataURL(String(reader.result || '')); const url = await getObjectURLByRef(ref); setForm((f: any) => ({ ...f, invoiceRef: ref, invoicePreview: url })); }; reader.readAsDataURL(file); }} className="hidden" />
@@ -427,6 +465,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <label className="block text-sm font-medium text-slate-300 mb-1">فاکتور/رسید</label>
                                         <div className="flex items-center gap-3">
                                             <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-dg-invoice')?.click()}>انتخاب تصویر</button>
+                                            {form.invoiceRef && <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-300 text-sm" onClick={() => setForm((f:any)=> ({...f, invoiceRef: undefined, dgInvoicePreview: undefined}))}>حذف تصویر</button>}
                                             {form.dgInvoicePreview && <img src={form.dgInvoicePreview} className="h-16 rounded ring-1 ring-slate-700" />}
                                         </div>
                                         <input id="gold-dg-invoice" type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { const ref = await saveImageDataURL(String(reader.result || '')); const url = await getObjectURLByRef(ref); setForm((f: any) => ({ ...f, invoiceRef: ref, dgInvoicePreview: url })); }; reader.readAsDataURL(file); }} className="hidden" />
@@ -438,6 +477,40 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
                             <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">لغو</button>
                             <button onClick={onSave} className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold">ذخیره</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {deleteTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setDeleteTarget(null)}>
+                    <div className="absolute inset-0 bg-black/70" />
+                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-4 border-b border-slate-700">
+                            <h3 className="text-slate-100 font-bold text-lg">حذف رکورد</h3>
+                        </div>
+                        <div className="p-5 space-y-4 text-slate-200">
+                            آیا از حذف این رکورد مطمئن هستید؟ این کار قابل بازگشت نیست.
+                        </div>
+                        <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
+                            <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">انصراف</button>
+                            <button onClick={confirmDelete} className="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold">حذف</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {imageModal.open && imageModal.url && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setImageModal({ open: false, url: null })}>
+                    <div className="absolute inset-0 bg-black/80" />
+                    <div className="relative w-full max-w-3xl bg-slate-900 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-3 border-b border-slate-700 flex items-center justify-between">
+                            <div className="text-slate-200 font-bold">پیش‌نمایش تصویر</div>
+                            <div className="flex items-center gap-2">
+                                <a href={imageModal.url} download={imageModal.fileName || 'invoice.jpg'} className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm">دانلود</a>
+                                <button onClick={() => setImageModal({ open: false, url: null })} className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm">بستن</button>
+                            </div>
+                        </div>
+                        <div className="p-4">
+                            <img src={imageModal.url} className="w-full h-auto rounded-lg" />
                         </div>
                     </div>
                 </div>

@@ -16,6 +16,7 @@ interface AssetsModuleState {
     gold: GoldAsset[];
     loadGoldByOwner: (ownerId: string) => Promise<void>;
     saveGold: (asset: GoldAsset) => Promise<void>;
+    deleteGold: (id: string, ownerId: string) => Promise<void>;
 }
 
 export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
@@ -145,6 +146,15 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             throw error;
         }
         await get().loadGoldByOwner(asset.ownerId);
+    },
+    deleteGold: async (id: string, ownerId: string) => {
+        const { error } = await supabase.from('asset_gold').delete().eq('id', id);
+        if (error) {
+            // eslint-disable-next-line no-console
+            console.error('Gold asset delete error', error);
+            throw error;
+        }
+        await get().loadGoldByOwner(ownerId);
     },
 }));
 
