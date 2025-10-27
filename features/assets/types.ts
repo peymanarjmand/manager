@@ -1,4 +1,16 @@
 export type GoldSubtype = 'physical' | 'token' | 'digikala';
+export type TransferReason = 'gift' | 'debt';
+
+export interface GoldTransfer {
+    id: string;
+    goldId: string;
+    fromOwnerId: string;
+    toOwnerId: string;
+    reason: TransferReason;
+    date: string; // ISO
+    fromOwnerName?: string;
+    toOwnerName?: string;
+}
 
 export interface AssetGoldBase {
     id: string;
@@ -20,6 +32,7 @@ export interface GoldPhysical extends AssetGoldBase {
     invoiceRef2?: string; // lm-images ref
     soldAt?: string; // ISO date when sold
     saleTotalToman?: number; // total received in Toman when sold
+    lastTransfer?: GoldTransfer; // latest transfer info (if any)
 }
 
 export interface GoldToken extends AssetGoldBase {

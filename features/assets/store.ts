@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../../lib/supabase';
-import { GoldAsset } from './types';
+import { GoldAsset, GoldTransfer } from './types';
 
 export interface AssetOwner {
     id: string;
@@ -17,6 +17,8 @@ interface AssetsModuleState {
     loadGoldByOwner: (ownerId: string) => Promise<void>;
     saveGold: (asset: GoldAsset) => Promise<void>;
     deleteGold: (id: string, ownerId: string) => Promise<void>;
+    transferGold: (params: { goldId: string; fromOwnerId: string; toOwnerId: string; reason: 'gift' | 'debt'; date?: string; }) => Promise<void>;
+    getTransfersForGold: (goldId: string) => Promise<GoldTransfer[]>;
 }
 
 export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
@@ -103,6 +105,42 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             purchaseDate: r.purchase_date,
             createdAt: r.created_at,
         }));
+        // attach last transfer info (if any)
+        try {
+            const goldIds = mapped.map(m => m.id);
+            if (goldIds.length) {
+                const { data: tr, error: trErr } = await supabase
+                    .from('asset_gold_transfers')
+                    .select('gold_id, from_owner_id, to_owner_id, reason, date')
+                    .in('gold_id', goldIds)
+                    .order('date', { ascending: false });
+                if (!trErr && tr) {
+                    const byGold: Record<string, GoldTransfer> = {} as any;
+                    const owners = get().owners || [];
+                    const ownerName = (id: string) => owners.find(o => o.id === id)?.name;
+                    for (const row of tr as any[]) {
+                        if (!byGold[row.gold_id]) {
+                            byGold[row.gold_id] = {
+                                id: `${row.gold_id}-${row.date}`,
+                                goldId: row.gold_id,
+                                fromOwnerId: row.from_owner_id,
+                                toOwnerId: row.to_owner_id,
+                                reason: row.reason,
+                                date: row.date,
+                                fromOwnerName: ownerName(row.from_owner_id),
+                                toOwnerName: ownerName(row.to_owner_id),
+                            };
+                        }
+                    }
+                    for (const m of mapped as any[]) {
+                        if (m.subtype === 'physical' && byGold[m.id]) m.lastTransfer = byGold[m.id];
+                    }
+                }
+            }
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('load last transfer failed', e);
+        }
         set({ gold: mapped });
     },
     saveGold: async (asset: GoldAsset) => {
@@ -159,6 +197,47 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             throw error;
         }
         await get().loadGoldByOwner(ownerId);
+    },
+    transferGold: async ({ goldId, fromOwnerId, toOwnerId, reason, date }: { goldId: string; fromOwnerId: string; toOwnerId: string; reason: 'gift' | 'debt'; date?: string; }) => {
+        const when = date || new Date().toISOString();
+        const { error } = await supabase.from('asset_gold_transfers').insert({ id: Date.now().toString(), gold_id: goldId, from_owner_id: fromOwnerId, to_owner_id: toOwnerId, reason, date: when });
+        if (error) {
+            // eslint-disable-next-line no-console
+            console.error('Gold transfer insert error', error);
+            throw error;
+        }
+        const { error: updError } = await supabase.from('asset_gold').update({ owner_id: toOwnerId }).eq('id', goldId);
+        if (updError) {
+            // eslint-disable-next-line no-console
+            console.error('Gold transfer update owner error', updError);
+            throw updError;
+        }
+        await get().loadGoldByOwner(fromOwnerId);
+        await get().loadGoldByOwner(toOwnerId);
+    },
+    getTransfersForGold: async (goldId: string) => {
+        const { data, error } = await supabase
+            .from('asset_gold_transfers')
+            .select('id,gold_id,from_owner_id,to_owner_id,reason,date')
+            .eq('gold_id', goldId)
+            .order('date', { ascending: false });
+        if (error) {
+            // eslint-disable-next-line no-console
+            console.error('Get transfers error', error);
+            return [];
+        }
+        const owners = get().owners || [];
+        const ownerName = (id: string) => owners.find(o => o.id === id)?.name;
+        return (data || []).map((r: any) => ({
+            id: r.id,
+            goldId: r.gold_id,
+            fromOwnerId: r.from_owner_id,
+            toOwnerId: r.to_owner_id,
+            reason: r.reason,
+            date: r.date,
+            fromOwnerName: ownerName(r.from_owner_id),
+            toOwnerName: ownerName(r.to_owner_id),
+        }));
     },
 }));
 

@@ -15,7 +15,7 @@ const LinkFromRef = ({ refId, label, onOpen }: { refId?: string; label: string; 
 };
 
 export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBack: () => void; }): React.ReactNode {
-    const { gold, loadGoldByOwner, saveGold, deleteGold } = useAssetsStore();
+    const { gold, owners, loadOwners, loadGoldByOwner, saveGold, deleteGold, transferGold, getTransfersForGold } = useAssetsStore() as any;
     const [isModalOpen, setModalOpen] = useState(false);
     const [subtype, setSubtype] = useState<GoldSubtype>('physical');
     const [form, setForm] = useState<any>({});
@@ -32,12 +32,16 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     const [imageModal, setImageModal] = useState<{open: boolean; url: string | null; fileName?: string}>({ open: false, url: null });
     const [saleTarget, setSaleTarget] = useState<any | null>(null);
     const [salePrice, setSalePrice] = useState<string>('');
+    const [transferTarget, setTransferTarget] = useState<any | null>(null);
+    const [transferTo, setTransferTo] = useState<string>('');
+    const [transferReason, setTransferReason] = useState<'gift' | 'debt'>('gift');
+    const [transferHistory, setTransferHistory] = useState<any[]>([]);
 
-    useEffect(() => { (async () => { await loadGoldByOwner(ownerId); })(); }, [ownerId]);
+    useEffect(() => { (async () => { await (loadOwners?.()); await loadGoldByOwner(ownerId); })(); }, [ownerId]);
 
     const j = (iso: string) => moment(iso).locale('fa').format('jD jMMMM jYYYY');
 
-    const itemsAll = gold.filter(g => g.ownerId === ownerId);
+    const itemsAll = gold.filter((g: any) => g.ownerId === ownerId);
     const summarize = (arr: any[]) => {
         const count = arr.length;
         const totalPaid = arr.reduce((s, a) => s + (a.totalPaidToman || 0), 0);
@@ -329,24 +333,32 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div>مقدار: {(it as any).grams || 0} گرم{(it as any).soot ? ` و ${(it as any).soot} سوت` : ''}</div>
                                 <div>قیمت هر گرم: {((it as any).pricePerGram || 0).toLocaleString('fa-IR')} تومان</div>
                                 <div>اجرت: {((it as any).wageToman || 0).toLocaleString('fa-IR')} تومان</div>
-                                        <div className="flex items-center gap-3">
-                                            <LinkFromRef refId={(it as any).invoiceRef1} label="فاکتور 1" onOpen={openImage} />
-                                            <LinkFromRef refId={(it as any).invoiceRef2} label="فاکتور 2" onOpen={openImage} />
-                                        </div>
-                                        {!((it as any).soldAt) && (
-                                            <div className="pt-2">
-                                                <button className="px-3 py-1.5 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-xs" onClick={() => openSale(it)}>
-                                                    فروش این فاکتور
-                                                </button>
-                                            </div>
-                                        )}
-                                        {(it as any).soldAt && (
-                                            <div className="mt-2 p-2 rounded-lg bg-slate-800/60 ring-1 ring-slate-700 text-xs text-slate-300 space-y-1">
-                                                <div>تاریخ فروش: {j((it as any).soldAt)}</div>
-                                                <div>مبلغ فروش: {(((it as any).saleTotalToman || 0)).toLocaleString('fa-IR')} تومان</div>
-                                                <div>سود/زیان: {((((it as any).saleTotalToman || 0) - ((it as any).totalPaidToman || 0))).toLocaleString('fa-IR')} تومان</div>
-                                            </div>
-                                        )}
+                                <div className="flex items-center gap-3">
+                                    <LinkFromRef refId={(it as any).invoiceRef1} label="فاکتور 1" onOpen={openImage} />
+                                    <LinkFromRef refId={(it as any).invoiceRef2} label="فاکتور 2" onOpen={openImage} />
+                                </div>
+                                {(it as any).lastTransfer && (
+                                    <div className="mt-2 p-2 rounded-lg bg-slate-800/60 ring-1 ring-slate-700 text-xs">
+                                        انتقال: از {(it as any).lastTransfer.fromOwnerName || '—'} به {(it as any).lastTransfer.toOwnerName || '—'} • { (it as any).lastTransfer.reason === 'gift' ? 'هدیه' : 'بدهی' } • {j((it as any).lastTransfer.date)}
+                                    </div>
+                                )}
+                                <div className="pt-2 flex items-center gap-2">
+                                    {!((it as any).soldAt) && (
+                                        <button className="px-3 py-1.5 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-xs" onClick={() => openSale(it)}>
+                                            فروش این فاکتور
+                                        </button>
+                                    )}
+                                    <button className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs" onClick={() => { setTransferTarget(it); setTransferTo(''); setTransferReason('gift'); (async()=>{ const list = await (getTransfersForGold?.(it.id)); setTransferHistory(list||[]); })(); }}>
+                                        انتقال به کاربر
+                                    </button>
+                                </div>
+                                {(it as any).soldAt && (
+                                    <div className="mt-2 p-2 rounded-lg bg-slate-800/60 ring-1 ring-slate-700 text-xs text-slate-300 space-y-1">
+                                        <div>تاریخ فروش: {j((it as any).soldAt)}</div>
+                                        <div>مبلغ فروش: {(((it as any).saleTotalToman || 0)).toLocaleString('fa-IR')} تومان</div>
+                                        <div>سود/زیان: {((((it as any).saleTotalToman || 0) - ((it as any).totalPaidToman || 0))).toLocaleString('fa-IR')} تومان</div>
+                                    </div>
+                                )}
                             </div>
                         )}
                         {it.subtype === 'token' && (
@@ -569,6 +581,49 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
                             <button onClick={() => setSaleTarget(null)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">انصراف</button>
                             <button onClick={confirmSale} className="px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold">ثبت فروش</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {transferTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setTransferTarget(null)}>
+                    <div className="absolute inset-0 bg-black/70" />
+                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-4 border-b border-slate-700">
+                            <h3 className="text-slate-100 font-bold text-lg">انتقال طلای فیزیکی</h3>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">انتقال به</label>
+                                <select value={transferTo} onChange={e => setTransferTo((e.target as HTMLSelectElement).value)} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3">
+                                    <option value="">انتخاب مالک</option>
+                                    {(owners || []).filter((o:any)=>o.id!==ownerId).map((o:any)=> (
+                                        <option key={o.id} value={o.id}>{o.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">علت انتقال</label>
+                                <div className="flex items-center gap-4 text-slate-200 text-sm">
+                                    <label className="inline-flex items-center gap-2"><input type="radio" name="reason" checked={transferReason==='gift'} onChange={()=>setTransferReason('gift')} /> هدیه</label>
+                                    <label className="inline-flex items-center gap-2"><input type="radio" name="reason" checked={transferReason==='debt'} onChange={()=>setTransferReason('debt')} /> بدهی</label>
+                                </div>
+                            </div>
+                            {!!transferHistory.length && (
+                                <div className="text-xs text-slate-400 space-y-1">
+                                    <div className="font-bold text-slate-300">تاریخچه انتقال‌ها</div>
+                                    {transferHistory.map((t:any)=> (
+                                        <div key={t.id} className="flex items-center justify-between">
+                                            <div>از {t.fromOwnerName || '—'} به {t.toOwnerName || '—'} • {t.reason==='gift'?'هدیه':'بدهی'}</div>
+                                            <div className="text-slate-500">{j(t.date)}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
+                            <button onClick={() => setTransferTarget(null)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">انصراف</button>
+                            <button onClick={async ()=>{ if(!transferTo){ setError('لطفاً گیرنده را انتخاب کنید'); return;} try{ await transferGold({ goldId: transferTarget.id, fromOwnerId: ownerId, toOwnerId: transferTo, reason: transferReason }); setTransferTarget(null); } catch(e:any){ setError(e?.message||'انتقال انجام نشد'); } }} className="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold">ثبت انتقال</button>
                         </div>
                     </div>
                 </div>
