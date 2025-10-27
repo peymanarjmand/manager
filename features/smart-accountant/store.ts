@@ -273,7 +273,7 @@ export const useAccountantStore = create<AccountantState>()(
             loadAssets: async () => {
                 const { data, error } = await supabase
                     .from('assets')
-                    .select('id,name,current_value,quantity,purchase_date,notes')
+                    .select('id,name,current_value,quantity,purchase_date,notes,person_id')
                     .order('purchase_date', { ascending: false });
                 if (error) {
                     console.warn('Assets load error', error);
@@ -285,6 +285,7 @@ export const useAccountantStore = create<AccountantState>()(
                         quantity: Number(r.quantity) || 0,
                         purchaseDate: r.purchase_date,
                         notes: r.notes || undefined,
+                        personId: r.person_id || undefined,
                     }));
                     set({ assets: mapped });
                 }
@@ -312,13 +313,14 @@ export const useAccountantStore = create<AccountantState>()(
                             quantity: Number(a.quantity) || 0,
                             purchase_date: a.purchaseDate,
                             notes: a.notes || null,
+                            person_id: a.personId || null,
                         }));
                         const { error: upErr } = await supabase.from('assets').upsert(rows);
                         if (upErr) console.error('Assets migrate upsert error', upErr);
                         else {
                             const { data: again } = await supabase
                                 .from('assets')
-                                .select('id,name,current_value,quantity,purchase_date,notes')
+                                .select('id,name,current_value,quantity,purchase_date,notes,person_id')
                                 .order('purchase_date', { ascending: false });
                             const mappedAgain: Asset[] = (again || []).map((r: any) => ({
                                 id: r.id,
@@ -327,6 +329,7 @@ export const useAccountantStore = create<AccountantState>()(
                                 quantity: Number(r.quantity) || 0,
                                 purchaseDate: r.purchase_date,
                                 notes: r.notes || undefined,
+                                personId: r.person_id || undefined,
                             }));
                             set({ assets: mappedAgain });
                         }
@@ -601,6 +604,7 @@ export const useAccountantStore = create<AccountantState>()(
                             quantity: Number(a.quantity) || 0,
                             purchase_date: a.purchaseDate,
                             notes: a.notes || null,
+                            person_id: a.personId || null,
                         });
                     if (error) console.error('Asset upsert error', error);
                 })();
