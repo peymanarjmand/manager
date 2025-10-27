@@ -117,6 +117,12 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             if (draft.subtype === 'token') {
                 const gramsDerived = draft.pricePerGramToday ? (Number(draft.totalPaidToman || 0) / Number(draft.pricePerGramToday || 1)) : undefined;
                 draft.gramsDerived = gramsDerived;
+                // If fee not provided, compute from USD reference and USD rate
+                if ((draft.feeToman == null || isNaN(Number(draft.feeToman))) && draft.priceUsd && draft.tokenAmount && draft.usdRateToman) {
+                    const referenceCost = Number(draft.priceUsd) * Number(draft.tokenAmount) * Number(draft.usdRateToman);
+                    const fee = Math.max(0, Math.round(Number(draft.totalPaidToman || 0) - referenceCost));
+                    draft.feeToman = fee;
+                }
             }
             const payload: GoldAsset = autoCompute(draft);
             await saveGold(payload);
@@ -361,6 +367,10 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <input type="number" value={String(form.priceUsd ?? '')} onChange={e => setForm((f: any) => ({ ...f, priceUsd: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">نرخ دلار (تومان)</label>
+                                        <input type="number" value={String(form.usdRateToman ?? '')} onChange={e => setForm((f: any) => ({ ...f, usdRateToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">قیمت هر گرم طلا امروز (تومان)</label>
                                         <input type="number" value={String(form.pricePerGramToday ?? '')} onChange={e => setForm((f: any) => ({ ...f, pricePerGramToday: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
@@ -371,6 +381,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">کارمزد (تومان)</label>
                                         <input type="number" value={String(form.feeToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, feeToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <div className="text-[11px] text-slate-400 mt-1">محاسبه پیشنهادی: کارمزد = مجموع پرداختی − (قیمت مرجع × مقدار × نرخ دلار)</div>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">محل نگهداری</label>

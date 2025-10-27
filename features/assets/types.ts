@@ -30,6 +30,7 @@ export interface GoldToken extends AssetGoldBase {
     custodyLocation?: string; // e.g., Nobitex, Trust Wallet
     invoiceRef?: string; // optional
     gramsDerived?: number; // derived grams from totalPaid/pricePerGramToday
+    usdRateToman?: number; // exchange rate used for precise fee calc
 }
 
 export interface GoldDigikala extends AssetGoldBase {

@@ -6,12 +6,18 @@ import OwnerGoldDashboard from './OwnerGoldDashboard';
 type Section = 'home' | 'cash' | 'gold' | 'dollar' | 'silver';
 
 export default function OwnerAssetsDashboard({ ownerId, onBack }: { ownerId: string; onBack: () => void; }): React.ReactNode {
-    const { owners } = useAssetsStore();
+    const { owners, gold, loadGoldByOwner } = useAssetsStore();
     const { loadOwners } = useAssetsStore.getState();
     const [section, setSection] = useState<Section>('home');
 
-    useEffect(() => { (async () => { if (!owners?.length) await loadOwners(); })(); }, []);
+    useEffect(() => { (async () => { if (!owners?.length) await loadOwners(); await loadGoldByOwner(ownerId); })(); }, [ownerId]);
     const ownerName = owners.find(o => o.id === ownerId)?.name || '—';
+    const totalGoldGrams = (gold || []).filter(g => g.ownerId === ownerId).reduce((sum: number, a: any) => {
+        if (a.subtype === 'physical') return sum + (Number(a.grams) || 0);
+        if (a.subtype === 'token') return sum + (Number(a.gramsDerived) || 0);
+        if (a.subtype === 'digikala') return sum + ((Number(a.amountMg) || 0) / 1000); // mg -> gram
+        return sum;
+    }, 0);
 
     if (section === 'gold') {
         return (
@@ -37,6 +43,7 @@ export default function OwnerAssetsDashboard({ ownerId, onBack }: { ownerId: str
                     <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><AssetsIcon/></div>
                     <div className="text-xl font-bold text-slate-100">طلا</div>
                     <div className="text-slate-400 text-sm mt-1">فیزیکی، توکن طلا، طلای دیجی‌کالا</div>
+                    <div className="text-slate-300 text-xs mt-2">گرم کل: <span className="font-bold">{totalGoldGrams.toFixed(4)}</span></div>
                 </button>
                 <button onClick={() => setSection('dollar')} className="group bg-slate-800/50 rounded-xl p-6 text-right ring-1 ring-slate-700 hover:ring-sky-400 transition">
                     <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><ExchangeIcon/></div>

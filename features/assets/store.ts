@@ -91,6 +91,7 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             feeToman: r.fee_toman != null ? Number(r.fee_toman) : undefined,
             custodyLocation: r.custody_location || undefined,
             gramsDerived: r.grams_derived != null ? Number(r.grams_derived) : undefined,
+            usdRateToman: r.usd_rate_toman != null ? Number(r.usd_rate_toman) : undefined,
             amountMg: r.amount_mg != null ? Number(r.amount_mg) : undefined,
             pricePerMg: r.price_per_mg != null ? Number(r.price_per_mg) : undefined,
             feeManualToman: r.fee_manual_toman != null ? Number(r.fee_manual_toman) : undefined,
@@ -126,6 +127,7 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             row.custody_location = a.custodyLocation ?? null;
             row.invoice_ref = a.invoiceRef ?? null;
             row.grams_derived = a.gramsDerived ?? null;
+            row.usd_rate_toman = a.usdRateToman ?? null;
         } else if (a.subtype === 'digikala') {
             row.amount_mg = a.amountMg;
             row.price_per_mg = a.pricePerMg;
