@@ -29,12 +29,22 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
         set({ owners });
     },
     saveOwner: async (owner: AssetOwner) => {
-        const row = { id: owner.id, name: owner.name, avatar_ref: owner.avatar || null };
+        const name = (owner.name || '').trim();
+        if (!name) throw new Error('نام مالک الزامی است');
+        // Client-side duplicate guard
+        const exists = (get().owners || []).some(o => o.name.trim().toLowerCase() === name.toLowerCase() && o.id !== owner.id);
+        if (exists) throw new Error('مالک تکراری است');
+
+        const row = { id: owner.id, name, avatar_ref: owner.avatar || null };
         const { error } = await supabase.from('asset_people').upsert(row);
         if (error) {
+            // Unique violation from DB
+            if ((error as any).code === '23505') {
+                throw new Error('مالک با این نام از قبل وجود دارد');
+            }
             // eslint-disable-next-line no-console
             console.error('Asset owner upsert error', error);
-            return;
+            throw error;
         }
         await get().loadOwners();
     },

@@ -24,6 +24,7 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
     const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
     const [ownerName, setOwnerName] = useState('');
     const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
+    const [ownerError, setOwnerError] = useState<string | null>(null);
 
     useEffect(() => {
         (async () => {
@@ -199,12 +200,13 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
                         <div className="p-5 space-y-3">
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">نام</label>
-                                <input value={ownerName} onChange={e => setOwnerName((e.target as HTMLInputElement).value)} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition" />
+                                <input value={ownerName} onChange={e => { setOwnerName((e.target as HTMLInputElement).value); setOwnerError(null); }} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition" />
+                                {ownerError && <div className="text-rose-400 text-xs mt-1">{ownerError}</div>}
                             </div>
                         </div>
                         <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
-                            <button onClick={() => setIsOwnerModalOpen(false)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">لغو</button>
-                            <button onClick={async () => { const id = Date.now().toString(); await saveOwner({ id, name: (ownerName || '').trim() }); setIsOwnerModalOpen(false); setOwnerName(''); }} className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold" disabled={!ownerName.trim()}>ذخیره</button>
+                            <button onClick={() => { setIsOwnerModalOpen(false); setOwnerError(null); }} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">لغو</button>
+                            <button onClick={async () => { try { const id = Date.now().toString(); await saveOwner({ id, name: (ownerName || '').trim() }); setIsOwnerModalOpen(false); setOwnerName(''); setOwnerError(null); } catch (e: any) { setOwnerError(e?.message || 'خطا در ذخیره مالک'); } }} className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold" disabled={!ownerName.trim()}>ذخیره</button>
                         </div>
                     </div>
                 </div>
