@@ -10,6 +10,7 @@ export interface AssetGoldBase {
 
 export interface GoldPhysical extends AssetGoldBase {
     subtype: 'physical';
+    title?: string; // user-provided label like ring/necklace
     grams?: number; // total grams
     soot?: number; // sookht
     pricePerGram?: number; // toman

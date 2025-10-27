@@ -260,7 +260,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                     <div key={it.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3">
                         <div className="flex items-start justify-between">
                             <div>
-                                <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? 'طلای فیزیکی' : it.subtype === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
+                                        <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? 'طلای فیزیکی' : it.subtype === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
+                                        {it.subtype === 'physical' && (it as any).title && <div className="text-xs text-slate-300 mt-0.5">عنوان: {(it as any).title}</div>}
                                 <div className="text-xs text-slate-400">تاریخ خرید: {j(it.purchaseDate)}</div>
                             </div>
                             <div className="flex items-center gap-2 text-slate-400">
@@ -315,6 +316,10 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             <JalaliDatePicker id="gold-purchase" value={form.purchaseDate || new Date().toISOString()} onChange={(iso) => setForm((f: any) => ({ ...f, purchaseDate: iso }))} label="تاریخ خرید" />
                             {subtype === 'physical' && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">عنوان (مثلاً انگشتر، گردنبند)</label>
+                                        <input type="text" value={String(form.title || '')} onChange={e => setForm((f: any) => ({ ...f, title: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400" placeholder="عنوان دلخواه" />
+                                    </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">مقدار (گرم)</label>
                                         <input type="number" value={String(form.grams ?? '')} onChange={e => setForm((f: any) => ({ ...f, grams: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400" />

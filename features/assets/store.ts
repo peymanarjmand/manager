@@ -77,6 +77,7 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             id: r.id,
             ownerId: r.owner_id,
             subtype: r.subtype,
+            title: r.title || undefined,
             grams: r.grams != null ? Number(r.grams) : undefined,
             soot: r.soot != null ? Number(r.soot) : undefined,
             pricePerGram: r.price_per_gram != null ? Number(r.price_per_gram) : undefined,
@@ -110,6 +111,7 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             purchase_date: a.purchaseDate,
         };
         if (a.subtype === 'physical') {
+            row.title = a.title ?? null;
             row.grams = a.grams ?? null;
             row.soot = a.soot ?? null;
             row.price_per_gram = a.pricePerGram ?? null;
