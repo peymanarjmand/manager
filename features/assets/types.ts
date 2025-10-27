@@ -18,6 +18,8 @@ export interface GoldPhysical extends AssetGoldBase {
     wageToman?: number; // auto-calculated, stored for history
     invoiceRef1?: string; // lm-images ref
     invoiceRef2?: string; // lm-images ref
+    soldAt?: string; // ISO date when sold
+    saleTotalToman?: number; // total received in Toman when sold
 }
 
 export interface GoldToken extends AssetGoldBase {

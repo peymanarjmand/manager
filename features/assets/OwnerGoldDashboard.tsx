@@ -30,6 +30,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     const [symbol, setSymbol] = useState<string | undefined>(undefined);
     const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
     const [imageModal, setImageModal] = useState<{open: boolean; url: string | null; fileName?: string}>({ open: false, url: null });
+    const [saleTarget, setSaleTarget] = useState<any | null>(null);
+    const [salePrice, setSalePrice] = useState<string>('');
 
     useEffect(() => { (async () => { await loadGoldByOwner(ownerId); })(); }, [ownerId]);
 
@@ -109,6 +111,27 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             setDeleteTarget(null);
         } catch (e: any) {
             setError(e?.message || 'حذف با خطا مواجه شد');
+        }
+    };
+
+    const openSale = (item: any) => {
+        setSaleTarget(item);
+        setSalePrice('');
+    };
+
+    const confirmSale = async () => {
+        if (!saleTarget) return;
+        const n = Number(salePrice);
+        if (!isFinite(n) || n <= 0) {
+            setError('مبلغ فروش را به‌درستی وارد کنید');
+            return;
+        }
+        try {
+            await saveGold({ ...(saleTarget as any), saleTotalToman: n, soldAt: new Date().toISOString() } as any);
+            setSaleTarget(null);
+            setSalePrice('');
+        } catch (e: any) {
+            setError(e?.message || 'ثبت فروش با خطا مواجه شد');
         }
     };
 
@@ -301,7 +324,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <button className="hover:text-rose-400" title="حذف" onClick={() => setDeleteTarget(it)}><DeleteIcon/></button>
                             </div>
                         </div>
-                        {it.subtype === 'physical' && (
+                                {it.subtype === 'physical' && (
                             <div className="text-sm text-slate-300 space-y-1">
                                 <div>مقدار: {(it as any).grams || 0} گرم{(it as any).soot ? ` و ${(it as any).soot} سوت` : ''}</div>
                                 <div>قیمت هر گرم: {((it as any).pricePerGram || 0).toLocaleString('fa-IR')} تومان</div>
@@ -310,6 +333,20 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                             <LinkFromRef refId={(it as any).invoiceRef1} label="فاکتور 1" onOpen={openImage} />
                                             <LinkFromRef refId={(it as any).invoiceRef2} label="فاکتور 2" onOpen={openImage} />
                                         </div>
+                                        {!((it as any).soldAt) && (
+                                            <div className="pt-2">
+                                                <button className="px-3 py-1.5 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-xs" onClick={() => openSale(it)}>
+                                                    فروش این فاکتور
+                                                </button>
+                                            </div>
+                                        )}
+                                        {(it as any).soldAt && (
+                                            <div className="mt-2 p-2 rounded-lg bg-slate-800/60 ring-1 ring-slate-700 text-xs text-slate-300 space-y-1">
+                                                <div>تاریخ فروش: {j((it as any).soldAt)}</div>
+                                                <div>مبلغ فروش: {(((it as any).saleTotalToman || 0)).toLocaleString('fa-IR')} تومان</div>
+                                                <div>سود/زیان: {((((it as any).saleTotalToman || 0) - ((it as any).totalPaidToman || 0))).toLocaleString('fa-IR')} تومان</div>
+                                            </div>
+                                        )}
                             </div>
                         )}
                         {it.subtype === 'token' && (
@@ -511,6 +548,27 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         </div>
                         <div className="p-4">
                             <img src={imageModal.url} className="w-full h-auto rounded-lg" />
+                        </div>
+                    </div>
+                </div>
+            )}
+            {saleTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setSaleTarget(null)}>
+                    <div className="absolute inset-0 bg-black/70" />
+                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-4 border-b border-slate-700">
+                            <h3 className="text-slate-100 font-bold text-lg">ثبت فروش طلای فیزیکی</h3>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">مبلغ فروش (تومان)</label>
+                                <input type="number" value={salePrice} onChange={e => setSalePrice((e.target as HTMLInputElement).value)} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" placeholder="مثلاً 25000000" />
+                            </div>
+                            <div className="text-xs text-slate-400">خرید: {((saleTarget as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان • تاریخ خرید: {j((saleTarget as any).purchaseDate)}</div>
+                        </div>
+                        <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
+                            <button onClick={() => setSaleTarget(null)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">انصراف</button>
+                            <button onClick={confirmSale} className="px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold">ثبت فروش</button>
                         </div>
                     </div>
                 </div>

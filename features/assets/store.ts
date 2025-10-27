@@ -86,6 +86,8 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             wageToman: r.wage_toman != null ? Number(r.wage_toman) : undefined,
             invoiceRef1: r.invoice_ref1 || undefined,
             invoiceRef2: r.invoice_ref2 || undefined,
+            soldAt: r.sold_at || undefined,
+            saleTotalToman: r.sale_total_toman != null ? Number(r.sale_total_toman) : undefined,
             tokenSymbol: r.token_symbol || undefined,
             tokenAmount: r.token_amount != null ? Number(r.token_amount) : undefined,
             priceUsd: r.price_usd != null ? Number(r.price_usd) : undefined,
@@ -120,6 +122,8 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             row.wage_toman = a.wageToman ?? null;
             row.invoice_ref1 = a.invoiceRef1 ?? null;
             row.invoice_ref2 = a.invoiceRef2 ?? null;
+            row.sold_at = a.soldAt ?? null;
+            row.sale_total_toman = a.saleTotalToman ?? null;
         } else if (a.subtype === 'token') {
             row.token_symbol = a.tokenSymbol;
             row.token_amount = a.tokenAmount;
