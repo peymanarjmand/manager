@@ -24,11 +24,12 @@ export interface GoldToken extends AssetGoldBase {
     tokenSymbol: 'xaut' | 'paxg';
     tokenAmount: number; // amount of token
     priceUsd: number; // USD price at buy
-    priceToman: number; // Toman price at buy
+    pricePerGramToday: number; // Toman price per gram today
     totalPaidToman: number; // total paid in Toman
     feeToman?: number; // auto-calculated fee in Toman
     custodyLocation?: string; // e.g., Nobitex, Trust Wallet
     invoiceRef?: string; // optional
+    gramsDerived?: number; // derived grams from totalPaid/pricePerGramToday
 }
 
 export interface GoldDigikala extends AssetGoldBase {

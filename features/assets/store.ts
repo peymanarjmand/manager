@@ -87,9 +87,10 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             tokenSymbol: r.token_symbol || undefined,
             tokenAmount: r.token_amount != null ? Number(r.token_amount) : undefined,
             priceUsd: r.price_usd != null ? Number(r.price_usd) : undefined,
-            priceToman: r.price_toman != null ? Number(r.price_toman) : undefined,
+            pricePerGramToday: r.price_per_gram_today != null ? Number(r.price_per_gram_today) : undefined,
             feeToman: r.fee_toman != null ? Number(r.fee_toman) : undefined,
             custodyLocation: r.custody_location || undefined,
+            gramsDerived: r.grams_derived != null ? Number(r.grams_derived) : undefined,
             amountMg: r.amount_mg != null ? Number(r.amount_mg) : undefined,
             pricePerMg: r.price_per_mg != null ? Number(r.price_per_mg) : undefined,
             feeManualToman: r.fee_manual_toman != null ? Number(r.fee_manual_toman) : undefined,
@@ -119,11 +120,12 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             row.token_symbol = a.tokenSymbol;
             row.token_amount = a.tokenAmount;
             row.price_usd = a.priceUsd;
-            row.price_toman = a.priceToman;
+            row.price_per_gram_today = a.pricePerGramToday ?? null;
             row.total_paid_toman = a.totalPaidToman ?? 0;
             row.fee_toman = a.feeToman ?? null;
             row.custody_location = a.custodyLocation ?? null;
             row.invoice_ref = a.invoiceRef ?? null;
+            row.grams_derived = a.gramsDerived ?? null;
         } else if (a.subtype === 'digikala') {
             row.amount_mg = a.amountMg;
             row.price_per_mg = a.pricePerMg;

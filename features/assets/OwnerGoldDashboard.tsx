@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import JalaliDatePicker from './components/JalaliDatePicker';
+import MiniChart from './components/MiniChart';
 import { useAssetsStore } from './store';
 import { GoldAsset, GoldSubtype } from './types';
 import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon, AssetsIcon, WalletIcon } from '../../components/Icons';
@@ -31,6 +32,11 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     const [preview2, setPreview2] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [view, setView] = useState<'overview' | GoldSubtype>('overview');
+    const [filterFrom, setFilterFrom] = useState<string | undefined>(undefined);
+    const [filterTo, setFilterTo] = useState<string | undefined>(undefined);
+    const [minAmount, setMinAmount] = useState<number | undefined>(undefined);
+    const [maxAmount, setMaxAmount] = useState<number | undefined>(undefined);
+    const [symbol, setSymbol] = useState<string | undefined>(undefined);
 
     useEffect(() => { (async () => { await loadGoldByOwner(ownerId); })(); }, [ownerId]);
 
@@ -107,7 +113,12 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     const onSave = async () => {
         try {
             const id = form.id || Date.now().toString();
-            const payload: GoldAsset = autoCompute({ ...form, id });
+            let draft: any = { ...form, id };
+            if (draft.subtype === 'token') {
+                const gramsDerived = draft.pricePerGramToday ? (Number(draft.totalPaidToman || 0) / Number(draft.pricePerGramToday || 1)) : undefined;
+                draft.gramsDerived = gramsDerived;
+            }
+            const payload: GoldAsset = autoCompute(draft);
             await saveGold(payload);
             setModalOpen(false);
         } catch (e: any) {
@@ -116,6 +127,15 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     };
 
     const items = itemsAll; // alias for below rendering
+    const filteredItems = useMemo(() => {
+        let list = itemsAll.filter(it => it.subtype === view);
+        if (filterFrom) list = list.filter(it => new Date(it.purchaseDate).getTime() >= new Date(filterFrom).getTime());
+        if (filterTo) list = list.filter(it => new Date(it.purchaseDate).getTime() <= new Date(filterTo).getTime());
+        if (minAmount != null) list = list.filter((it: any) => (it.totalPaidToman || 0) >= minAmount);
+        if (maxAmount != null) list = list.filter((it: any) => (it.totalPaidToman || 0) <= maxAmount);
+        if (view === 'token' && symbol) list = list.filter((it: any) => (it.tokenSymbol || '').toLowerCase() === symbol.toLowerCase());
+        return list;
+    }, [itemsAll, view, filterFrom, filterTo, minAmount, maxAmount, symbol]);
 
     return (
         <div className="space-y-6">
@@ -191,9 +211,46 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             <button onClick={() => openNew(view)} className="px-3 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm flex items-center gap-2"><PlusIcon/> افزودن</button>
                         </div>
                     </div>
+                    {/* Filters */}
+                    <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                            <JalaliDatePicker id="from" label="از تاریخ" value={filterFrom || new Date(0).toISOString()} onChange={(iso) => setFilterFrom(iso)} />
+                            <JalaliDatePicker id="to" label="تا تاریخ" value={filterTo || new Date().toISOString()} onChange={(iso) => setFilterTo(iso)} />
+                            {view === 'token' ? (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">نماد</label>
+                                    <select value={symbol || ''} onChange={(e) => setSymbol((e.target as HTMLSelectElement).value || undefined)} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3">
+                                        <option value="">همه</option>
+                                        <option value="xaut">XAUT</option>
+                                        <option value="paxg">PAXG</option>
+                                    </select>
+                                </div>
+                            ) : (
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-300 mb-1">مبلغ از</label>
+                                    <input type="number" value={minAmount ?? ''} onChange={(e) => setMinAmount(((e.target as HTMLInputElement).value || '') === '' ? undefined : Number((e.target as HTMLInputElement).value))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                </div>
+                            )}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-300 mb-1">مبلغ تا</label>
+                                <input type="number" value={maxAmount ?? ''} onChange={(e) => setMaxAmount(((e.target as HTMLInputElement).value || '') === '' ? undefined : Number((e.target as HTMLInputElement).value))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                            </div>
+                        </div>
+                    </div>
+                    {/* Charts */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                            <div className="text-slate-300 text-sm mb-2">روند پرداختی</div>
+                            <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: (it as any).totalPaidToman || 0 }))} />
+                        </div>
+                        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                            <div className="text-slate-300 text-sm mb-2">روند مقدار</div>
+                            <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: view === 'physical' ? ((it as any).grams || 0) : view === 'token' ? ((it as any).tokenAmount || 0) : ((it as any).amountMg || 0) }))} stroke="#22c55e" fill="rgba(34,197,94,0.15)" />
+                        </div>
+                    </div>
                     {/* filtered list */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {itemsAll.filter(it => it.subtype === view).map(it => (
+                        {filteredItems.map(it => (
                     <div key={it.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3">
                         <div className="flex items-start justify-between">
                             <div>
@@ -217,7 +274,9 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             <div className="text-sm text-slate-300 space-y-1">
                                 <div>نماد: {(it as any).tokenSymbol?.toUpperCase()}</div>
                                 <div>مقدار: {(it as any).tokenAmount}</div>
-                                <div>قیمت خرید: {(it as any).priceUsd} دلار / {(it as any).priceToman?.toLocaleString('fa-IR')} تومان</div>
+                                <div>قیمت مرجع: {(it as any).priceUsd} دلار</div>
+                                <div>قیمت هر گرم امروز: {((it as any).pricePerGramToday || 0).toLocaleString('fa-IR')} تومان</div>
+                                {(it as any).gramsDerived != null && <div>گرم معادل: {Number((it as any).gramsDerived).toFixed(4)}</div>}
                                 <div>کارمزد: {((it as any).feeToman || 0).toLocaleString('fa-IR')} تومان</div>
                                 <div>محل نگهداری: {(it as any).custodyLocation || '—'}</div>
                                         <LinkFromRef refId={(it as any).invoiceRef} label="رسید" />
@@ -298,20 +357,27 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <input type="number" value={String(form.tokenAmount ?? '')} onChange={e => setForm((f: any) => ({ ...f, tokenAmount: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-1">قیمت دلاری خرید</label>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">قیمت دلاری مرجع</label>
                                         <input type="number" value={String(form.priceUsd ?? '')} onChange={e => setForm((f: any) => ({ ...f, priceUsd: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-1">قیمت تومانی خرید</label>
-                                        <input type="number" value={String(form.priceToman ?? '')} onChange={e => setForm((f: any) => ({ ...f, priceToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">قیمت هر گرم طلا امروز (تومان)</label>
+                                        <input type="number" value={String(form.pricePerGramToday ?? '')} onChange={e => setForm((f: any) => ({ ...f, pricePerGramToday: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">مجموع پرداختی (تومان)</label>
                                         <input type="number" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">کارمزد (تومان)</label>
+                                        <input type="number" value={String(form.feeToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, feeToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">محل نگهداری</label>
-                                        <input value={form.custodyLocation || ''} onChange={e => setForm((f: any) => ({ ...f, custodyLocation: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <select value={form.custodyLocation || 'nobitex'} onChange={e => setForm((f: any) => ({ ...f, custodyLocation: (e.target as HTMLSelectElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3">
+                                            <option value="nobitex">نوبیتکس</option>
+                                            <option value="bitpin">بیت پین</option>
+                                        </select>
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className="block text-sm font-medium text-slate-300 mb-1">فاکتور/رسید</label>
