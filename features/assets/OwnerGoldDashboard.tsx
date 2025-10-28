@@ -409,7 +409,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                     <div key={it.id} className={it.subtype === 'token' ? "flex items-center justify-between rounded-lg p-3 ring-1 ring-slate-700 bg-slate-800/30 hover:bg-slate-800/50 transition" : "bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3 hover:ring-sky-600 transition"}>
                         <div className="flex items-start justify-between">
                             <div>
-                                <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? ((it as any).title || 'طلای فیزیکی') : it.subtype === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
+                                <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? ((it as any).title || 'طلای فیزیکی') : it.subtype === 'token' ? ((it as any).tokenSymbol?.toUpperCase() || '—') : 'طلای دیجی‌کالا'}</div>
                                 <div className="text-xs text-slate-400">تاریخ خرید: {j(it.purchaseDate)}</div>
                             </div>
                             <div className="flex items-center gap-2 text-slate-400">
@@ -453,17 +453,31 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         )}
                         {it.subtype === 'token' && (
                             <>
-                                <div className="flex items-center gap-3 text-sm">
-                                    <span className={`px-2 py-0.5 rounded-full text-xs ${((it as any).txType||'buy')==='buy' ? 'bg-emerald-700/40 text-emerald-200 ring-1 ring-emerald-600/40' : 'bg-rose-700/40 text-rose-200 ring-1 ring-rose-600/40'}`}>{((it as any).txType||'buy')==='buy' ? 'خرید' : 'فروش'}</span>
-                                    <span className="text-slate-300">{(it as any).tokenSymbol?.toUpperCase()}</span>
-                                    <span className="text-slate-400">{j(it.purchaseDate)}</span>
+                                <div className="flex items-center justify-between text-sm">
+                                    <div className="flex items-center gap-3">
+                                        <span className={`px-2 py-0.5 rounded-full text-xs ${((it as any).txType||'buy')==='buy' ? 'bg-emerald-700/40 text-emerald-200 ring-1 ring-emerald-600/40' : 'bg-rose-700/40 text-rose-200 ring-1 ring-rose-600/40'}`}>{((it as any).txType||'buy')==='buy' ? 'خرید' : 'فروش'}</span>
+                                        <span className="text-slate-300">{(it as any).tokenSymbol?.toUpperCase() || '—'}</span>
+                                        <span className="text-slate-400">{j(it.purchaseDate)}</span>
+                                    </div>
+                                    <div className="text-xs text-slate-400">{(it as any).custodyLocation === 'nobitex' ? 'نوبیتکس' : (it as any).custodyLocation === 'bitpin' ? 'بیت پین' : '—'}</div>
                                 </div>
                                 <div className="text-slate-200 font-bold">{(it as any).tokenAmount}</div>
-                                <div className="text-xs text-slate-400">گرم معادل: {((it as any).gramsDerived != null ? Number((it as any).gramsDerived) : ((Number((it as any).tokenAmount)||0) * TOKEN_TO_GRAMS_18K)).toFixed(4)}</div>
-                                <div className="text-xs text-slate-400">مبلغ: {((it as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان</div>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
+                                    <div>گرم معادل: {((it as any).gramsDerived != null ? Number((it as any).gramsDerived) : ((Number((it as any).tokenAmount)||0) * TOKEN_TO_GRAMS_18K)).toFixed(4)}</div>
+                                    <div>مبلغ: {((it as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان</div>
+                                    {(it as any).priceTokenToman != null && <div>قیمت هر توکن: {Number((it as any).priceTokenToman).toLocaleString('fa-IR')} تومان</div>}
+                                    <div>
+                                        {(() => { const fee = Number((it as any).feeToman || 0); const total = Number((it as any).totalPaidToman || 0); const pct = total ? Math.round((fee / total) * 10000) / 100 : 0; return (
+                                            <span>کارمزد: {fee.toLocaleString('fa-IR')} تومان {total ? <span className="text-slate-500">({pct}%)</span> : null}</span>
+                                        ); })()}
+                                    </div>
+                                </div>
                                 <div className="flex items-center gap-2 text-slate-400">
                                     <button className="hover:text-sky-400" title="ویرایش" onClick={(e) => { e.stopPropagation(); openEdit(it); }}><EditIcon/></button>
                                     <button className="hover:text-rose-400" title="حذف" onClick={(e) => { e.stopPropagation(); setDeleteTarget(it); }}><DeleteIcon/></button>
+                                    <button className="px-2 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs" onClick={(e)=>{ e.stopPropagation(); setDetailTarget({ ...it }); }}>
+                                        جزئیات
+                                    </button>
                                 </div>
                             </>
                         )}
@@ -648,7 +662,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                     <div className="absolute inset-0 bg-black/80" />
                     <div className="relative w-full max-w-4xl bg-slate-900 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-                            <div className="text-xl font-bold text-slate-100">جزئیات {detailTarget.subtype === 'physical' ? 'طلای فیزیکی' : detailTarget.subtype === 'token' ? 'توکن طلا' : 'طلای دیجیffffffffffffffffffffffffffffff'}</div>
+                            <div className="text-xl font-bold text-slate-100">{detailTarget.subtype === 'physical' ? 'جزئیات طلای فیزیکی' : detailTarget.subtype === 'token' ? `جزئیات ${String(detailTarget.tokenSymbol || '').toUpperCase()}` : 'جزئیات طلای دیجی‌کالا'}</div>
                             <button onClick={() => setDetailTarget(null)} className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm">بستن</button>
                         </div>
                         <div className="p-6 space-y-6">
@@ -713,6 +727,59 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                                 <div className="text-slate-500 text-sm">هیچ انتقالی ثبت نشده است.</div>
                                             )}
                                         </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {detailTarget.subtype === 'token' && (() => {
+                                const symbol = (detailTarget.tokenSymbol || '').toUpperCase();
+                                const txTypeLabel = (detailTarget.txType || 'buy') === 'buy' ? 'خرید' : 'فروش';
+                                const amount = Number(detailTarget.tokenAmount || 0);
+                                const grams = (detailTarget.gramsDerived != null ? Number(detailTarget.gramsDerived) : (amount * TOKEN_TO_GRAMS_18K));
+                                const pricePerToken = detailTarget.priceTokenToman != null ? Number(detailTarget.priceTokenToman) : undefined;
+                                const totalPaid = Number(detailTarget.totalPaidToman || 0);
+                                const fee = Number(detailTarget.feeToman || 0);
+                                const feePercent = totalPaid ? Math.round((fee / totalPaid) * 10000) / 100 : 0;
+                                const custody = detailTarget.custodyLocation === 'nobitex' ? 'نوبیتکس' : detailTarget.custodyLocation === 'bitpin' ? 'بیت پین' : '—';
+                                const usdPrice = detailTarget.priceUsd != null ? Number(detailTarget.priceUsd) : undefined;
+                                const usdRate = detailTarget.usdRateToman != null ? Number(detailTarget.usdRateToman) : undefined;
+                                const pricePerGramToday = detailTarget.pricePerGramToday != null ? Number(detailTarget.pricePerGramToday) : undefined;
+                                return (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <div className="text-slate-300 text-sm">نوع تراکنش</div>
+                                                <div className="font-bold text-slate-100">{txTypeLabel}</div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="text-slate-300 text-sm">نماد</div>
+                                                <div className="font-bold text-slate-100">{symbol || '—'}</div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="text-slate-300 text-sm">محل انجام</div>
+                                                <div className="font-bold text-slate-100">{custody}</div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="text-slate-300 text-sm">تاریخ</div>
+                                                <div className="font-bold text-slate-100">{j(detailTarget.purchaseDate)}</div>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-300">
+                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">مقدار: <span className="font-bold">{amount}</span> توکن</div>
+                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">گرم معادل: <span className="font-bold">{grams.toFixed(4)}</span></div>
+                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت هر توکن: <span className="font-bold">{pricePerToken != null ? pricePerToken.toLocaleString('fa-IR') : '—'}</span> <span className="text-xs">تومان</span></div>
+                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">مجموع پرداختی: <span className="font-bold">{totalPaid.toLocaleString('fa-IR')}</span> <span className="text-xs">تومان</span></div>
+                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">کارمزد: <span className="font-bold">{fee.toLocaleString('fa-IR')}</span> <span className="text-xs">تومان</span> <span className="text-xs text-slate-400">({feePercent}%)</span></div>
+                                            {usdPrice != null && <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت دلار هنگام معامله: <span className="font-bold">{usdPrice}</span></div>}
+                                            {usdRate != null && <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">نرخ دلار (تومان): <span className="font-bold">{usdRate.toLocaleString('fa-IR')}</span></div>}
+                                            {pricePerGramToday != null && <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت هر گرم امروز (تومان): <span className="font-bold">{pricePerGramToday.toLocaleString('fa-IR')}</span></div>}
+                                        </div>
+                                        {detailTarget.invoiceRef && (
+                                            <div className="space-y-2">
+                                                <div className="text-slate-300 text-sm">رسید</div>
+                                                <button className="px-3 py-2 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 text-sm" onClick={() => openImage(detailTarget.invoiceRef)}>مشاهده رسید</button>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })()}
