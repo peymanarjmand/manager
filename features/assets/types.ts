@@ -39,14 +39,16 @@ export interface GoldToken extends AssetGoldBase {
     subtype: 'token';
     tokenSymbol: 'xaut' | 'paxg';
     tokenAmount: number; // amount of token
-    priceUsd: number; // USD price at buy
-    pricePerGramToday: number; // Toman price per gram today
+    priceUsd?: number; // deprecated
+    pricePerGramToday?: number; // deprecated
+    priceTokenToman?: number; // Toman price per 1 token at tx time
     totalPaidToman: number; // total paid in Toman
     feeToman?: number; // auto-calculated fee in Toman
     custodyLocation?: string; // e.g., Nobitex, Trust Wallet
     invoiceRef?: string; // optional
     gramsDerived?: number; // derived grams from totalPaid/pricePerGramToday
     usdRateToman?: number; // exchange rate used for precise fee calc
+    txType?: 'buy' | 'sell';
 }
 
 export interface GoldDigikala extends AssetGoldBase {
@@ -58,6 +60,7 @@ export interface GoldDigikala extends AssetGoldBase {
     feeManualToman?: number; // manually entered fee
     feePercent?: number; // derived percent
     invoiceRef?: string; // optional invoice
+    txType?: 'buy' | 'sell';
 }
 
 export type GoldAsset = GoldPhysical | GoldToken | GoldDigikala;
