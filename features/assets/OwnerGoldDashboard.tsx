@@ -78,6 +78,25 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     const dgi = itemsAll.filter(i => i.subtype === 'digikala') as any[];
     const totals = useMemo(() => ({ totalPaid: itemsAll.reduce((s, a: any) => s + (a.totalPaidToman || 0), 0) }), [itemsAll]);
 
+    // Aggregate token holdings for asset view (XAUT/PAXG and totals)
+    const tokenSums = useMemo(() => {
+        const sumAmt = (arr: any[]) => arr.reduce((n, a) => n + (Number((a as any).tokenAmount) || 0) * ((((a as any).txType || 'buy') === 'buy') ? 1 : -1), 0);
+        const xautArr = tok.filter(t => (t as any).tokenSymbol === 'xaut');
+        const paxgArr = tok.filter(t => (t as any).tokenSymbol === 'paxg');
+        const amtXaut = sumAmt(xautArr);
+        const amtPaxg = sumAmt(paxgArr);
+        const totalAmt = amtXaut + amtPaxg;
+        const gramsXaut = amtXaut * TOKEN_TO_GRAMS_18K;
+        const gramsPaxg = amtPaxg * TOKEN_TO_GRAMS_18K;
+        const gramsTotal = gramsXaut + gramsPaxg;
+        // by custody location
+        const amtNobitex = sumAmt(tok.filter(t => (t as any).custodyLocation === 'nobitex'));
+        const amtBitpin = sumAmt(tok.filter(t => (t as any).custodyLocation === 'bitpin'));
+        const gramsNobitex = amtNobitex * TOKEN_TO_GRAMS_18K;
+        const gramsBitpin = amtBitpin * TOKEN_TO_GRAMS_18K;
+        return { amtXaut, amtPaxg, totalAmt, gramsXaut, gramsPaxg, gramsTotal, amtNobitex, amtBitpin, gramsNobitex, gramsBitpin };
+    }, [tok]);
+
     const openNew = (s: GoldSubtype, tx?: 'buy' | 'sell') => {
         setSubtype(s);
         setTxType(tx || 'buy');
@@ -349,19 +368,41 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             </div>
                         </div>
                     </div>
-                    {/* Charts */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
-                            <div className="text-slate-300 text-sm mb-2">روند پرداختی</div>
-                            <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: (it as any).totalPaidToman || 0 }))} />
+                    {/* Token assets summary (replaces payment trend chart for token view) or charts for others */}
+                    {view === 'token' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                                <div className="text-slate-300 text-sm">XAUT</div>
+                                <div className="text-2xl font-extrabold text-emerald-400">{Number(tokenSums.amtXaut).toFixed(6)}</div>
+                                <div className="text-xs text-slate-400 mt-1">گرم معادل: {tokenSums.gramsXaut.toFixed(3)}</div>
+                            </div>
+                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                                <div className="text-slate-300 text-sm">PAXG</div>
+                                <div className="text-2xl font-extrabold text-emerald-400">{Number(tokenSums.amtPaxg).toFixed(6)}</div>
+                                <div className="text-xs text-slate-400 mt-1">گرم معادل: {tokenSums.gramsPaxg.toFixed(3)}</div>
+                            </div>
+                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                                <div className="text-slate-300 text-sm">جمع دارایی</div>
+                                <div className="text-2xl font-extrabold text-sky-400">{Number(tokenSums.totalAmt).toFixed(6)} توکن</div>
+                                <div className="text-xs text-slate-400 mt-1">جمع گرم معادل: {tokenSums.gramsTotal.toFixed(3)}</div>
+                                <div className="text-xs text-slate-400 mt-3 space-y-1">
+                                    <div>در نوبیتکس: <span className="font-bold">{Number(tokenSums.amtNobitex).toFixed(6)}</span> توکن • <span className="font-bold">{tokenSums.gramsNobitex.toFixed(3)}</span> گرم</div>
+                                    <div>در بیت پین: <span className="font-bold">{Number(tokenSums.amtBitpin).toFixed(6)}</span> توکن • <span className="font-bold">{tokenSums.gramsBitpin.toFixed(3)}</span> گرم</div>
+                                </div>
+                            </div>
                         </div>
-                        {view !== 'token' && (
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                                <div className="text-slate-300 text-sm mb-2">روند پرداختی</div>
+                                <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: (it as any).totalPaidToman || 0 }))} />
+                            </div>
                             <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
                                 <div className="text-slate-300 text-sm mb-2">روند مقدار</div>
-                                <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: view === 'physical' ? ((it as any).grams || 0) : view === 'token' ? ((it as any).tokenAmount || 0) : ((it as any).amountMg || 0) }))} stroke="#22c55e" fill="rgba(34,197,94,0.15)" />
+                                <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: view === 'physical' ? ((it as any).grams || 0) : ((it as any).amountMg || 0) }))} stroke="#22c55e" fill="rgba(34,197,94,0.15)" />
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                     {/* filtered list */}
                     <div className={view === 'token' ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"}>
                         {filteredItems.map(it => (
