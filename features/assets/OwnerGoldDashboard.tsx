@@ -47,6 +47,14 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
 
     const j = (iso: string) => moment(iso).locale('fa').format('jD jMMMM jYYYY');
 
+    // Helper to parse numbers from inputs that may contain commas/strings
+    const toNumber = (v: any): number => {
+        if (v === undefined || v === null || v === '') return NaN;
+        const s = typeof v === 'string' ? v.replace(/,/g, '') : v;
+        const n = Number(s);
+        return isNaN(n) ? NaN : n;
+    };
+
     const itemsAll = gold.filter((g: any) => g.ownerId === ownerId);
     const summarize = (arr: any[]) => {
         const count = arr.length;
@@ -97,10 +105,26 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
         return { amtXaut, amtPaxg, totalAmt, gramsXaut, gramsPaxg, gramsTotal, amtNobitex, amtBitpin, gramsNobitex, gramsBitpin };
     }, [tok]);
 
+    // Auto-calc token trading fee whenever user edits amount/price/total
+    useEffect(() => {
+        if (subtype !== 'token') return;
+        const amount = toNumber(form.tokenAmount);
+        const price = toNumber(form.priceTokenToman);
+        const total = toNumber(form.totalPaidToman);
+        if (isFinite(amount) && isFinite(price) && isFinite(total)) {
+            const net = amount * price; // net asset value
+            const fee = Math.max(0, Math.round(total - net));
+            const currentFee = toNumber(form.feeToman);
+            if (fee !== currentFee) setForm((f: any) => ({ ...f, feeToman: fee }));
+        }
+    }, [subtype, form.tokenAmount, form.priceTokenToman, form.totalPaidToman]);
+
     const openNew = (s: GoldSubtype, tx?: 'buy' | 'sell') => {
         setSubtype(s);
         setTxType(tx || 'buy');
-        setForm({ id: undefined, ownerId, subtype: s, txType: tx || 'buy', purchaseDate: new Date().toISOString() });
+        const base: any = { id: undefined, ownerId, subtype: s, txType: tx || 'buy', purchaseDate: new Date().toISOString() };
+        const defaults = s === 'token' ? { tokenSymbol: 'xaut', custodyLocation: 'nobitex' } : {};
+        setForm({ ...base, ...defaults });
         setPreview1(null); setPreview2(null); setError(null);
         setModalOpen(true);
     };
@@ -203,6 +227,9 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             const id = form.id || Date.now().toString();
             let draft: any = { ...form, id };
             if (draft.subtype === 'token') {
+                // Ensure defaults if user didn't touch select inputs
+                if (!draft.tokenSymbol) draft.tokenSymbol = 'xaut';
+                if (!draft.custodyLocation) draft.custodyLocation = 'nobitex';
                 // gramsDerived handled by autoCompute via tokenAmount
                 const numericFields2 = ['priceTokenToman'];
                 for (const k of numericFields2) {
@@ -212,11 +239,13 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         draft[k] = isNaN(n) ? undefined : n;
                     }
                 }
-                // Auto derive fee if not provided: fee = totalPaid - (tokenAmount * priceTokenToman)
-                if ((draft.feeToman == null || isNaN(Number(draft.feeToman))) && draft.tokenAmount && draft.priceTokenToman) {
-                    const calc = Number(draft.tokenAmount) * Number(draft.priceTokenToman);
-                    const fee = Math.max(0, Math.round(Number(draft.totalPaidToman || 0) - calc));
-                    draft.feeToman = fee;
+                // Always derive fee: fee = totalPaid - (tokenAmount × priceTokenToman)
+                if (draft.tokenAmount != null && draft.priceTokenToman != null) {
+                    const total = typeof draft.totalPaidToman === 'string' ? Number(String(draft.totalPaidToman).replace(/,/g,'')) : Number(draft.totalPaidToman || 0);
+                    const amount = Number(draft.tokenAmount);
+                    const price = Number(draft.priceTokenToman);
+                    const net = amount * price;
+                    draft.feeToman = Math.max(0, Math.round(total - net));
                 }
             }
             // Coerce numeric-like strings to numbers while preserving fractional typing
