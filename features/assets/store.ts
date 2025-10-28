@@ -167,15 +167,11 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
         } else if (a.subtype === 'token') {
             row.token_symbol = a.tokenSymbol;
             row.token_amount = a.tokenAmount;
-            row.price_usd = a.priceUsd ?? null;
-            row.price_per_gram_today = a.pricePerGramToday ?? null;
             row.price_token_toman = a.priceTokenToman ?? null;
             row.total_paid_toman = a.totalPaidToman ?? 0;
             row.fee_toman = a.feeToman ?? null;
             row.custody_location = a.custodyLocation ?? null;
-            row.invoice_ref = a.invoiceRef ?? null;
             row.grams_derived = a.gramsDerived ?? null;
-            row.usd_rate_toman = a.usdRateToman ?? null;
             row.tx_type = a.txType ?? null;
         } else if (a.subtype === 'digikala') {
             row.amount_mg = a.amountMg;

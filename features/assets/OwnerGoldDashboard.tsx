@@ -193,6 +193,12 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         draft[k] = isNaN(n) ? undefined : n;
                     }
                 }
+                // Auto derive fee if not provided: fee = totalPaid - (tokenAmount * priceTokenToman)
+                if ((draft.feeToman == null || isNaN(Number(draft.feeToman))) && draft.tokenAmount && draft.priceTokenToman) {
+                    const calc = Number(draft.tokenAmount) * Number(draft.priceTokenToman);
+                    const fee = Math.max(0, Math.round(Number(draft.totalPaidToman || 0) - calc));
+                    draft.feeToman = fee;
+                }
             }
             // Coerce numeric-like strings to numbers while preserving fractional typing
             if (draft.subtype === 'token') {
@@ -269,19 +275,19 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div className="text-slate-500 text-xs mt-2">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
                             </button>
                         ); })()}
-                        {(() => { const s = summarizeToken(tok); const state = s.count ? 'فعال' : 'خالی'; return (
+                        {(() => { const s = summarizeToken(tok); const state = s.count ? 'فعال' : 'خالی'; const xaut = tok.filter(t => (t as any).tokenSymbol==='xaut'); const paxg = tok.filter(t => (t as any).tokenSymbol==='paxg'); const sumAmt = (arr:any[]) => arr.reduce((n,a)=> n + (Number((a as any).tokenAmount)||0)*(((a as any).txType||'buy')==='buy'? 1 : -1),0); const amtXaut = sumAmt(xaut); const amtPaxg = sumAmt(paxg); const gramsXaut = amtXaut * TOKEN_TO_GRAMS_18K; const gramsPaxg = amtPaxg * TOKEN_TO_GRAMS_18K; return (
                             <button onClick={() => setView('token')} className="text-right rounded-xl p-5 ring-1 ring-emerald-700/60 hover:ring-emerald-400 transition bg-gradient-to-br from-emerald-900/20 to-slate-800/40">
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="bg-emerald-700/40 p-3 rounded-full inline-block"><WalletIcon/></div>
                                     <span className={`px-2 py-0.5 rounded-full text-xs ${s.count ? 'bg-emerald-600/40 text-emerald-200 ring-1 ring-emerald-500/40' : 'bg-slate-700 text-slate-300 ring-1 ring-slate-600'}`}>{state}</span>
                                 </div>
                                 <div className="text-xl font-bold text-slate-100">توکن طلا</div>
-                                <div className="text-slate-400 text-sm mt-1">{s.count} رکورد • مجموع {s.totalPaid.toLocaleString('fa-IR')} تومان</div>
                                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
-                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">کل مقدار: <span className="font-bold">{s.totalAmount}</span></div>
-                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">میانگین تومانی: <span className="font-bold">{s.avgPriceToman.toLocaleString('fa-IR')}</span></div>
+                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">XAUT: <span className="font-bold">{amtXaut}</span> توکن • <span className="font-bold">{gramsXaut.toFixed(3)}</span> گرم</div>
+                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">PAXG: <span className="font-bold">{amtPaxg}</span> توکن • <span className="font-bold">{gramsPaxg.toFixed(3)}</span> گرم</div>
+                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700 col-span-2">جمع: <span className="font-bold">{(amtXaut+amtPaxg)}</span> توکن • <span className="font-bold">{(gramsXaut+gramsPaxg).toFixed(3)}</span> گرم</div>
                                 </div>
-                                <div className="text-slate-500 text-xs mt-2">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
+                                <div className="text-slate-500 text-xs mt-2">آخرین تراکنش: {s.last ? j(s.last) : '—'}</div>
                             </button>
                         ); })()}
                         {(() => { const s = summarizeDigi(dgi); const state = s.count ? 'فعال' : 'خالی'; return (
@@ -349,15 +355,17 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             <div className="text-slate-300 text-sm mb-2">روند پرداختی</div>
                             <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: (it as any).totalPaidToman || 0 }))} />
                         </div>
-                        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
-                            <div className="text-slate-300 text-sm mb-2">روند مقدار</div>
-                            <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: view === 'physical' ? ((it as any).grams || 0) : view === 'token' ? ((it as any).tokenAmount || 0) : ((it as any).amountMg || 0) }))} stroke="#22c55e" fill="rgba(34,197,94,0.15)" />
-                        </div>
+                        {view !== 'token' && (
+                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                                <div className="text-slate-300 text-sm mb-2">روند مقدار</div>
+                                <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: view === 'physical' ? ((it as any).grams || 0) : view === 'token' ? ((it as any).tokenAmount || 0) : ((it as any).amountMg || 0) }))} stroke="#22c55e" fill="rgba(34,197,94,0.15)" />
+                            </div>
+                        )}
                     </div>
                     {/* filtered list */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className={view === 'token' ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"}>
                         {filteredItems.map(it => (
-                    <div key={it.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3 hover:ring-sky-600 transition">
+                    <div key={it.id} className={it.subtype === 'token' ? "flex items-center justify-between rounded-lg p-3 ring-1 ring-slate-700 bg-slate-800/30 hover:bg-slate-800/50 transition" : "bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3 hover:ring-sky-600 transition"}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? ((it as any).title || 'طلای فیزیکی') : it.subtype === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
@@ -403,13 +411,20 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             </div>
                         )}
                         {it.subtype === 'token' && (
-                            <div className="text-sm text-slate-300 space-y-1">
-                                <div>نماد: {(it as any).tokenSymbol?.toUpperCase()}</div>
-                                <div>مقدار: {(it as any).tokenAmount}</div>
-                                <div>گرم معادل (۱۸ عیار): {((it as any).gramsDerived != null ? Number((it as any).gramsDerived) : ((Number((it as any).tokenAmount)||0) * TOKEN_TO_GRAMS_18K)).toFixed(4)}</div>
-                                <div>محل نگهداری: {(it as any).custodyLocation || '—'}</div>
-                                        <LinkFromRef refId={(it as any).invoiceRef} label="رسید" onOpen={openImage} />
-                            </div>
+                            <>
+                                <div className="flex items-center gap-3 text-sm">
+                                    <span className={`px-2 py-0.5 rounded-full text-xs ${((it as any).txType||'buy')==='buy' ? 'bg-emerald-700/40 text-emerald-200 ring-1 ring-emerald-600/40' : 'bg-rose-700/40 text-rose-200 ring-1 ring-rose-600/40'}`}>{((it as any).txType||'buy')==='buy' ? 'خرید' : 'فروش'}</span>
+                                    <span className="text-slate-300">{(it as any).tokenSymbol?.toUpperCase()}</span>
+                                    <span className="text-slate-400">{j(it.purchaseDate)}</span>
+                                </div>
+                                <div className="text-slate-200 font-bold">{(it as any).tokenAmount}</div>
+                                <div className="text-xs text-slate-400">گرم معادل: {((it as any).gramsDerived != null ? Number((it as any).gramsDerived) : ((Number((it as any).tokenAmount)||0) * TOKEN_TO_GRAMS_18K)).toFixed(4)}</div>
+                                <div className="text-xs text-slate-400">مبلغ: {((it as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان</div>
+                                <div className="flex items-center gap-2 text-slate-400">
+                                    <button className="hover:text-sky-400" title="ویرایش" onClick={(e) => { e.stopPropagation(); openEdit(it); }}><EditIcon/></button>
+                                    <button className="hover:text-rose-400" title="حذف" onClick={(e) => { e.stopPropagation(); setDeleteTarget(it); }}><DeleteIcon/></button>
+                                </div>
+                            </>
                         )}
                         {it.subtype === 'digikala' && (
                             <div className="text-sm text-slate-300 space-y-1">
@@ -492,17 +507,10 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <input type="number" step="any" inputMode="decimal" value={String(form.tokenAmount ?? '')} onChange={e => setForm((f: any) => ({ ...f, tokenAmount: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-1">قیمت دلاری مرجع</label>
-                                        <input type="number" step="any" inputMode="decimal" value={String(form.priceUsd ?? '')} onChange={e => setForm((f: any) => ({ ...f, priceUsd: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">قیمت هر توکن (تومان)</label>
+                                        <input type="number" step="any" inputMode="decimal" value={String(form.priceTokenToman ?? '')} onChange={e => setForm((f: any) => ({ ...f, priceTokenToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-1">نرخ دلار (تومان)</label>
-                                        <input type="number" step="any" inputMode="decimal" value={String(form.usdRateToman ?? '')} onChange={e => setForm((f: any) => ({ ...f, usdRateToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-1">قیمت هر گرم طلا امروز (تومان)</label>
-                                        <input type="number" step="any" inputMode="decimal" value={String(form.pricePerGramToday ?? '')} onChange={e => setForm((f: any) => ({ ...f, pricePerGramToday: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
-                                    </div>
+                                    
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">مجموع پرداختی (تومان)</label>
                                         <input type="number" step="any" inputMode="decimal" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
@@ -519,15 +527,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                             <option value="bitpin">بیت پین</option>
                                         </select>
                                     </div>
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-slate-300 mb-1">فاکتور/رسید</label>
-                                        <div className="flex items-center gap-3">
-                                            <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-token-invoice')?.click()}>انتخاب تصویر</button>
-                                            {form.invoiceRef && <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-300 text-sm" onClick={() => setForm((f:any)=> ({...f, invoiceRef: undefined, invoicePreview: undefined}))}>حذف تصویر</button>}
-                                            {form.invoicePreview && <img src={form.invoicePreview} className="h-16 rounded ring-1 ring-slate-700" />}
-                                        </div>
-                                        <input id="gold-token-invoice" type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { const ref = await saveImageDataURL(String(reader.result || '')); const url = await getObjectURLByRef(ref); setForm((f: any) => ({ ...f, invoiceRef: ref, invoicePreview: url })); }; reader.readAsDataURL(file); }} className="hidden" />
-                                    </div>
+                                    
                                 </div>
                             )}
                             {subtype === 'digikala' && (
