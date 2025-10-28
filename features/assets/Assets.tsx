@@ -72,20 +72,20 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
             {/* Header */}
-            <div className="mb-8 relative overflow-hidden rounded-2xl ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/70 via-slate-800/40 to-slate-900/20">
-                <div className="p-5 flex items-center justify-between">
+            <div className="mb-5 md:mb-8 relative overflow-hidden rounded-2xl ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/70 via-slate-800/40 to-slate-900/20">
+                <div className="p-4 md:p-5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button onClick={onNavigateBack} aria-label="بازگشت" className="text-slate-300 hover:text-white" title="بازگشت">
                             <BackIcon />
                         </button>
-                        <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        <h2 className="text-xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
                             <AssetsIcon /> دارایی‌ها
                         </h2>
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setIsOwnerModalOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow">
+                        <button onClick={() => setIsOwnerModalOpen(true)} className="inline-flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs md:text-sm font-bold shadow">
                             <PlusIcon /> افزودن مالک
                         </button>
                     </div>
@@ -93,21 +93,21 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
             </div>
 
             {/* Owners section */}
-            <div className="mb-10">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xl font-bold text-slate-100">مالکین</h3>
+            <div className="mb-6 md:mb-10">
+                <div className="flex items-center justify-between mb-2 md:mb-3">
+                    <h3 className="text-lg md:text-xl font-bold text-slate-100">مالکین</h3>
                 </div>
                 {(owners?.length || 0) === 0 ? (
-                    <p className="text-slate-400 text-center py-12 bg-slate-800/30 rounded-xl ring-1 ring-slate-700">هنوز مالکی ثبت نشده است.</p>
+                    <p className="text-slate-400 text-center py-10 md:py-12 bg-slate-800/30 rounded-xl ring-1 ring-slate-700">هنوز مالکی ثبت نشده است.</p>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                         {owners.map(p => (
-                            <button key={p.id} onClick={() => setViewOwnerId(p.id)} className={`text-right rounded-2xl ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/60 to-slate-900/30 hover:ring-sky-500/60 hover:from-slate-800/80 p-3 transition flex items-center gap-3 shadow-sm`}>
-                                <span className="h-10 w-10 rounded-full overflow-hidden bg-slate-700/80 flex items-center justify-center ring-1 ring-slate-600">
+                            <button key={p.id} onClick={() => setViewOwnerId(p.id)} className={`text-right rounded-2xl ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/60 to-slate-900/30 hover:ring-sky-500/60 hover:from-slate-800/80 p-2.5 md:p-3 transition flex items-center gap-2 md:gap-3 shadow-sm`}>
+                                <span className="h-9 w-9 md:h-10 md:w-10 rounded-full overflow-hidden bg-slate-700/80 flex items-center justify-center ring-1 ring-slate-600">
                                     <UserCircleIcon />
                                 </span>
                                 <div className="truncate">
-                                    <div className="text-slate-100 font-semibold truncate">{p.name}</div>
+                                    <div className="text-slate-100 font-semibold truncate text-sm md:text-base">{p.name}</div>
                                 </div>
                             </button>
                         ))}
@@ -115,36 +115,36 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="rounded-2xl p-4 ring-1 ring-emerald-700/40 bg-gradient-to-br from-emerald-900/20 to-slate-900/30">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
+                <div className="rounded-2xl p-3 md:p-4 ring-1 ring-emerald-700/40 bg-gradient-to-br from-emerald-900/20 to-slate-900/30">
                     <div className="text-slate-300 text-sm">مجموع ارزش کنونی</div>
-                    <div className="text-3xl font-extrabold text-emerald-400 mt-1">{formatCurrency(totals.totalValue)}</div>
+                    <div className="text-2xl md:text-3xl font-extrabold text-emerald-400 mt-1">{formatCurrency(totals.totalValue)}</div>
                 </div>
-                <div className="rounded-2xl p-4 ring-1 ring-sky-700/40 bg-gradient-to-br from-sky-900/20 to-slate-900/30">
+                <div className="rounded-2xl p-3 md:p-4 ring-1 ring-sky-700/40 bg-gradient-to-br from-sky-900/20 to-slate-900/30">
                     <div className="text-slate-300 text-sm">تعداد دارایی‌ها</div>
-                    <div className="text-3xl font-extrabold text-sky-400 mt-1">{totals.count}</div>
+                    <div className="text-2xl md:text-3xl font-extrabold text-sky-400 mt-1">{totals.count}</div>
                 </div>
             </div>
 
             {((assets?.filter(a => !selectedOwnerId || a.ownerId === selectedOwnerId) || []).length === 0) ? (
                 <p className="text-slate-400 text-center py-16 bg-slate-800/30 rounded-2xl ring-1 ring-slate-700">هنوز دارایی ثبت نشده است.</p>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
                     {assets.filter(a => !selectedOwnerId || a.ownerId === selectedOwnerId).map(asset => (
-                        <div key={asset.id} className="rounded-2xl p-4 ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/60 to-slate-900/30 flex flex-col space-y-3 hover:ring-sky-600/50 transition">
+                        <div key={asset.id} className="rounded-2xl p-3 md:p-4 ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/60 to-slate-900/30 flex flex-col space-y-2 md:space-y-3 hover:ring-sky-600/50 transition">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h4 className="font-bold text-slate-100 text-lg">{asset.name}</h4>
-                                    <p className="text-sm text-slate-400">مقدار: {asset.quantity}</p>
+                                    <h4 className="font-bold text-slate-100 text-base md:text-lg">{asset.name}</h4>
+                                    <p className="text-xs md:text-sm text-slate-400">مقدار: {asset.quantity}</p>
                                 </div>
                                 <div className="flex items-center space-x-1 space-x-reverse text-slate-400">
                                     <button onClick={() => openEdit(asset)} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition" aria-label="ویرایش"><EditIcon/></button>
                                     <button onClick={() => onDelete(asset.id)} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition" aria-label="حذف"><DeleteIcon/></button>
                                 </div>
                             </div>
-                            <p className="text-2xl font-bold text-sky-400">{formatCurrency(asset.currentValue * asset.quantity)}</p>
-                            <p className="text-xs text-slate-500 pt-2 border-t border-slate-700/50">تاریخ خرید: <JalaliDate iso={asset.purchaseDate} /></p>
-                            <div className="text-xs text-slate-400">{asset.ownerId ? (owners.find(p => p.id === asset.ownerId)?.name || '—') : '— بدون مالک —'}</div>
+                            <p className="text-xl md:text-2xl font-bold text-sky-400">{formatCurrency(asset.currentValue * asset.quantity)}</p>
+                            <p className="text-[11px] md:text-xs text-slate-500 pt-2 border-t border-slate-700/50">تاریخ خرید: <JalaliDate iso={asset.purchaseDate} /></p>
+                            <div className="text-[11px] md:text-xs text-slate-400">{asset.ownerId ? (owners.find(p => p.id === asset.ownerId)?.name || '—') : '— بدون مالک —'}</div>
                             {asset.notes && <p className="text-sm text-slate-300">{asset.notes}</p>}
                         </div>
                     ))}

@@ -295,17 +295,17 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
     }, [itemsAll, view, filterFrom, filterTo, minAmount, maxAmount, symbol]);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
             <div className="flex items-center justify-between">
                 <button onClick={onBack} className="text-slate-300 hover:text-white"><BackIcon/></button>
-                <div className="text-2xl font-extrabold">طلا</div>
+                <div className="text-xl md:text-2xl font-extrabold">طلا</div>
                 <div />
             </div>
 
             {/* Overview summary and entry points */}
             {view === 'overview' ? (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                         <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
                             <div className="text-slate-300 text-sm">مجموع پرداختی</div>
                             <div className="text-2xl font-extrabold text-emerald-400">{(totals.totalPaid || 0).toLocaleString('fa-IR')} تومان</div>
@@ -362,21 +362,21 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             ) : (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <div className="text-lg font-bold text-slate-100">{view === 'physical' ? 'طلای فیزیکی' : view === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
+                        <div className="text-base md:text-lg font-bold text-slate-100">{view === 'physical' ? 'طلای فیزیکی' : view === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
                         <div className="flex items-center gap-2">
-                            <button onClick={() => setView('overview')} className="px-3 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">بازگشت</button>
+                            <button onClick={() => setView('overview')} className="px-3 py-1.5 md:py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-xs md:text-sm">بازگشت</button>
                             {view === 'token' || view === 'digikala' ? (
                                 <div className="flex items-center gap-2">
-                                    <button onClick={() => openNew(view, 'buy')} className="px-3 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm">خرید</button>
-                                    <button onClick={() => openNew(view, 'sell')} className="px-3 py-2 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-sm">فروش</button>
+                                    <button onClick={() => openNew(view, 'buy')} className="px-3 py-1.5 md:py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs md:text-sm">خرید</button>
+                                    <button onClick={() => openNew(view, 'sell')} className="px-3 py-1.5 md:py-2 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-xs md:text-sm">فروش</button>
                                 </div>
                             ) : (
-                                <button onClick={() => openNew(view)} className="px-3 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm flex items-center gap-2"><PlusIcon/> افزودن</button>
+                                <button onClick={() => openNew(view)} className="px-3 py-1.5 md:py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-xs md:text-sm flex items-center gap-2"><PlusIcon/> افزودن</button>
                             )}
                         </div>
                     </div>
                     {/* Filters */}
-                    <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                    <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                             <JalaliDatePicker id="from" label="از تاریخ" value={filterFrom || new Date(0).toISOString()} onChange={(iso) => setFilterFrom(iso)} />
                             <JalaliDatePicker id="to" label="تا تاریخ" value={filterTo || new Date().toISOString()} onChange={(iso) => setFilterTo(iso)} />
@@ -403,18 +403,18 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                     </div>
                     {/* Token assets summary (replaces payment trend chart for token view) or charts for others */}
                     {view === 'token' ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
                                 <div className="text-slate-300 text-sm">XAUT</div>
                                 <div className="text-2xl font-extrabold text-emerald-400">{Number(tokenSums.amtXaut).toFixed(6)}</div>
                                 <div className="text-xs text-slate-400 mt-1">گرم معادل: {tokenSums.gramsXaut.toFixed(3)}</div>
                             </div>
-                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
                                 <div className="text-slate-300 text-sm">PAXG</div>
                                 <div className="text-2xl font-extrabold text-emerald-400">{Number(tokenSums.amtPaxg).toFixed(6)}</div>
                                 <div className="text-xs text-slate-400 mt-1">گرم معادل: {tokenSums.gramsPaxg.toFixed(3)}</div>
                             </div>
-                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
                                 <div className="text-slate-300 text-sm">جمع دارایی</div>
                                 <div className="text-2xl font-extrabold text-sky-400">{Number(tokenSums.totalAmt).toFixed(6)} توکن</div>
                                 <div className="text-xs text-slate-400 mt-1">جمع گرم معادل: {tokenSums.gramsTotal.toFixed(3)}</div>
@@ -425,31 +425,33 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
                                 <div className="text-slate-300 text-sm mb-2">روند پرداختی</div>
                                 <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: (it as any).totalPaidToman || 0 }))} />
                             </div>
-                            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
                                 <div className="text-slate-300 text-sm mb-2">روند مقدار</div>
                                 <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: view === 'physical' ? ((it as any).grams || 0) : ((it as any).amountMg || 0) }))} stroke="#22c55e" fill="rgba(34,197,94,0.15)" />
                             </div>
                         </div>
                     )}
                     {/* filtered list */}
-                    <div className={view === 'token' ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"}>
+                    <div className={view === 'token' ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4"}>
                         {filteredItems.map(it => (
-                    <div key={it.id} className={it.subtype === 'token' ? "flex items-center justify-between rounded-lg p-3 ring-1 ring-slate-700 bg-slate-800/30 hover:bg-slate-800/50 transition" : "bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3 hover:ring-sky-600 transition"}>
+                    <div key={it.id} className={it.subtype === 'token' ? "bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700 space-y-2 hover:ring-sky-600 transition" : "bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3 hover:ring-sky-600 transition"}>
+                        {it.subtype !== 'token' && (
                         <div className="flex items-start justify-between">
                             <div>
-                                <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? ((it as any).title || 'طلای فیزیکی') : it.subtype === 'token' ? ((it as any).tokenSymbol?.toUpperCase() || '—') : 'طلای دیجی‌کالا'}</div>
+                                <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? ((it as any).title || 'طلای فیزیکی') : 'طلای دیجی‌کالا'}</div>
                                 <div className="text-xs text-slate-400">تاریخ خرید: {j(it.purchaseDate)}</div>
                             </div>
                             <div className="flex items-center gap-2 text-slate-400">
-                                        <button className="hover:text-sky-400" title="ویرایش" onClick={(e) => { e.stopPropagation(); openEdit(it); }}><EditIcon/></button>
-                                        <button className="hover:text-rose-400" title="حذف" onClick={(e) => { e.stopPropagation(); setDeleteTarget(it); }}><DeleteIcon/></button>
+                                <button className="hover:text-sky-400" title="ویرایش" onClick={(e) => { e.stopPropagation(); openEdit(it); }}><EditIcon/></button>
+                                <button className="hover:text-rose-400" title="حذف" onClick={(e) => { e.stopPropagation(); setDeleteTarget(it); }}><DeleteIcon/></button>
                             </div>
                         </div>
+                        )}
                                 {it.subtype === 'physical' && (
                             <div className="text-sm text-slate-300 space-y-1">
                                 <div>مقدار: {(it as any).grams || 0} گرم{(it as any).soot ? ` و ${(it as any).soot} سوت` : ''} (جمع: {((Number((it as any).grams) || 0) + (Number((it as any).soot) || 0)/1000).toFixed(3)} گرم)</div>
@@ -485,34 +487,32 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             </div>
                         )}
                         {it.subtype === 'token' && (
-                            <>
-                                <div className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-3">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs ${((it as any).txType||'buy')==='buy' ? 'bg-emerald-700/40 text-emerald-200 ring-1 ring-emerald-600/40' : 'bg-rose-700/40 text-rose-200 ring-1 ring-rose-600/40'}`}>{((it as any).txType||'buy')==='buy' ? 'خرید' : 'فروش'}</span>
-                                        <span className="text-slate-300">{(it as any).tokenSymbol?.toUpperCase() || '—'}</span>
-                                        <span className="text-slate-400">{j(it.purchaseDate)}</span>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs md:text-sm">
+                                    <div className="flex items-center gap-2 md:gap-3">
+                                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] md:text-xs ${((it as any).txType||'buy')==='buy' ? 'bg-emerald-700/40 text-emerald-200 ring-1 ring-emerald-600/40' : 'bg-rose-700/40 text-rose-200 ring-1 ring-rose-600/40'}`}>{((it as any).txType||'buy')==='buy' ? 'خرید' : 'فروش'}</span>
+                                        <span className="text-slate-300 font-bold">{(it as any).tokenSymbol?.toUpperCase() || '—'}</span>
+                                        <span className="text-slate-400 hidden xs:inline">{j(it.purchaseDate)}</span>
                                     </div>
-                                    <div className="text-xs text-slate-400">{(it as any).custodyLocation === 'nobitex' ? 'نوبیتکس' : (it as any).custodyLocation === 'bitpin' ? 'بیت پین' : '—'}</div>
+                                    <div className="text-[10px] md:text-xs text-slate-400">{(it as any).custodyLocation === 'nobitex' ? 'نوبیتکس' : (it as any).custodyLocation === 'bitpin' ? 'بیت پین' : '—'}</div>
                                 </div>
-                                <div className="text-slate-200 font-bold">{(it as any).tokenAmount}</div>
-                                <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
+                                <div className="flex items-end justify-between">
+                                    <div className="text-slate-200 font-extrabold text-base md:text-lg">{(it as any).tokenAmount}</div>
+                                    <div className="flex items-center gap-2 text-slate-400">
+                                        <button className="hover:text-sky-400" title="ویرایش" onClick={(e) => { e.stopPropagation(); openEdit(it); }}><EditIcon/></button>
+                                        <button className="hover:text-rose-400" title="حذف" onClick={(e) => { e.stopPropagation(); setDeleteTarget(it); }}><DeleteIcon/></button>
+                                        <button className="px-2 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs" onClick={(e)=>{ e.stopPropagation(); setDetailTarget({ ...it }); }}>جزئیات</button>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-[11px] md:text-xs text-slate-400">
                                     <div>گرم معادل: {((it as any).gramsDerived != null ? Number((it as any).gramsDerived) : ((Number((it as any).tokenAmount)||0) * TOKEN_TO_GRAMS_18K)).toFixed(4)}</div>
-                                    <div>مبلغ: {((it as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان</div>
-                                    {(it as any).priceTokenToman != null && <div>قیمت هر توکن: {Number((it as any).priceTokenToman).toLocaleString('fa-IR')} تومان</div>}
-                                    <div>
-                                        {(() => { const fee = Number((it as any).feeToman || 0); const total = Number((it as any).totalPaidToman || 0); const pct = total ? Math.round((fee / total) * 10000) / 100 : 0; return (
-                                            <span>کارمزد: {fee.toLocaleString('fa-IR')} تومان {total ? <span className="text-slate-500">({pct}%)</span> : null}</span>
-                                        ); })()}
-                                    </div>
+                                    <div className="text-right">{((it as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان</div>
+                                    {(it as any).priceTokenToman != null && <div>قیمت هر توکن: {Number((it as any).priceTokenToman).toLocaleString('fa-IR')}</div>}
+                                    <div className="col-span-2">{(() => { const fee = Number((it as any).feeToman || 0); const total = Number((it as any).totalPaidToman || 0); const pct = total ? Math.round((fee / total) * 10000) / 100 : 0; return (
+                                        <span>کارمزد: {fee.toLocaleString('fa-IR')} تومان {total ? <span className="text-slate-500">({pct}%)</span> : null}</span>
+                                    ); })()}</div>
                                 </div>
-                                <div className="flex items-center gap-2 text-slate-400">
-                                    <button className="hover:text-sky-400" title="ویرایش" onClick={(e) => { e.stopPropagation(); openEdit(it); }}><EditIcon/></button>
-                                    <button className="hover:text-rose-400" title="حذف" onClick={(e) => { e.stopPropagation(); setDeleteTarget(it); }}><DeleteIcon/></button>
-                                    <button className="px-2 py-1 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs" onClick={(e)=>{ e.stopPropagation(); setDetailTarget({ ...it }); }}>
-                                        جزئیات
-                                    </button>
-                                </div>
-                            </>
+                            </div>
                         )}
                         {it.subtype === 'digikala' && (
                             <div className="text-sm text-slate-300 space-y-1">
@@ -522,7 +522,9 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <LinkFromRef refId={(it as any).invoiceRef} label="رسید" onOpen={openImage} />
                             </div>
                         )}
-                        <div className="text-sky-400 font-extrabold">مجموع پرداختی: {((it as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان</div>
+                        {it.subtype !== 'token' && (
+                            <div className="text-sky-400 font-extrabold">مجموع پرداختی: {((it as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان</div>
+                        )}
                     </div>
                         ))}
                     </div>

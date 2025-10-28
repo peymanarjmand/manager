@@ -26,34 +26,34 @@ export default function OwnerAssetsDashboard({ ownerId, onBack }: { ownerId: str
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
             <div className="flex items-center justify-between">
                 <button onClick={onBack} className="text-slate-300 hover:text-white" title="بازگشت"><BackIcon/></button>
-                <div className="text-2xl font-extrabold">داشبورد دارایی — {ownerName}</div>
+                <div className="text-xl md:text-2xl font-extrabold truncate">داشبورد دارایی — {ownerName}</div>
                 <div />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button onClick={() => setSection('cash')} className="group bg-slate-800/50 rounded-xl p-6 text-right ring-1 ring-slate-700 hover:ring-sky-400 transition">
-                    <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><WalletIcon/></div>
-                    <div className="text-xl font-bold text-slate-100">وجه نقد</div>
-                    <div className="text-slate-400 text-sm mt-1">ثبت و مدیریت حساب‌های بانکی</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                <button onClick={() => setSection('cash')} className="group bg-slate-800/50 rounded-xl p-4 md:p-6 text-right ring-1 ring-slate-700 hover:ring-sky-400 transition">
+                    <div className="bg-slate-700/50 p-2.5 md:p-3 rounded-full inline-block mb-2 md:mb-3"><WalletIcon/></div>
+                    <div className="text-base md:text-xl font-bold text-slate-100">وجه نقد</div>
+                    <div className="text-slate-400 text-xs md:text-sm mt-1">ثبت و مدیریت حساب‌های بانکی</div>
                 </button>
-                <button onClick={() => setSection('gold')} className="group bg-slate-800/50 rounded-xl p-6 text-right ring-1 ring-slate-700 hover:ring-sky-400 transition">
-                    <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><AssetsIcon/></div>
-                    <div className="text-xl font-bold text-slate-100">طلا</div>
-                    <div className="text-slate-400 text-sm mt-1">فیزیکی، توکن طلا، طلای دیجی‌کالا</div>
-                    <div className="text-slate-300 text-xs mt-2">گرم کل: <span className="font-bold">{totalGoldGrams.toFixed(4)}</span></div>
+                <button onClick={() => setSection('gold')} className="group bg-slate-800/50 rounded-xl p-4 md:p-6 text-right ring-1 ring-slate-700 hover:ring-sky-400 transition">
+                    <div className="bg-slate-700/50 p-2.5 md:p-3 rounded-full inline-block mb-2 md:mb-3"><AssetsIcon/></div>
+                    <div className="text-base md:text-xl font-bold text-slate-100">طلا</div>
+                    <div className="text-slate-400 text-xs md:text-sm mt-1">فیزیکی، توکن طلا، طلای دیجی‌کالا</div>
+                    <div className="text-slate-300 text-[11px] md:text-xs mt-2">گرم کل: <span className="font-bold">{totalGoldGrams.toFixed(4)}</span></div>
                 </button>
-                <button onClick={() => setSection('dollar')} className="group bg-slate-800/50 rounded-xl p-6 text-right ring-1 ring-slate-700 hover:ring-sky-400 transition">
-                    <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><ExchangeIcon/></div>
-                    <div className="text-xl font-bold text-slate-100">دلار</div>
-                    <div className="text-slate-400 text-sm mt-1">تتر و دلار فیزیکی</div>
+                <button onClick={() => setSection('dollar')} className="group bg-slate-800/50 rounded-xl p-4 md:p-6 text-right ring-1 ring-slate-700 hover:ring-sky-400 transition">
+                    <div className="bg-slate-700/50 p-2.5 md:p-3 rounded-full inline-block mb-2 md:mb-3"><ExchangeIcon/></div>
+                    <div className="text-base md:text-xl font-bold text-slate-100">دلار</div>
+                    <div className="text-slate-400 text-xs md:text-sm mt-1">تتر و دلار فیزیکی</div>
                 </button>
-                <button onClick={() => setSection('silver')} className="group bg-slate-800/50 rounded-xl p-6 text-right ring-1 ring-slate-700 hover:ring-sky-400 transition">
-                    <div className="bg-slate-700/50 p-3 rounded-full inline-block mb-3"><BankIcon/></div>
-                    <div className="text-xl font-bold text-slate-100">نقره</div>
-                    <div className="text-slate-400 text-sm mt-1">ثبت و مدیریت نقره</div>
+                <button onClick={() => setSection('silver')} className="group bg-slate-800/50 rounded-xl p-4 md:p-6 text-right ring-1 ring-slate-700 hover:ring-sky-400 transition">
+                    <div className="bg-slate-700/50 p-2.5 md:p-3 rounded-full inline-block mb-2 md:mb-3"><BankIcon/></div>
+                    <div className="text-base md:text-xl font-bold text-slate-100">نقره</div>
+                    <div className="text-slate-400 text-xs md:text-sm mt-1">ثبت و مدیریت نقره</div>
                 </button>
             </div>
 
