@@ -40,7 +40,6 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
         return { totalValue, count: assets?.length || 0 };
     }, [assets]);
 
-    const openNew = () => { setEditing({ id: undefined, name: '', currentValue: 0, quantity: 1, purchaseDate: new Date().toISOString(), notes: '' } as any); setIsModalOpen(true); };
     const openEdit = (a: Asset) => { setEditing(a); setIsModalOpen(true); };
 
     const onSave = () => {
@@ -74,37 +73,37 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
 
     return (
         <div className="container mx-auto px-4 py-6">
-            <div className="mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <button onClick={onNavigateBack} aria-label="بازگشت" className="text-slate-300 hover:text-white" title="بازگشت">
-                        <BackIcon />
-                    </button>
-                    <h2 className="text-2xl font-extrabold text-white flex items-center gap-2">
-                        <AssetsIcon /> دارایی‌ها
-                    </h2>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setIsOwnerModalOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold">
-                        <PlusIcon /> افزودن مالک
-                    </button>
-                    <button onClick={openNew} className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold">
-                        <PlusIcon /> افزودن دارایی
-                    </button>
+            {/* Header */}
+            <div className="mb-8 relative overflow-hidden rounded-2xl ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/70 via-slate-800/40 to-slate-900/20">
+                <div className="p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <button onClick={onNavigateBack} aria-label="بازگشت" className="text-slate-300 hover:text-white" title="بازگشت">
+                            <BackIcon />
+                        </button>
+                        <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                            <AssetsIcon /> دارایی‌ها
+                        </h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setIsOwnerModalOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold shadow">
+                            <PlusIcon /> افزودن مالک
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* Owners section */}
-            <div className="mb-8">
+            <div className="mb-10">
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-bold text-slate-200">مالکین</h3>
+                    <h3 className="text-xl font-bold text-slate-100">مالکین</h3>
                 </div>
                 {(owners?.length || 0) === 0 ? (
-                    <p className="text-slate-500 text-center py-10 bg-slate-800/20 rounded-lg">هنوز مالکی ثبت نشده است.</p>
+                    <p className="text-slate-400 text-center py-12 bg-slate-800/30 rounded-xl ring-1 ring-slate-700">هنوز مالکی ثبت نشده است.</p>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {owners.map(p => (
-                            <button key={p.id} onClick={() => setViewOwnerId(p.id)} className={`text-right rounded-xl ring-1 ring-slate-700 bg-slate-800/50 hover:bg-slate-800 p-3 transition flex items-center gap-3`}>
-                                <span className="h-9 w-9 rounded-full overflow-hidden bg-slate-700 flex items-center justify-center">
+                            <button key={p.id} onClick={() => setViewOwnerId(p.id)} className={`text-right rounded-2xl ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/60 to-slate-900/30 hover:ring-sky-500/60 hover:from-slate-800/80 p-3 transition flex items-center gap-3 shadow-sm`}>
+                                <span className="h-10 w-10 rounded-full overflow-hidden bg-slate-700/80 flex items-center justify-center ring-1 ring-slate-600">
                                     <UserCircleIcon />
                                 </span>
                                 <div className="truncate">
@@ -116,23 +115,23 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="rounded-2xl p-4 ring-1 ring-emerald-700/40 bg-gradient-to-br from-emerald-900/20 to-slate-900/30">
                     <div className="text-slate-300 text-sm">مجموع ارزش کنونی</div>
-                    <div className="text-2xl font-extrabold text-emerald-400">{formatCurrency(totals.totalValue)}</div>
+                    <div className="text-3xl font-extrabold text-emerald-400 mt-1">{formatCurrency(totals.totalValue)}</div>
                 </div>
-                <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                <div className="rounded-2xl p-4 ring-1 ring-sky-700/40 bg-gradient-to-br from-sky-900/20 to-slate-900/30">
                     <div className="text-slate-300 text-sm">تعداد دارایی‌ها</div>
-                    <div className="text-2xl font-extrabold text-sky-400">{totals.count}</div>
+                    <div className="text-3xl font-extrabold text-sky-400 mt-1">{totals.count}</div>
                 </div>
             </div>
 
             {((assets?.filter(a => !selectedOwnerId || a.ownerId === selectedOwnerId) || []).length === 0) ? (
-                <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">هنوز دارایی ثبت نشده است.</p>
+                <p className="text-slate-400 text-center py-16 bg-slate-800/30 rounded-2xl ring-1 ring-slate-700">هنوز دارایی ثبت نشده است.</p>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {assets.filter(a => !selectedOwnerId || a.ownerId === selectedOwnerId).map(asset => (
-                        <div key={asset.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 flex flex-col space-y-3">
+                        <div key={asset.id} className="rounded-2xl p-4 ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/60 to-slate-900/30 flex flex-col space-y-3 hover:ring-sky-600/50 transition">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h4 className="font-bold text-slate-100 text-lg">{asset.name}</h4>
@@ -152,52 +151,7 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
                 </div>
             )}
 
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setIsModalOpen(false)}>
-                    <div className="absolute inset-0 bg-black/70" />
-                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
-                            <h3 className="text-slate-100 font-bold text-lg">{editing?.id ? 'ویرایش دارایی' : 'افزودن دارایی'}</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">×</button>
-                        </div>
-                        <div className="p-5 space-y-3">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1">مالک</label>
-                                <select value={editing?.ownerId || selectedOwnerId || ''} onChange={e => { const v = (e.target as HTMLSelectElement).value || undefined; setEditing({ ...(editing || {}), ownerId: v }); setSelectedOwnerId(v || null); }} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition">
-                                    <option value="">— بدون مالک —</option>
-                                    {owners.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1">نام</label>
-                                <input value={String(editing?.name || '')} onChange={e => setEditing({ ...(editing || {}), name: (e.target as HTMLInputElement).value })} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">ارزش کنونی</label>
-                                    <input type="number" value={String(editing?.currentValue ?? 0)} onChange={e => setEditing({ ...(editing || {}), currentValue: Number((e.target as HTMLInputElement).value) })} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">تعداد/مقدار</label>
-                                    <input type="number" value={String(editing?.quantity ?? 1)} onChange={e => setEditing({ ...(editing || {}), quantity: Number((e.target as HTMLInputElement).value) })} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition" />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1">تاریخ خرید (میلادی/ISO)</label>
-                                <input type="date" value={moment(editing?.purchaseDate || new Date().toISOString()).format('YYYY-MM-DD')} onChange={e => setEditing({ ...(editing || {}), purchaseDate: moment((e.target as HTMLInputElement).value, 'YYYY-MM-DD').toISOString() })} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-300 mb-1">توضیحات</label>
-                                <textarea value={String(editing?.notes || '')} onChange={e => setEditing({ ...(editing || {}), notes: (e.target as HTMLTextAreaElement).value })} rows={3} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition" />
-                            </div>
-                        </div>
-                        <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
-                            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">لغو</button>
-                            <button onClick={onSave} className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold">ذخیره</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* asset edit/create modal removed per request (Add Asset removed) */}
 
             {isOwnerModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setIsOwnerModalOpen(false)}>

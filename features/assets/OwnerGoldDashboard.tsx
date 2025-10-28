@@ -11,7 +11,7 @@ const LinkFromRef = ({ refId, label, onOpen }: { refId?: string; label: string; 
     const [has, setHas] = useState<boolean>(false);
     useEffect(() => { setHas(!!refId && isImageRef(String(refId))); }, [refId]);
     if (!has || !refId) return null;
-    return <button type="button" className="inline-flex items-center gap-1 text-sky-400 text-xs hover:text-sky-300" onClick={() => onOpen(refId)} title="نمایش تصویر"><EyeIcon/> {label}</button>;
+    return <button type="button" className="inline-flex items-center gap-1 text-sky-400 text-xs hover:text-sky-300" onClick={(e) => { e.stopPropagation(); onOpen(refId); }} title="نمایش تصویر"><EyeIcon/> {label}</button>;
 };
 
 export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBack: () => void; }): React.ReactNode {
@@ -330,16 +330,15 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                     {/* filtered list */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredItems.map(it => (
-                    <div key={it.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3 hover:ring-sky-600 transition cursor-pointer" onClick={() => openDetails(it)}>
+                    <div key={it.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3 hover:ring-sky-600 transition">
                         <div className="flex items-start justify-between">
                             <div>
-                                        <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? 'طلای فیزیکی' : it.subtype === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
-                                        {it.subtype === 'physical' && (it as any).title && <div className="text-xs text-slate-300 mt-0.5">عنوان: {(it as any).title}</div>}
+                                <div className="text-slate-100 font-bold">{it.subtype === 'physical' ? ((it as any).title || 'طلای فیزیکی') : it.subtype === 'token' ? 'توکن طلا' : 'طلای دیجی‌کالا'}</div>
                                 <div className="text-xs text-slate-400">تاریخ خرید: {j(it.purchaseDate)}</div>
                             </div>
                             <div className="flex items-center gap-2 text-slate-400">
-                                        <button className="hover:text-sky-400" title="ویرایش" onClick={() => openEdit(it)}><EditIcon/></button>
-                                        <button className="hover:text-rose-400" title="حذف" onClick={() => setDeleteTarget(it)}><DeleteIcon/></button>
+                                        <button className="hover:text-sky-400" title="ویرایش" onClick={(e) => { e.stopPropagation(); openEdit(it); }}><EditIcon/></button>
+                                        <button className="hover:text-rose-400" title="حذف" onClick={(e) => { e.stopPropagation(); setDeleteTarget(it); }}><DeleteIcon/></button>
                             </div>
                         </div>
                                 {it.subtype === 'physical' && (
@@ -358,13 +357,14 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 )}
                                 <div className="pt-2 flex items-center gap-2">
                                     {!((it as any).soldAt) && (
-                                        <button className="px-3 py-1.5 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-xs" onClick={() => openSale(it)}>
+                                        <button className="px-3 py-1.5 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-xs" onClick={(e) => { e.stopPropagation(); openSale(it); }}>
                                             فروش این فاکتور
                                         </button>
                                     )}
-                                    <button className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs" onClick={() => { setTransferTarget(it); setTransferTo(''); setTransferReason('gift'); (async()=>{ const list = await (getTransfersForGold?.(it.id)); setTransferHistory(list||[]); })(); }}>
+                                    <button className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs" onClick={(e) => { e.stopPropagation(); setTransferTarget(it); setTransferTo(''); setTransferReason('gift'); (async()=>{ const list = await (getTransfersForGold?.(it.id)); setTransferHistory(list||[]); })(); }}>
                                         انتقال به کاربر
                                     </button>
+                                    <button className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs" onClick={(e) => { e.stopPropagation(); openDetails(it); }}>جزئیات</button>
                                 </div>
                                 {(it as any).soldAt && (
                                     <div className="mt-2 p-2 rounded-lg bg-slate-800/60 ring-1 ring-slate-700 text-xs text-slate-300 space-y-1">
