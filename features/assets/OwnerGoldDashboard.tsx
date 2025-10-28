@@ -110,14 +110,16 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
         if (subtype !== 'token') return;
         const amount = toNumber(form.tokenAmount);
         const price = toNumber(form.priceTokenToman);
-        const total = toNumber(form.totalPaidToman);
+        const total = toNumber(form.totalPaidToman); // for فروش: مبلغ دریافتی
+        const mode = (form.txType || txType || 'buy');
         if (isFinite(amount) && isFinite(price) && isFinite(total)) {
-            const net = amount * price; // net asset value
-            const fee = Math.max(0, Math.round(total - net));
+            const net = amount * price; // ارزش خالص = مقدار × قیمت هر توکن
+            const feeRaw = mode === 'sell' ? (net - total) : (total - net);
+            const fee = Math.max(0, Math.round(feeRaw));
             const currentFee = toNumber(form.feeToman);
             if (fee !== currentFee) setForm((f: any) => ({ ...f, feeToman: fee }));
         }
-    }, [subtype, form.tokenAmount, form.priceTokenToman, form.totalPaidToman]);
+    }, [subtype, form.tokenAmount, form.priceTokenToman, form.totalPaidToman, form.txType, txType]);
 
     const openNew = (s: GoldSubtype, tx?: 'buy' | 'sell') => {
         setSubtype(s);
@@ -239,13 +241,15 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         draft[k] = isNaN(n) ? undefined : n;
                     }
                 }
-                // Always derive fee: fee = totalPaid - (tokenAmount × priceTokenToman)
+                // Always derive fee (buy vs sell)
                 if (draft.tokenAmount != null && draft.priceTokenToman != null) {
                     const total = typeof draft.totalPaidToman === 'string' ? Number(String(draft.totalPaidToman).replace(/,/g,'')) : Number(draft.totalPaidToman || 0);
                     const amount = Number(draft.tokenAmount);
                     const price = Number(draft.priceTokenToman);
                     const net = amount * price;
-                    draft.feeToman = Math.max(0, Math.round(total - net));
+                    const mode = (draft.txType || txType || 'buy');
+                    const feeRaw = mode === 'sell' ? (net - total) : (total - net);
+                    draft.feeToman = Math.max(0, Math.round(feeRaw));
                 }
             }
             // Coerce numeric-like strings to numbers while preserving fractional typing
@@ -596,7 +600,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                     </div>
                                     
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-300 mb-1">مجموع پرداختی (تومان)</label>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">{(form.txType||txType)==='sell' ? 'مبلغ دریافتی (تومان)' : 'مجموع پرداختی (تومان)'}</label>
                                         <input type="number" step="any" inputMode="decimal" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
