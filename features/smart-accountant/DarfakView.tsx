@@ -133,7 +133,7 @@ const JalaliDatePicker = ({ value, onChange, id, label }) => {
     };
 
     const currentJYear = moment().jYear();
-    const years = Array.from({ length: 20 }, (_, i) => currentJYear - 10 + i);
+    const years = useMemo(() => Array.from({ length: (currentJYear - 1390 + 1) }, (_, i) => 1390 + i), [currentJYear]);
     const months = useMemo(() => Array.from({ length: 12 }, (_, i) => moment().jMonth(i).locale('fa').format('jMMMM')), []);
     const daysInSelectedMonth = moment.jDaysInMonth(jYear, jMonth);
     const days = Array.from({ length: daysInSelectedMonth }, (_, i) => i + 1);
