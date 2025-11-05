@@ -814,10 +814,33 @@ export const useAccountantStore = create<AccountantState>()(
                 }
                 return { installments: newInstallments };
             }),
-            saveCheck: (check) => set(state => {
-                const items = state.checks.filter(c => c.id !== check.id);
-                return { checks: [...items, check] };
-            }),
+            saveCheck: (check) => {
+                set(state => {
+                    const items = state.checks.filter(c => c.id !== check.id);
+                    return { checks: [...items, check] };
+                });
+                (async () => {
+                    const c = check;
+                    const { error } = await supabase
+                        .from('checks')
+                        .upsert({
+                            id: c.id,
+                            type: c.type,
+                            amount: Number(c.amount) || 0,
+                            due_date: c.dueDate,
+                            status: c.status || 'pending',
+                            subject: c.subject,
+                            sayyad_id: c.sayyadId,
+                            payee_name: c.payeeName || null,
+                            payee_national_id: c.payeeNationalId || null,
+                            drawer_name: c.drawerName || null,
+                            drawer_national_id: c.drawerNationalId || null,
+                            description: c.description || null,
+                            cashed_date: c.cashedDate || null,
+                        });
+                    if (error) console.error('Check upsert error', error);
+                })();
+            },
             deleteCheck: (id) => {
                 set(state => ({ checks: state.checks.filter(c => c.id !== id) }));
                 (async () => {
