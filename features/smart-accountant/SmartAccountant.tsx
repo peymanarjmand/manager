@@ -1052,17 +1052,23 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
 // VIEW COMPONENTS
 
 const SummaryView = ({ data }: { data: AccountantData }) => {
-    const thirtyDaysAgo = moment().subtract(30, 'days');
+    // Selected month cursor (Jalali). We store ISO of the start of month for stability.
+    const [selectedMonthISO, setSelectedMonthISO] = useState<string>(() => moment().startOf('jMonth').toISOString());
+
+    const startOfSelected = useMemo(() => moment(selectedMonthISO).startOf('jMonth'), [selectedMonthISO]);
+    const endOfSelected = useMemo(() => moment(selectedMonthISO).endOf('jMonth'), [selectedMonthISO]);
+    const selectedMonthLabel = useMemo(() => startOfSelected.clone().locale('fa').format('jMMMM jYYYY'), [startOfSelected]);
+    const canGoNextMonth = useMemo(() => startOfSelected.isBefore(moment().startOf('jMonth')), [startOfSelected]);
 
     const totalAssets = useMemo(() => data.assets.reduce((sum, asset) => sum + (asset.currentValue * (asset.quantity || 1)), 0), [data.assets]);
     
-    const recentIncome = useMemo(() => data.transactions
-        .filter(t => t.type === 'income' && moment(t.date).isAfter(thirtyDaysAgo))
-        .reduce((sum, t) => sum + t.amount, 0), [data.transactions]);
+    const incomeOfMonth = useMemo(() => data.transactions
+        .filter(t => t.type === 'income' && moment(t.date).isBetween(startOfSelected, endOfSelected, undefined, '[]'))
+        .reduce((sum, t) => sum + t.amount, 0), [data.transactions, selectedMonthISO]);
 
-    const recentExpenses = useMemo(() => data.transactions
-        .filter(t => t.type === 'expense' && moment(t.date).isAfter(thirtyDaysAgo))
-        .reduce((sum, t) => sum + t.amount, 0), [data.transactions]);
+    const expensesOfMonth = useMemo(() => data.transactions
+        .filter(t => t.type === 'expense' && moment(t.date).isBetween(startOfSelected, endOfSelected, undefined, '[]'))
+        .reduce((sum, t) => sum + t.amount, 0), [data.transactions, selectedMonthISO]);
     
     const { totalDebt, totalCredit } = useMemo(() => {
         let debt = 0;
@@ -1077,8 +1083,8 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
     }, [data.ledger]);
 
     const monthlyInstallments = useMemo(() => {
-        const startOfMonth = moment().startOf('jMonth');
-        const endOfMonth = moment().endOf('jMonth');
+        const startOfMonth = startOfSelected;
+        const endOfMonth = endOfSelected;
 
         const allPaymentsThisMonth = data.installments.flatMap(plan => plan.payments)
             .filter(payment => moment(payment.dueDate).isBetween(startOfMonth, endOfMonth, undefined, '[]'));
@@ -1100,16 +1106,16 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
             progress,
             hasInstallments: allPaymentsThisMonth.length > 0
         };
-    }, [data.installments]);
+    }, [data.installments, selectedMonthISO]);
     
     const monthlyIssuedChecks = useMemo(() => {
-        const startOfMonth = moment().startOf('jMonth');
-        const endOfMonth = moment().endOf('jMonth');
+        const startOfMonth = startOfSelected;
+        const endOfMonth = endOfSelected;
 
         return data.checks
             .filter(c => c.type === 'issued' && c.status === 'pending' && moment(c.dueDate).isBetween(startOfMonth, endOfMonth, undefined, '[]'))
             .reduce((sum, c) => sum + c.amount, 0);
-    }, [data.checks]);
+    }, [data.checks, selectedMonthISO]);
 
     const netWorth = totalAssets + totalDebt - totalCredit;
     
@@ -1120,18 +1126,59 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
         </div>
     );
 
+    // Last 12 months quick selector (including current)
+    const monthsHistory = useMemo(() => {
+        const base = moment().startOf('jMonth');
+        return Array.from({ length: 12 }).map((_, i) => base.clone().subtract(i, 'jMonth'));
+    }, []);
+
     return (
         <div className="space-y-6">
+            {/* Month navigation */}
+            <div className="flex items-center justify-between bg-slate-900/40 p-3 md:p-4 rounded-lg ring-1 ring-slate-800">
+                <div className="flex items-center gap-2">
+                    <button
+                        className="px-3 py-1.5 rounded-md bg-slate-700 text-slate-100 hover:bg-slate-600"
+                        onClick={() => setSelectedMonthISO(startOfSelected.clone().subtract(1, 'jMonth').toISOString())}
+                    >ماه قبل</button>
+                    <button
+                        className="px-3 py-1.5 rounded-md border border-slate-600 text-slate-200 hover:bg-slate-700"
+                        onClick={() => setSelectedMonthISO(moment().startOf('jMonth').toISOString())}
+                    >ماه جاری</button>
+                </div>
+                <div className="text-slate-200 font-bold">{selectedMonthLabel}</div>
+                <button
+                    className={`px-3 py-1.5 rounded-md ${canGoNextMonth ? 'bg-slate-700 text-slate-100 hover:bg-slate-600' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+                    onClick={() => canGoNextMonth && setSelectedMonthISO(startOfSelected.clone().add(1, 'jMonth').toISOString())}
+                    disabled={!canGoNextMonth}
+                >ماه بعد</button>
+            </div>
+
+            {/* Quick 12-month chips */}
+            <div className="flex flex-wrap gap-2">
+                {monthsHistory.map(m => {
+                    const isActive = m.isSame(startOfSelected, 'jMonth');
+                    const iso = m.toISOString();
+                    return (
+                        <button
+                            key={iso}
+                            onClick={() => setSelectedMonthISO(iso)}
+                            className={`px-3 py-1 rounded-full text-xs border ${isActive ? 'bg-sky-600 text-white border-sky-500' : 'bg-slate-700/50 text-slate-200 border-slate-600 hover:bg-slate-700'}`}
+                            title={m.locale('fa').format('jMMMM jYYYY')}
+                        >{m.locale('fa').format('jMMM jYY')}</button>
+                    );
+                })}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard title="ارزش خالص دارایی‌ها" value={netWorth} colorClass="text-sky-400" />
-                <StatCard title="درآمد ۳۰ روز اخیر" value={recentIncome} colorClass="text-emerald-400" />
-                <StatCard title="هزینه ۳۰ روز اخیر" value={recentExpenses} colorClass="text-rose-400" />
+                <StatCard title={`درآمد ${selectedMonthLabel}`} value={incomeOfMonth} colorClass="text-emerald-400" />
+                <StatCard title={`هزینه ${selectedMonthLabel}`} value={expensesOfMonth} colorClass="text-rose-400" />
             </div>
 
             {monthlyInstallments.hasInstallments && (
                 <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700">
                     <h3 className="text-slate-300 text-lg font-semibold mb-4">
-                        خلاصه اقساط این ماه ({moment().locale('fa').format('jMMMM')})
+                        خلاصه اقساط {selectedMonthLabel}
                     </h3>
                     <div className="w-full bg-slate-700 rounded-full h-4 mb-2 overflow-hidden">
                         <div 
@@ -1162,7 +1209,7 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  <StatCard title="مجموع طلب شما از دیگران" value={totalDebt} colorClass="text-emerald-400" />
                  <StatCard title="مجموع بدهی شما به دیگران" value={totalCredit} colorClass="text-rose-400" />
-                 <StatCard title={`چک‌های صادره این ماه (${moment().locale('fa').format('jMMMM')})`} value={monthlyIssuedChecks} colorClass="text-amber-400" />
+                 <StatCard title={`چک‌های صادره ${selectedMonthLabel}`} value={monthlyIssuedChecks} colorClass="text-amber-400" />
              </div>
         </div>
     )
