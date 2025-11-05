@@ -80,6 +80,15 @@ export interface Check {
 }
 
 
+// Monthly fund (opening cash per Jalali month)
+export interface MonthlyFund {
+    id: string; // e.g., "1404-08"
+    year: number; // Jalali year
+    month: number; // 1-12 (Jalali month index)
+    openingAmount: number; // Opening cash at start of month
+    note?: string;
+}
+
 // The whole state for the accountant module
 export interface AccountantData {
     transactions: Transaction[];
@@ -88,6 +97,7 @@ export interface AccountantData {
     ledger: Record<string, LedgerEntry[]>; // key is personId
     installments: InstallmentPlan[];
     checks: Check[];
+    funds?: MonthlyFund[]; // optional for backward compatibility
 }
 
 // Darfak (house build) expense

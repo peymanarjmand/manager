@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense, SocialInsurancePayment } from './types';
+import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense, SocialInsurancePayment, MonthlyFund } from './types';
 import { createSupabaseTableStateStorage } from '../../lib/supabaseStorage';
 import { encryptedStateStorage } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
@@ -14,6 +14,7 @@ const STORAGE_KEY = 'lifeManagerAccountant';
 interface AccountantState extends AccountantData {
     darfak: DarfakExpense[];
     socialInsurance: SocialInsurancePayment[];
+    funds: MonthlyFund[];
     // UI preferences
     tabsOrder: AccountantTab[]; // persisted order of tabs in Smart Accountant
     loadDarfak: () => Promise<void>;
@@ -29,6 +30,8 @@ interface AccountantState extends AccountantData {
     setInstallmentsSortMode: (mode: 'nearest' | 'highest_month' | 'earliest_loan' | 'custom') => void;
     setInstallmentsCustomOrder: (order: string[]) => void;
     setTabsOrder: (order: AccountantTab[]) => void;
+    saveMonthlyFund: (fund: MonthlyFund) => void;
+    deleteMonthlyFund: (id: string) => void;
     saveDarfak: (exp: DarfakExpense) => void;
     deleteDarfak: (id: string) => void;
     saveTransaction: (transaction: Transaction) => void;
@@ -65,12 +68,40 @@ export const useAccountantStore = create<AccountantState>()(
             checks: [],
             darfak: [],
             socialInsurance: [],
+            funds: [],
             tabsOrder: ['summary','transactions','checks','installments','people','social_insurance','darfak'],
             installmentsSortMode: 'nearest',
             installmentsCustomOrder: [],
             setInstallmentsSortMode: (mode) => set({ installmentsSortMode: mode }),
             setInstallmentsCustomOrder: (order) => set({ installmentsCustomOrder: order }),
             setTabsOrder: (order) => set({ tabsOrder: order }),
+            saveMonthlyFund: (fund) => {
+                set((state) => {
+                    const rest = (state.funds || []).filter(f => !(f.year === fund.year && f.month === fund.month));
+                    const next = [...rest, fund].sort((a,b) => (a.year === b.year ? a.month - b.month : a.year - b.year));
+                    return { funds: next } as any;
+                });
+                (async () => {
+                    try {
+                        // Optional: persist to dedicated table if exists
+                        await supabase.from('monthly_funds').upsert({
+                            id: fund.id,
+                            year: fund.year,
+                            month: fund.month,
+                            opening_amount: Number(fund.openingAmount) || 0,
+                            note: fund.note || null,
+                        });
+                    } catch (e) {
+                        // ignore if table doesn't exist
+                    }
+                })();
+            },
+            deleteMonthlyFund: (id) => {
+                set((state) => ({ funds: (state.funds || []).filter(f => f.id !== id) }));
+                (async () => {
+                    try { await supabase.from('monthly_funds').delete().eq('id', id); } catch {}
+                })();
+            },
             loadDarfak: async () => {
                 const { data, error } = await supabase
                     .from('darfak_expenses')

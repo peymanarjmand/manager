@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, ChangeEvent } from 'react';
 import moment from 'jalali-moment';
-import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense } from './types';
+import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, Check, CheckStatus, DarfakExpense, MonthlyFund } from './types';
 import { TRANSACTION_CATEGORIES } from './constants';
 import { SummaryIcon, TransactionsIcon, AssetsIcon, PeopleIcon, InstallmentsIcon, ChecksIcon, BackIcon, PlusIcon, EditIcon, DeleteIcon, CloseIcon, DefaultImageIcon, UserCircleIcon, CheckCircleIcon, UncheckedCircleIcon, ArrowRightIcon, SearchIcon, WalletIcon, EyeIcon } from '../../components/Icons';
 import { SI_RATES } from './constants';
@@ -1137,6 +1137,51 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
         return Array.from({ length: 12 }).map((_, i) => base.clone().subtract(i, 'jMonth'));
     }, []);
 
+    // Monthly fund state (opening amount setup)
+    const jYear = startOfSelected.jYear();
+    const jMonth = startOfSelected.jMonth() + 1; // 1-12
+    const currentFund: MonthlyFund | undefined = useMemo(() => (data.funds || []).find((f: any) => f.year === jYear && f.month === jMonth), [data.funds, jYear, jMonth]);
+    const [isEditingFund, setIsEditingFund] = useState<boolean>(false);
+    const [fundInput, setFundInput] = useState<string>(() => String(currentFund?.openingAmount ?? ''));
+    useEffect(() => { setFundInput(String(currentFund?.openingAmount ?? '')); }, [currentFund?.openingAmount, jYear, jMonth]);
+
+    const saveFund = () => {
+        const opening = Number(String(fundInput).replace(/,/g, '')) || 0;
+        const id = `${jYear}-${String(jMonth).padStart(2,'0')}`;
+        const payload: MonthlyFund = { id, year: jYear, month: jMonth, openingAmount: opening };
+        const { saveMonthlyFund } = useAccountantStore.getState() as any;
+        saveMonthlyFund(payload);
+        setIsEditingFund(false);
+    };
+
+    // Cashflow components for selected month
+    const incomeTx = useMemo(() => data.transactions
+        .filter(t => t.type === 'income' && moment(t.date).isBetween(startOfSelected, endOfSelected, undefined, '[]'))
+        .reduce((sum, t) => sum + t.amount, 0), [data.transactions, selectedMonthISO]);
+    const expenseTx = useMemo(() => data.transactions
+        .filter(t => t.type === 'expense' && moment(t.date).isBetween(startOfSelected, endOfSelected, undefined, '[]'))
+        .reduce((sum, t) => sum + t.amount, 0), [data.transactions, selectedMonthISO]);
+
+    const ledgerEntries = useMemo(() => Object.values(data.ledger || {}).flat().filter(e => moment(e.date).isBetween(startOfSelected, endOfSelected, undefined, '[]')), [data.ledger, selectedMonthISO]);
+    const ledgerInflow = useMemo(() => ledgerEntries.filter(e => e.type === 'credit' && !e.isSettled).reduce((s, e) => s + e.amount, 0) + ledgerEntries.filter(e => e.type === 'credit' && e.isSettled).reduce((s,e)=>s+e.amount,0), [ledgerEntries]);
+    const ledgerOutflow = useMemo(() => ledgerEntries.filter(e => e.type === 'debt' && !e.isSettled).reduce((s, e) => s + e.amount, 0) + ledgerEntries.filter(e => e.type === 'debt' && e.isSettled).reduce((s,e)=>s+e.amount,0), [ledgerEntries]);
+
+    const installmentOut = useMemo(() => (data.installments || []).flatMap(p => p.payments)
+        .filter(p => p.isPaid && p.paidDate && moment(p.paidDate).isBetween(startOfSelected, endOfSelected, undefined, '[]'))
+        .reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0), [data.installments, selectedMonthISO]);
+
+    const checksCashed = useMemo(() => (data.checks || []).filter(c => c.status === 'cashed' && c.cashedDate && moment(c.cashedDate).isBetween(startOfSelected, endOfSelected, undefined, '[]')), [data.checks, selectedMonthISO]);
+    const checksIn = useMemo(() => checksCashed.filter(c => c.type === 'received').reduce((s, c) => s + c.amount, 0), [checksCashed]);
+    const checksOut = useMemo(() => checksCashed.filter(c => c.type === 'issued').reduce((s, c) => s + c.amount, 0), [checksCashed]);
+
+    const socialOut = useMemo(() => (data as any).socialInsurance?.filter((p: any) => p.payDate && moment(p.payDate).isBetween(startOfSelected, endOfSelected, undefined, '[]')).reduce((s: number, p: any) => s + (Number(p.amount) || 0), 0) || 0, [data.socialInsurance, selectedMonthISO]);
+    const darfakOut = useMemo(() => (useAccountantStore.getState().darfak || []).filter((e: any) => e.date && moment(e.date).isBetween(startOfSelected, endOfSelected, undefined, '[]')).reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0), [selectedMonthISO]);
+
+    const inflowTotal = useMemo(() => incomeTx + ledgerInflow + checksIn, [incomeTx, ledgerInflow, checksIn]);
+    const outflowTotal = useMemo(() => expenseTx + ledgerOutflow + installmentOut + checksOut + socialOut + darfakOut, [expenseTx, ledgerOutflow, installmentOut, checksOut, socialOut, darfakOut]);
+    const openingAmount = Number(currentFund?.openingAmount || 0);
+    const monthEndBalance = useMemo(() => openingAmount + inflowTotal - outflowTotal, [openingAmount, inflowTotal, outflowTotal]);
+
     return (
         <div className="space-y-6">
             {/* Month navigation */}
@@ -1173,6 +1218,33 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
                         >{m.locale('fa').format('jMMM jYY')}</button>
                     );
                 })}
+            </div>
+
+            {/* Monthly Fund */}
+            <div className="bg-slate-800/50 rounded-xl p-4 md:p-5 ring-1 ring-slate-700 space-y-3">
+                <div className="flex items-center justify-between">
+                    <div className="text-slate-300 text-sm">صندوق نقدی {selectedMonthLabel}</div>
+                    <button className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs" onClick={() => setIsEditingFund(v => !v)}>{isEditingFund ? 'انصراف' : (currentFund ? 'ویرایش موجودی اولیه' : 'تنظیم موجودی اولیه')}</button>
+                </div>
+                {isEditingFund ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-1">موجودی ابتدای ماه (تومان)</label>
+                            <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" value={fundInput} onChange={(e)=>setFundInput((e.target as HTMLInputElement).value)} />
+                        </div>
+                        <div className="md:col-span-2 flex items-center gap-2">
+                            <button className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold" onClick={saveFund}>ذخیره</button>
+                            {currentFund && <div className="text-slate-400 text-xs">مقدار فعلی: {formatCurrency(currentFund.openingAmount)}</div>}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700">ابتدای ماه: <span className="font-bold text-slate-100">{formatCurrency(openingAmount)}</span></div>
+                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700">ورودی‌ها: <span className="font-bold text-emerald-400">{formatCurrency(inflowTotal)}</span></div>
+                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700">خروجی‌ها: <span className="font-bold text-rose-400">{formatCurrency(outflowTotal)}</span></div>
+                        <div className="bg-slate-900/60 rounded-lg p-3 ring-1 ring-slate-700">مانده ماه: <span className="font-extrabold text-sky-400">{formatCurrency(monthEndBalance)}</span></div>
+                    </div>
+                )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard title="ارزش خالص دارایی‌ها" value={netWorth} colorClass="text-sky-400" />
