@@ -1089,11 +1089,13 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
     }, [data.ledger]);
 
     const monthlyInstallments = useMemo(() => {
-        const startOfMonth = startOfSelected;
-        const endOfMonth = endOfSelected;
-
+        const jjYear = startOfSelected.jYear();
+        const jjMonth = startOfSelected.jMonth() + 1;
         const allPaymentsThisMonth = data.installments.flatMap(plan => plan.payments)
-            .filter(payment => moment(payment.dueDate).isBetween(startOfMonth, endOfMonth, undefined, '[]'));
+            .filter(payment => {
+                const d = moment(payment.dueDate);
+                return d.jYear() === jjYear && (d.jMonth() + 1) === jjMonth;
+            });
 
         const paidAmount = allPaymentsThisMonth
             .filter(p => p.isPaid)
@@ -1113,6 +1115,25 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
             hasInstallments: allPaymentsThisMonth.length > 0
         };
     }, [data.installments, selectedMonthISO]);
+
+    // Installments preview: previous and next months (totals based on dueDate)
+    const computeInstallmentMonth = (m: any) => {
+        const jy = m.jYear();
+        const jm = m.jMonth() + 1;
+        const s = m.clone().startOf('jMonth');
+        const all = data.installments.flatMap(pl => pl.payments).filter(p => {
+            const d = moment(p.dueDate);
+            return d.jYear() === jy && (d.jMonth() + 1) === jm;
+        });
+        const total = all.reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
+        const paid = all.filter(p => p.isPaid).reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
+        const unpaid = total - paid;
+        return { total, paid, unpaid, label: m.clone().locale('fa').format('jMMM jYY'), iso: s.toISOString() };
+    };
+    const prevInstallments = useMemo(() => computeInstallmentMonth(startOfSelected.clone().subtract(1, 'jMonth')), [selectedMonthISO, data.installments]);
+    const nextInstallments = useMemo(() => {
+        return Array.from({ length: 6 }).map((_, i) => computeInstallmentMonth(startOfSelected.clone().add(i + 1, 'jMonth')));
+    }, [selectedMonthISO, data.installments]);
     
     const monthlyIssuedChecks = useMemo(() => {
         const startOfMonth = startOfSelected;
@@ -1254,33 +1275,26 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
             </div>
 
             {monthlyInstallments.hasInstallments && (
-                <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700">
-                    <h3 className="text-slate-300 text-lg font-semibold mb-4">
+                <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 space-y-4">
+                    <h3 className="text-slate-300 text-lg font-semibold">
                         خلاصه اقساط {selectedMonthLabel}
                     </h3>
-                    <div className="w-full bg-slate-700 rounded-full h-4 mb-2 overflow-hidden">
-                        <div 
-                            className="bg-emerald-500 h-4 rounded-full transition-all duration-500" 
-                            style={{ width: `${monthlyInstallments.progress}%` }}
-                            role="progressbar"
-                            aria-valuenow={monthlyInstallments.progress}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                        ></div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700 flex items-center justify-between"><span className="text-slate-300">کل اقساط این ماه</span><span className="font-bold text-slate-100">{formatCurrency(monthlyInstallments.totalAmount)}</span></div>
+                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700 flex items-center justify-between"><span className="text-slate-300">پرداخت شده</span><span className="font-bold text-emerald-400">{formatCurrency(monthlyInstallments.paidAmount)}</span></div>
+                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700 flex items-center justify-between"><span className="text-slate-300">مانده</span><span className="font-bold text-rose-400">{formatCurrency(monthlyInstallments.unpaidAmount)}</span></div>
                     </div>
-                    <div className="flex justify-between items-center text-sm font-medium">
-                        <div className="text-emerald-400">
-                            <span>پرداخت شده: </span>
-                            <span>{formatCurrency(monthlyInstallments.paidAmount)}</span>
-                        </div>
-                        <div className="text-rose-400">
-                            <span>مانده: </span>
-                            <span>{formatCurrency(monthlyInstallments.unpaidAmount)}</span>
-                        </div>
+                    <div className="w-full bg-slate-700 rounded-full h-3 md:h-4 overflow-hidden">
+                        <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${monthlyInstallments.progress}%` }}></div>
                     </div>
-                    <div className="text-center text-slate-200 mt-3 font-bold text-base">
-                        <span>مجموع: </span>
-                        <span>{formatCurrency(monthlyInstallments.totalAmount)}</span>
+                    <div className="grid grid-cols-1 gap-3">
+                        <div className="text-slate-400 text-sm">ماه قبل: <button className="px-2 py-1 rounded-md bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs" onClick={() => setSelectedMonthISO(prevInstallments.iso)} title="مشاهده ماه قبل">{prevInstallments.label} • {formatCurrency(prevInstallments.total)}</button></div>
+                        <div className="flex flex-wrap gap-2 items-center">
+                            <span className="text-slate-400 text-sm">ماه‌های آینده:</span>
+                            {nextInstallments.map((m) => (
+                                <button key={m.iso} className="px-2 py-1 rounded-md bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs" onClick={() => setSelectedMonthISO(m.iso)} title={`اقساط ${m.label}`}>{m.label} • {formatCurrency(m.total)}</button>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
@@ -1780,8 +1794,10 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
 
     // Compute helper metrics for sorting modes
     const today = useMemo(() => new Date(), []);
-    const startOfThisJMonth = useMemo(() => moment().startOf('jMonth'), []);
-    const endOfThisJMonth = useMemo(() => moment().endOf('jMonth'), []);
+    const [instMonthISO, setInstMonthISO] = useState<string>(() => moment().startOf('jMonth').toISOString());
+    const startOfMonth = useMemo(() => moment(instMonthISO).startOf('jMonth'), [instMonthISO]);
+    const endOfMonth = useMemo(() => moment(instMonthISO).endOf('jMonth'), [instMonthISO]);
+    const monthLabel = useMemo(() => startOfMonth.clone().locale('fa').format('jMMMM jYYYY'), [startOfMonth]);
 
     const getPlanNearestDueDate = (plan: InstallmentPlan): Date | null => {
         const upcoming = plan.payments
@@ -1798,9 +1814,15 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
         return first || null;
     };
 
+    const instJYear = useMemo(() => startOfMonth.jYear(), [startOfMonth]);
+    const instJMonth = useMemo(() => startOfMonth.jMonth() + 1, [startOfMonth]);
+    const isInInstMonth = (iso: string) => {
+        const d = moment(iso);
+        return d.jYear() === instJYear && (d.jMonth() + 1) === instJMonth;
+    };
     const getPlanThisMonthAmount = (plan: InstallmentPlan): number => {
         return plan.payments
-            .filter(p => moment(p.dueDate).isBetween(startOfThisJMonth, endOfThisJMonth, undefined, '[]'))
+            .filter(p => isInInstMonth(p.dueDate))
             .reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
     };
 
@@ -2012,7 +2034,7 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
                 ) : (
                     <>
                         {(() => {
-                            const monthPays = plan.payments.filter(p => moment(p.dueDate).isBetween(startOfThisJMonth, endOfThisJMonth, undefined, '[]'));
+                            const monthPays = plan.payments.filter(p => isInInstMonth(p.dueDate));
                             const monthAmount = monthPays.reduce((s, p) => s + (p.amount || 0) + (p.penalty || 0), 0);
                             const monthPaid = monthPays.length > 0 ? monthPays.every(p => p.isPaid) : false;
                             const earliestMonthDue = monthPays.length > 0 ? monthPays.map(p => p.dueDate).sort((a,b) => new Date(a).getTime() - new Date(b).getTime())[0] : null;
@@ -2077,17 +2099,31 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
                     {installmentsSortMode === 'custom' && <span className="text-xs text-slate-400">برای تغییر ترتیب کارت‌ها را بکشید و رها کنید</span>}
                 </div>
 
-                {/* Monthly paid and remaining summaries */}
+                {/* Month navigation for installments */}
+                <div className="mb-3 flex items-center justify-between bg-slate-900/40 p-3 rounded-lg ring-1 ring-slate-800">
+                    <button className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs" onClick={() => setInstMonthISO(startOfMonth.clone().subtract(1, 'jMonth').toISOString())}>ماه قبل</button>
+                    <div className="text-slate-200 font-bold text-sm">{monthLabel}</div>
+                    <button className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs" onClick={() => setInstMonthISO(startOfMonth.clone().add(1, 'jMonth').toISOString())}>ماه بعد</button>
+                </div>
+
+                {/* Monthly paid/total/remaining summaries */}
                 {(() => {
-                    const active = installments.filter(plan => plan.payments.some(p => !p.isPaid));
-                    const inThisMonth = (p) => moment(p.dueDate).isBetween(startOfThisJMonth, endOfThisJMonth, undefined, '[]');
-                    const monthlyPayments = active.flatMap(p => p.payments).filter(inThisMonth);
+                    const inThisMonth = (p) => isInInstMonth(p.dueDate);
+                    // IMPORTANT: include ALL plans (active + completed) so that
+                    // months prior to completion still reflect their payments
+                    const monthlyPayments = installments.flatMap(p => p.payments).filter(inThisMonth);
                     const monthAll = monthlyPayments.reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
                     const monthPaid = monthlyPayments.filter(p => p.isPaid).reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
                     const monthRemaining = Math.max(0, monthAll - monthPaid);
                     const progress = monthAll > 0 ? (monthPaid / monthAll) * 100 : 0;
                     return (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+                            <div className="bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-slate-300 text-sm">کل اقساط این ماه</span>
+                                    <span className="text-slate-100 font-extrabold">{formatCurrency(monthAll)}</span>
+                                </div>
+                            </div>
                             <div className="bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700">
                                 <div className="flex items-center justify-between">
                                     <span className="text-slate-300 text-sm">کل پرداختی این ماه</span>
@@ -2100,12 +2136,12 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
                                     <span className="text-rose-400 font-extrabold">{formatCurrency(monthRemaining)}</span>
                                 </div>
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="md:col-span-3">
                                 <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
                                     <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
                                 </div>
                                 <div className="mt-1 text-xs text-slate-400 text-center">
-                                    <span>پیشرفت پرداخت ماه جاری: </span>
+                                    <span>پیشرفت پرداخت ماه منتخب: </span>
                                     <span className="text-slate-200 font-semibold">{progress.toFixed(0)}%</span>
                                 </div>
                             </div>
