@@ -1070,16 +1070,21 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
         .filter(t => t.type === 'expense' && moment(t.date).isBetween(startOfSelected, endOfSelected, undefined, '[]'))
         .reduce((sum, t) => sum + t.amount, 0), [data.transactions, selectedMonthISO]);
     
+    // Aggregate receivables/payables per person, then split into totals.
+    // This avoids showing both sides simultaneously when the net with a person is zero or one-sided.
     const { totalDebt, totalCredit } = useMemo(() => {
-        let debt = 0;
-        let credit = 0;
-        Object.values(data.ledger).flat().forEach(entry => {
-            if (!entry.isSettled) {
-                if (entry.type === 'debt') debt += entry.amount;
-                else credit += entry.amount;
-            }
+        let receivables = 0; // طلب از دیگران
+        let payables = 0;    // بدهی به دیگران
+        Object.values(data.ledger).forEach((personEntries: any[]) => {
+            const netForPerson = (personEntries || []).reduce((acc, entry) => {
+                if (entry.isSettled) return acc;
+                if (entry.type === 'debt') return acc + entry.amount;   // آنها به من بدهکارند
+                return acc - entry.amount;                               // من به آنها بدهکارم
+            }, 0);
+            if (netForPerson > 0) receivables += netForPerson;
+            else if (netForPerson < 0) payables += Math.abs(netForPerson);
         });
-        return { totalDebt: debt, totalCredit: credit };
+        return { totalDebt: receivables, totalCredit: payables };
     }, [data.ledger]);
 
     const monthlyInstallments = useMemo(() => {
