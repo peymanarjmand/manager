@@ -1816,6 +1816,10 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
 
     const instJYear = useMemo(() => startOfMonth.jYear(), [startOfMonth]);
     const instJMonth = useMemo(() => startOfMonth.jMonth() + 1, [startOfMonth]);
+    const isCurrentInstMonth = useMemo(() => {
+        const now = moment();
+        return now.jYear() === instJYear && (now.jMonth() + 1) === instJMonth;
+    }, [instJYear, instJMonth]);
     const isInInstMonth = (iso: string) => {
         const d = moment(iso);
         return d.jYear() === instJYear && (d.jMonth() + 1) === instJMonth;
@@ -2148,54 +2152,85 @@ const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallm
                         </div>
                     );
                 })()}
-                <h3 className="text-2xl font-bold mb-4 text-slate-200">اقساط فعال</h3>
-                {activePlans.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {activePlans.map((plan, idx) => (
-                            <div key={plan.id}
-                                 draggable={installmentsSortMode==='custom'}
-                                 onDragStart={(e) => { if (installmentsSortMode==='custom') e.dataTransfer.setData('text/plain', String(idx)); }}
-                                 onDragOver={(e) => { if (installmentsSortMode==='custom') e.preventDefault(); }}
-                                 onDrop={(e) => {
-                                     if (installmentsSortMode!=='custom') return;
-                                     e.preventDefault();
-                                     const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
-                                     if (isNaN(fromIdx)) return;
-                                     const currentOrder = [...installmentsCustomOrder];
-                                     const activeIds = activePlans.map(p => p.id);
-                                     const indices = currentOrder.filter(id => activeIds.includes(id));
-                                     const fromId = activePlans[fromIdx]?.id;
-                                     const toId = plan.id;
-                                     if (!fromId || !toId) return;
-                                     const working = [...indices];
-                                     const fi = working.indexOf(fromId);
-                                     const ti = working.indexOf(toId);
-                                     if (fi === -1 || ti === -1) return;
-                                     working.splice(ti, 0, working.splice(fi, 1)[0]);
-                                     // Rebuild full order keeping non-active ids in their relative order
-                                     const nonActive = currentOrder.filter(id => !activeIds.includes(id));
-                                     const newOrder: string[] = [];
-                                     const activeSet = new Set(activeIds);
-                                     for (const id of currentOrder) {
-                                         if (activeSet.has(id)) continue;
-                                         newOrder.push(id);
-                                     }
-                                     // Insert active area in place of first active appearance
-                                     const firstActiveIndex = currentOrder.findIndex(id => activeSet.has(id));
-                                     const before = currentOrder.slice(0, firstActiveIndex).filter(id => !activeSet.has(id));
-                                     const after = currentOrder.slice(firstActiveIndex).filter(id => !activeSet.has(id));
-                                     const reconstructed = [...before, ...working, ...after];
-                                     setInstallmentsCustomOrder(reconstructed);
-                                 }}>
-                                <PlanCard plan={plan} />
+                {isCurrentInstMonth ? (
+                    <>
+                        <h3 className="text-2xl font-bold mb-4 text-slate-200">اقساط فعال</h3>
+                        {activePlans.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                {activePlans.map((plan, idx) => (
+                                    <div key={plan.id}
+                                         draggable={installmentsSortMode==='custom'}
+                                         onDragStart={(e) => { if (installmentsSortMode==='custom') e.dataTransfer.setData('text/plain', String(idx)); }}
+                                         onDragOver={(e) => { if (installmentsSortMode==='custom') e.preventDefault(); }}
+                                         onDrop={(e) => {
+                                             if (installmentsSortMode!=='custom') return;
+                                             e.preventDefault();
+                                             const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                                             if (isNaN(fromIdx)) return;
+                                             const currentOrder = [...installmentsCustomOrder];
+                                             const activeIds = activePlans.map(p => p.id);
+                                             const indices = currentOrder.filter(id => activeIds.includes(id));
+                                             const fromId = activePlans[fromIdx]?.id;
+                                             const toId = plan.id;
+                                             if (!fromId || !toId) return;
+                                             const working = [...indices];
+                                             const fi = working.indexOf(fromId);
+                                             const ti = working.indexOf(toId);
+                                             if (fi === -1 || ti === -1) return;
+                                             working.splice(ti, 0, working.splice(fi, 1)[0]);
+                                             // Rebuild full order keeping non-active ids in their relative order
+                                             const nonActive = currentOrder.filter(id => !activeIds.includes(id));
+                                             const newOrder: string[] = [];
+                                             const activeSet = new Set(activeIds);
+                                             for (const id of currentOrder) {
+                                                 if (activeSet.has(id)) continue;
+                                                 newOrder.push(id);
+                                             }
+                                             // Insert active area in place of first active appearance
+                                             const firstActiveIndex = currentOrder.findIndex(id => activeSet.has(id));
+                                             const before = currentOrder.slice(0, firstActiveIndex).filter(id => !activeSet.has(id));
+                                             const after = currentOrder.slice(firstActiveIndex).filter(id => !activeIds.includes(id));
+                                             const reconstructed = [...before, ...working, ...after];
+                                             setInstallmentsCustomOrder(reconstructed);
+                                         }}>
+                                        <PlanCard plan={plan} />
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                        ) : (
+                            <div className="text-center py-10 px-6 bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
+                                <CheckCircleIcon className="h-14 w-14 text-emerald-400 mx-auto mb-4" />
+                                <h3 className="text-xl font-semibold text-slate-200">شما هیچ قسط فعالی ندارید!</h3>
+                                <p className="text-slate-400 mt-2">تمام اقساط شما پرداخت شده‌اند یا قسطی ثبت نکرده‌اید.</p>
+                            </div>
+                        )}
+                    </>
                 ) : (
-                    <div className="text-center py-10 px-6 bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
-                        <CheckCircleIcon className="h-14 w-14 text-emerald-400 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-slate-200">شما هیچ قسط فعالی ندارید!</h3>
-                        <p className="text-slate-400 mt-2">تمام اقساط شما پرداخت شده‌اند یا قسطی ثبت نکرده‌اید.</p>
+                    <div className="bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
+                        <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+                            <h3 className="text-slate-200 font-bold">لیست اقساط {monthLabel}</h3>
+                        </div>
+                        <div className="divide-y divide-slate-700">
+                            {(() => {
+                                const jy = instJYear; const jm = instJMonth;
+                                const rows = installments.flatMap(plan => plan.payments.map((p, idx) => ({ plan, p, idx })))
+                                    .filter(r => { const d = moment(r.p.dueDate); return d.jYear() === jy && (d.jMonth() + 1) === jm; })
+                                    .sort((a,b) => new Date(a.p.dueDate).getTime() - new Date(b.p.dueDate).getTime());
+                                if (rows.length === 0) return <div className="p-4 text-slate-500">در این ماه قسطی وجود ندارد.</div>;
+                                return rows.map((r) => (
+                                    <div key={`${r.plan.id}-${r.p.id}`} className="p-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] ring-1 ${r.p.isPaid ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30' : 'bg-rose-500/10 text-rose-400 ring-rose-500/30'}`}>{r.p.isPaid ? 'پرداخت شده' : 'پرداخت نشده'}</span>
+                                            <div>
+                                                <div className="text-slate-100 font-bold text-sm">{r.plan.title}</div>
+                                                <div className="text-xs text-slate-400">تاریخ سررسید: {formatDate(r.p.dueDate)}</div>
+                                            </div>
+                                        </div>
+                                        <div className="text-slate-100 font-extrabold">{formatCurrency((r.p.amount || 0) + (r.p.penalty || 0))}</div>
+                                    </div>
+                                ));
+                            })()}
+                        </div>
                     </div>
                 )}
             </div>
