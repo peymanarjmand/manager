@@ -821,6 +821,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
             loadChecks(),
             loadSocialInsurance(),
             loadInstallments(),
+            (useAccountantStore.getState() as any).loadFunds?.(),
         ]).catch(() => {});
     }, []);
 

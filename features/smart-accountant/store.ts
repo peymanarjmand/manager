@@ -30,6 +30,7 @@ interface AccountantState extends AccountantData {
     setInstallmentsSortMode: (mode: 'nearest' | 'highest_month' | 'earliest_loan' | 'custom') => void;
     setInstallmentsCustomOrder: (order: string[]) => void;
     setTabsOrder: (order: AccountantTab[]) => void;
+    loadFunds: () => Promise<void>;
     saveMonthlyFund: (fund: MonthlyFund) => void;
     deleteMonthlyFund: (id: string) => void;
     saveDarfak: (exp: DarfakExpense) => void;
@@ -75,6 +76,29 @@ export const useAccountantStore = create<AccountantState>()(
             setInstallmentsSortMode: (mode) => set({ installmentsSortMode: mode }),
             setInstallmentsCustomOrder: (order) => set({ installmentsCustomOrder: order }),
             setTabsOrder: (order) => set({ tabsOrder: order }),
+            loadFunds: async () => {
+                try {
+                    const { data, error } = await supabase
+                        .from('monthly_funds')
+                        .select('id,year,month,opening_amount,note')
+                        .order('year', { ascending: true })
+                        .order('month', { ascending: true });
+                    if (error) {
+                        console.warn('Funds load error', error);
+                        return;
+                    }
+                    const rows: MonthlyFund[] = (data || []).map((r: any) => ({
+                        id: r.id,
+                        year: Number(r.year) || 0,
+                        month: Number(r.month) || 0,
+                        openingAmount: Number(r.opening_amount) || 0,
+                        note: r.note || undefined,
+                    }));
+                    set({ funds: rows });
+                } catch (e) {
+                    console.warn('Funds load exception', e);
+                }
+            },
             saveMonthlyFund: (fund) => {
                 set((state) => {
                     const rest = (state.funds || []).filter(f => !(f.year === fund.year && f.month === fund.month));
