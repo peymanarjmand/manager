@@ -1,8 +1,15 @@
 import React from 'react';
 import { DashboardItem } from '../../types';
-import { KeyIcon, CalculatorIcon, PhoneBookIcon, TodoIcon, SettingsIcon, HomeBuildIcon, AssetsIcon } from '../../components/Icons';
+import { KeyIcon, CalculatorIcon, PhoneBookIcon, TodoIcon, SettingsIcon, HomeBuildIcon, AssetsIcon, HeartIcon } from '../../components/Icons';
 
 export const DASHBOARD_ITEMS: DashboardItem[] = [
+  {
+    id: 'health-dashboard',
+    icon: React.createElement(HeartIcon),
+    title: 'داشبورد سلامتی',
+    description: 'مدیریت جامع سلامتی، تغذیه، داروها و فشار خون خود را دنبال کنید.',
+  },
+
   {
     id: 'password-manager',
     icon: React.createElement(KeyIcon),
@@ -20,12 +27,6 @@ export const DASHBOARD_ITEMS: DashboardItem[] = [
     icon: React.createElement(CalculatorIcon),
     title: 'حسابدار هوشمند',
     description: 'درآمد و هزینه‌های خود را بدون زحمت پیگیری کنید.',
-  },
-  {
-    id: 'phone-book',
-    icon: React.createElement(PhoneBookIcon),
-    title: 'دفتر تلفن',
-    description: 'مخاطبین خود را به راحتی سازماندهی و به آنها دسترسی پیدا کنید.',
   },
   {
     id: 'daily-tasks',

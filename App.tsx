@@ -7,26 +7,21 @@ import { SmartAccountant } from './features/smart-accountant/SmartAccountant';
 import { Assets } from './features/assets/Assets';
 import { DailyTasks } from './features/daily-tasks/DailyTasks';
 import { Darfak } from './features/darfak/Darfak';
+import { HealthDashboard } from './features/health-dashboard/HealthDashboard';
 import { SUPABASE_ENABLED } from './lib/supabase';
 import { supabase } from './lib/supabase';
 
-export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phone-book' | 'daily-tasks' | 'assets' | 'darfak';
+export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phone-book' | 'daily-tasks' | 'assets' | 'darfak' | 'health-dashboard';
 
 function App(): React.ReactNode {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [sessionInfo, setSessionInfo] = useState<string | undefined>(undefined);
-
-
-
-
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
       window.location.reload();
     }
   };
-
-
 
   const handleNavigate = (view: View) => {
     setCurrentView(view);
@@ -74,12 +69,14 @@ function App(): React.ReactNode {
       <Header onLogout={handleLogout} sessionInfo={sessionInfo} />
       <main>
         {currentView === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
+        {currentView === 'health-dashboard' && <HealthDashboard onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'password-manager' && <PasswordManager onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'smart-accountant' && <SmartAccountant onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'phone-book' && <PhoneBook onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'daily-tasks' && <DailyTasks onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'assets' && <Assets onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'darfak' && <Darfak onNavigateBack={() => handleNavigate('dashboard')} />}
+
       </main>
       <footer className="text-center py-6 text-slate-500 text-sm">
         <p>

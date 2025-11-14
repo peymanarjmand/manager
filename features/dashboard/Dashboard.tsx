@@ -14,7 +14,7 @@ interface DashboardCardProps {
 }
 
 const DashboardCard: React.FC<DashboardCardProps> = ({ item, onNavigate, onOpenSettings }) => {
-    const isActionable = ['password-manager', 'smart-accountant', 'phone-book', 'daily-tasks', 'assets', 'settings'].includes(item.id);
+    const isActionable = ['health-dashboard', 'password-manager', 'smart-accountant', 'phone-book', 'daily-tasks', 'assets', 'settings'].includes(item.id);
     const cardClasses = `group bg-slate-800/50 rounded-xl p-6 flex flex-col items-start space-y-4 ring-1 ring-slate-700 transition-all duration-300 transform shadow-lg ${isActionable ? 'hover:ring-sky-400 hover:-translate-y-1 cursor-pointer hover:shadow-sky-400/10' : 'opacity-70'}`;
 
     const handleCardClick = () => {

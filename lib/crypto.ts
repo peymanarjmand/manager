@@ -60,3 +60,24 @@ export async function decryptString(payload: { iv: string; ct: string }, key: Cr
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ctBytes);
   return textDecoder.decode(pt);
 }
+
+// File encryption utilities for medical records
+export async function generateFileChecksum(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  return bytesToBase64(hashBuffer);
+}
+
+export async function encryptFile(file: File, key: CryptoKey): Promise<{ iv: string; ct: string; checksum: string }> {
+  const checksum = await generateFileChecksum(file);
+  const buffer = await file.arrayBuffer();
+  const iv = randomBytes(12);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, buffer);
+  return { iv: bytesToBase64(iv), ct: bytesToBase64(ct), checksum };
+}
+
+export async function decryptFile(encryptedData: { iv: string; ct: string }, key: CryptoKey): Promise<ArrayBuffer> {
+  const iv = base64ToBytes(encryptedData.iv);
+  const ctBytes = base64ToBytes(encryptedData.ct);
+  return await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ctBytes);
+}

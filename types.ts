@@ -175,3 +175,76 @@ export interface Contact {
     org?: string;
     title?: string;
 }
+
+// New Types for Health Dashboard
+export interface Meal {
+    id: string;
+    name: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    date: Date;
+    time: string;
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    notes?: string;
+}
+
+export interface Medicine {
+    id: string;
+    name: string;
+    dosage: string;
+    frequency: 'daily' | 'twice' | 'three-times' | 'as-needed';
+    times: string[];
+    startDate: Date;
+    endDate?: Date;
+    instructions?: string;
+    isActive: boolean;
+}
+
+export interface MedicineIntake {
+    id: string;
+    medicineId: string;
+    timestamp: Date;
+    wasTaken: boolean;
+    notes?: string;
+}
+
+export interface BloodPressureReading {
+    id: string;
+    systolic: number;
+    diastolic: number;
+    pulse: number;
+    timestamp: Date;
+    notes?: string;
+}
+
+export interface WeightRecord {
+    id: string;
+    weight: number;
+    timestamp: Date;
+    notes?: string;
+}
+
+export interface HealthProfile {
+    height: number;
+    age: number;
+    gender: 'male' | 'female';
+    activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very-active';
+    targetWeight?: number;
+    targetBloodPressure?: {
+        systolic: number;
+        diastolic: number;
+    };
+}
+
+export interface HealthEvent {
+    id: string;
+    title: string;
+    type: 'medicine' | 'meal' | 'exercise' | 'appointment' | 'measurement';
+    startTime: Date;
+    endTime?: Date;
+    recurrence?: 'daily' | 'weekly' | 'monthly';
+    metadata?: Record<string, any>;
+}
+export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phone-book' | 'health-dashboard' | 'medical-records';
