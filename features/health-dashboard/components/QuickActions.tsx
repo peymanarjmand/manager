@@ -1,9 +1,23 @@
 import React from 'react';
 import { PlusIcon, CalendarIcon, ChartIcon, FileTextIcon } from '../../../components/Icons';
 
-interface QuickActionsProps {}
+interface QuickActionsProps {
+  onWeightClick?: () => void;
+  onBloodPressureClick?: () => void;
+  onMedicineClick?: () => void;
+  onMealClick?: () => void;
+  onReportsClick?: () => void;
+  onCalendarClick?: () => void;
+}
 
-export const QuickActions: React.FC<QuickActionsProps> = () => {
+export const QuickActions: React.FC<QuickActionsProps> = ({
+  onWeightClick,
+  onBloodPressureClick,
+  onMedicineClick,
+  onMealClick,
+  onReportsClick,
+  onCalendarClick
+}) => {
   const actions = [
     {
       id: 'add-meal',
@@ -11,7 +25,7 @@ export const QuickActions: React.FC<QuickActionsProps> = () => {
       description: 'ثبت وعده غذایی جدید',
       icon: <PlusIcon />,
       color: 'emerald',
-      action: () => console.log('Add meal clicked')
+      action: onMealClick
     },
     {
       id: 'add-medicine',
@@ -19,7 +33,7 @@ export const QuickActions: React.FC<QuickActionsProps> = () => {
       description: 'ثبت داروی جدید',
       icon: <PlusIcon />,
       color: 'blue',
-      action: () => console.log('Add medicine clicked')
+      action: onMedicineClick
     },
     {
       id: 'record-bp',
@@ -27,7 +41,7 @@ export const QuickActions: React.FC<QuickActionsProps> = () => {
       description: 'اندازه‌گیری جدید فشار خون',
       icon: <ChartIcon />,
       color: 'purple',
-      action: () => console.log('Record BP clicked')
+      action: onBloodPressureClick
     },
     {
       id: 'record-weight',
@@ -35,7 +49,7 @@ export const QuickActions: React.FC<QuickActionsProps> = () => {
       description: 'وزن جدید را ثبت کنید',
       icon: <ChartIcon />,
       color: 'orange',
-      action: () => console.log('Record weight clicked')
+      action: onWeightClick
     },
     {
       id: 'view-reports',
@@ -43,7 +57,7 @@ export const QuickActions: React.FC<QuickActionsProps> = () => {
       description: 'مشاهده گزارش‌های سلامتی',
       icon: <FileTextIcon />,
       color: 'slate',
-      action: () => console.log('View reports clicked')
+      action: onReportsClick
     },
     {
       id: 'health-calendar',
@@ -51,7 +65,7 @@ export const QuickActions: React.FC<QuickActionsProps> = () => {
       description: 'برنامه‌ریزی و یادآوری‌ها',
       icon: <CalendarIcon />,
       color: 'pink',
-      action: () => console.log('Health calendar clicked')
+      action: onCalendarClick
     }
   ];
 

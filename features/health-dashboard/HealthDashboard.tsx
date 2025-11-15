@@ -8,6 +8,10 @@ import { QuickActions } from './components/QuickActions';
 import { useHealthStore } from './store/healthStore';
 import { MedicalRecords } from '../medical-records';
 import { FileText, Heart, Pill, TrendingUp } from 'lucide-react';
+import { WeightEntryModal } from './components/WeightEntryModal';
+import { BloodPressureEntryModal } from './components/BloodPressureEntryModal';
+import { MedicineEntryModal } from './components/MedicineEntryModal';
+import { MealEntryModal } from './components/MealEntryModal';
 
 interface HealthDashboardProps {
   onNavigateBack: () => void;
@@ -16,13 +20,18 @@ interface HealthDashboardProps {
 export const HealthDashboard: React.FC<HealthDashboardProps> = ({ onNavigateBack }) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'records'>('dashboard');
+  const [activeModal, setActiveModal] = useState<'weight' | 'blood-pressure' | 'medicine' | 'meal' | null>(null);
   const { 
     healthProfile, 
     weightRecords, 
     bloodPressureReadings, 
     medicines, 
     meals,
-    fetchAllData 
+    fetchAllData,
+    addWeightRecord,
+    addBloodPressureReading,
+    addMedicine,
+    addMeal
   } = useHealthStore();
 
   useEffect(() => {
@@ -168,7 +177,14 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = ({ onNavigateBack
             </div>
 
             {/* Quick Actions */}
-            <QuickActions />
+            <QuickActions 
+              onWeightClick={() => setActiveModal('weight')}
+              onBloodPressureClick={() => setActiveModal('blood-pressure')}
+              onMedicineClick={() => setActiveModal('medicine')}
+              onMealClick={() => setActiveModal('meal')}
+              onReportsClick={() => console.log('View reports clicked')}
+              onCalendarClick={() => console.log('Health calendar clicked')}
+            />
 
             {/* Today's Summary */}
             <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700">
@@ -215,6 +231,75 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = ({ onNavigateBack
           <MedicalRecords onNavigateBack={() => setActiveTab('dashboard')} />
         )}
       </div>
+
+      {/* Modal Components */}
+      {activeModal === 'weight' && (
+        <WeightEntryModal
+          isOpen={true}
+          onClose={() => setActiveModal(null)}
+          onSubmit={async (data) => {
+            try {
+              await addWeightRecord(data);
+              setActiveModal(null);
+              // Refresh data after submission
+              await fetchAllData();
+            } catch (error) {
+              console.error('Error adding weight record:', error);
+            }
+          }}
+        />
+      )}
+
+      {activeModal === 'blood-pressure' && (
+        <BloodPressureEntryModal
+          isOpen={true}
+          onClose={() => setActiveModal(null)}
+          onSubmit={async (data) => {
+            try {
+              await addBloodPressureReading(data);
+              setActiveModal(null);
+              // Refresh data after submission
+              await fetchAllData();
+            } catch (error) {
+              console.error('Error adding blood pressure reading:', error);
+            }
+          }}
+        />
+      )}
+
+      {activeModal === 'medicine' && (
+        <MedicineEntryModal
+          isOpen={true}
+          onClose={() => setActiveModal(null)}
+          onSubmit={async (data) => {
+            try {
+              await addMedicine(data);
+              setActiveModal(null);
+              // Refresh data after submission
+              await fetchAllData();
+            } catch (error) {
+              console.error('Error adding medicine:', error);
+            }
+          }}
+        />
+      )}
+
+      {activeModal === 'meal' && (
+        <MealEntryModal
+          isOpen={true}
+          onClose={() => setActiveModal(null)}
+          onSubmit={async (data) => {
+            try {
+              await addMeal(data);
+              setActiveModal(null);
+              // Refresh data after submission
+              await fetchAllData();
+            } catch (error) {
+              console.error('Error adding meal:', error);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
