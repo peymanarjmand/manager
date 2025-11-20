@@ -98,9 +98,10 @@ export const FocusTimer = ({ onOpenSettings }: { onOpenSettings: () => void; }) 
     }, [timeLeft]);
 
     useEffect(() => {
-        // Request notification permission on component mount
-        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            Notification.requestPermission();
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
         }
     }, []);
 
