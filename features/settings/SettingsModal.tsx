@@ -20,15 +20,16 @@ const FormInput = ({ label, id, value, onChange, type = 'number', min = 1, step 
                 onChange={onChange}
                 min={min}
                 step={step}
-                className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition"
+                inputMode={type === 'number' ? 'numeric' : undefined}
+                className="w-full bg-slate-700/50 text-white rounded-md py-2 pr-12 pl-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition"
             />
-            <span className="absolute left-3 inset-y-0 flex items-center text-slate-400 text-sm">{unit}</span>
+            <span className="absolute right-3 inset-y-0 flex items-center text-slate-400 text-sm">{unit}</span>
         </div>
     </div>
 );
 
 const FormToggle = ({ label, id, checked, onChange, description }) => (
-    <div className="flex justify-between items-center">
+    <div className="grid grid-cols-[1fr_auto] items-center gap-3 px-2">
         <div>
             <label htmlFor={id} className="block text-sm font-medium text-slate-200">{label}</label>
             {description && <p className="text-xs text-slate-400">{description}</p>}
@@ -38,9 +39,9 @@ const FormToggle = ({ label, id, checked, onChange, description }) => (
             role="switch"
             aria-checked={checked}
             onClick={onChange}
-            className={`${checked ? 'bg-sky-500' : 'bg-slate-600'} relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-800`}
+            className={`${checked ? 'bg-sky-500' : 'bg-slate-600'} relative h-6 w-11 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-800 overflow-hidden`}
         >
-            <span className={`${checked ? 'translate-x-6' : 'translate-x-1'} inline-block h-4 w-4 transform rounded-full bg-white transition-transform`} />
+            <span className={`absolute top-1 ${checked ? 'left-6' : 'left-1'} h-4 w-4 rounded-full bg-white transition-all`} />
         </button>
     </div>
 );
@@ -129,19 +130,19 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-slate-700 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                <form onSubmit={handleSave}>
-                    <header className="flex justify-between items-center p-4 border-b border-slate-700">
+            <div className="bg-slate-800 rounded-xl w-full max-w-xl sm:max-w-2xl shadow-2xl ring-1 ring-slate-700 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <form className="flex flex-col max-h-[90vh]" onSubmit={handleSave}>
+                    <header className="flex justify-between items-center p-4 border-b border-slate-700 shrink-0">
                         <h3 className="text-xl font-bold text-slate-100">تنظیمات</h3>
                         <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">
                             <CloseIcon />
                         </button>
                     </header>
 
-                    <main className="p-6 space-y-6 overflow-y-auto">
+                    <main className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
                         <section>
                             <h4 className="font-semibold text-slate-200 mb-3">تنظیمات تایمر پومودورو</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                                 <FormInput label="زمان تمرکز" id="focusDuration" value={localSettings.focusDuration} onChange={handleChange} unit="دقیقه" />
                                 <FormInput label="استراحت کوتاه" id="shortBreakDuration" value={localSettings.shortBreakDuration} onChange={handleChange} unit="دقیقه" />
                                 <FormInput label="استراحت طولانی" id="longBreakDuration" value={localSettings.longBreakDuration} onChange={handleChange} unit="دقیقه" />
@@ -156,8 +157,11 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             <div className="space-y-4">
                                <FormToggle label="فعال‌سازی هشدار استراحت چشم" id="eyeStrainAlertEnabled" checked={localSettings.eyeStrainAlertEnabled} onChange={() => handleToggle('eyeStrainAlertEnabled')} description="هر ۲۰ دقیقه یکبار یادآوری می‌کند."/>
                                {localSettings.eyeStrainAlertEnabled && (
-                                   <div className="pl-4 border-r-2 border-slate-700 space-y-4 animate-fade-in">
-                                        <FormToggle label="پخش صدا برای هشدار" id="soundEnabled" checked={localSettings.soundEnabled} onChange={() => handleToggle('soundEnabled')} description="" />
+                                   <div className="pl-4 border-r-2 border-slate-700 space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <FormInput label="فاصله زمانی هشدار" id="eyeStrainInterval" value={localSettings.eyeStrainInterval} onChange={handleChange} unit="دقیقه" min={5} step={5} />
+                                            <FormToggle label="پخش صدا برای هشدار" id="soundEnabled" checked={localSettings.soundEnabled} onChange={() => handleToggle('soundEnabled')} description="" />
+                                        </div>
                                         <div>
                                             <label htmlFor="eyeStrainMessage" className="block text-sm font-medium text-slate-300 mb-1">متن پیام هشدار</label>
                                              <input
@@ -188,11 +192,12 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 <div className="space-y-3">
                                     <FormToggle label="پاک‌سازی خودکار کلیپ‌بورد" id="clipboardAutoClearEnabled" checked={localSettings.clipboardAutoClearEnabled} onChange={() => handleToggle('clipboardAutoClearEnabled')} description="پس از کپی رمزها، کلیپ‌بورد به صورت خودکار پاک می‌شود." />
                                     {localSettings.clipboardAutoClearEnabled && (
-                                        <div className="grid grid-cols-2 gap-4 pl-4 border-r-2 border-slate-700 animate-fade-in">
+                                        <div className="grid grid-cols-2 gap-4 pl-4 border-r-2 border-slate-700">
                                             <FormInput label="تاخیر پاک‌سازی" id="clipboardClearSeconds" value={localSettings.clipboardClearSeconds} onChange={handleChange} unit="ثانیه" min={5} />
                                         </div>
                                     )}
                                 </div>
+                                
                             </div>
                         </section>
 
@@ -211,7 +216,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
                     </main>
 
-                    <footer className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end">
+                    <footer className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end shrink-0">
                         <button type="submit" className="py-2 px-5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-sky-400">ذخیره تغییرات</button>
                     </footer>
                 </form>
