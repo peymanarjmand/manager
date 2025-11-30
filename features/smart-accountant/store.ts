@@ -56,6 +56,9 @@ interface AccountantState extends AccountantData {
     deleteSocialInsurance: (id: string) => void;
     settleSocialInsurance: (id: string) => Promise<void>;
     settleSocialInsuranceMonth: (year: number, month: number) => Promise<void>;
+    // Custom Categories
+    customCategories: { income: string[]; expense: string[] };
+    addCustomCategory: (type: 'income' | 'expense', category: string) => void;
 }
 
 export const useAccountantStore = create<AccountantState>()(
@@ -73,6 +76,17 @@ export const useAccountantStore = create<AccountantState>()(
             tabsOrder: ['summary','transactions','checks','installments','people','social_insurance','darfak'],
             installmentsSortMode: 'nearest',
             installmentsCustomOrder: [],
+            customCategories: { income: [], expense: [] },
+            addCustomCategory: (type, category) => set(state => {
+                const current = state.customCategories[type] || [];
+                if (current.includes(category)) return state as any;
+                return {
+                    customCategories: {
+                        ...state.customCategories,
+                        [type]: [...current, category]
+                    }
+                };
+            }),
             setInstallmentsSortMode: (mode) => set({ installmentsSortMode: mode }),
             setInstallmentsCustomOrder: (order) => set({ installmentsCustomOrder: order }),
             setTabsOrder: (order) => set({ tabsOrder: order }),

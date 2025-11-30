@@ -595,11 +595,14 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
 const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen: boolean, onClose: () => void, onSave: (type:string, data:any)=>void, type?:string, payload?:any}) => {
     if (!isOpen) return null;
 
+    const { customCategories, addCustomCategory } = useAccountantStore();
     const [formData, setFormData] = useState(payload || {});
     const [imagePreview, setImagePreview] = useState(payload?.receiptImage || payload?.avatar || null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isCustomCategoryMode, setIsCustomCategoryMode] = useState(false);
 
-     useEffect(() => {
+    useEffect(() => {
+        setIsCustomCategoryMode(false);
         const isoNow = new Date().toISOString();
         let defaultData: any = {};
         if (payload) {
@@ -641,7 +644,11 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
         setFormData(prev => {
             const newState = { ...prev, [name]: value };
             if (name === 'type' && (type === 'transaction')) {
-                newState.category = TRANSACTION_CATEGORIES[value][0];
+                const newType = value as 'income' | 'expense';
+                const defaults = TRANSACTION_CATEGORIES[newType] || [];
+                // Reset category to default if switching type, unless we want to keep it if it exists in new type?
+                // Usually categories are disjoint. Safe to reset.
+                newState.category = defaults[0];
             }
             return newState;
         });
@@ -672,6 +679,15 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        // If transaction and custom category, save it to store
+        if (type === 'transaction') {
+            const cat = formData.category;
+            const tType = formData.type as 'income' | 'expense';
+            // If it's not in default list, treat as custom and add it
+            if (cat && !TRANSACTION_CATEGORIES[tType].includes(cat)) {
+                addCustomCategory(tType, cat);
+            }
+        }
         onSave(type, formData);
     };
 
@@ -689,21 +705,69 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
         }
     }
     
-    const renderTransactionFields = () => (
-        <>
-            <FormSelect label="نوع" id="type" value={formData.type} onChange={handleChange} required>
-                <option value="expense">هزینه</option>
-                <option value="income">درآمد</option>
-            </FormSelect>
-            <FormSelect label="دسته بندی" id="category" value={formData.category} onChange={handleChange} required>
-                {(formData.type === 'income' ? TRANSACTION_CATEGORIES.income : TRANSACTION_CATEGORIES.expense).map(cat => <option key={cat} value={cat}>{cat}</option>)}
-            </FormSelect>
-            <FormInput label="مبلغ" id="amount" type="number" value={formData.amount} onChange={handleChange} required />
-            <FormInput label="توضیحات" id="description" value={formData.description} onChange={handleChange} required />
-            <JalaliDatePicker label="تاریخ" id="date" value={formData.date} onChange={(isoDate) => setFormData(p => ({...p, date: isoDate}))} />
-            <FormImageUpload label="رسید" preview={imagePreview} onChange={handleImageChange} />
-        </>
-    );
+    const renderTransactionFields = () => {
+        const tType = (formData.type || 'expense') as 'income' | 'expense';
+        const defaultCats = TRANSACTION_CATEGORIES[tType] || [];
+        const customCats = customCategories[tType] || [];
+        const allCats = [...defaultCats, ...customCats];
+        const uniqueCats = Array.from(new Set(allCats));
+
+        return (
+            <>
+                <FormSelect label="نوع" id="type" value={formData.type} onChange={handleChange} required>
+                    <option value="expense">هزینه</option>
+                    <option value="income">درآمد</option>
+                </FormSelect>
+
+                 <div className="relative">
+                     {!isCustomCategoryMode ? (
+                        <div className="flex gap-2 items-end">
+                            <div className="flex-1">
+                                <FormSelect label="دسته بندی" id="category" value={formData.category} onChange={handleChange} required>
+                                    {uniqueCats.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </FormSelect>
+                            </div>
+                            <button 
+                                type="button" 
+                                onClick={() => { setIsCustomCategoryMode(true); setFormData(p => ({...p, category: ''})); }}
+                                className="mb-[1px] p-2.5 bg-slate-700 hover:bg-slate-600 rounded-md text-slate-300 hover:text-white transition"
+                                title="افزودن دسته‌بندی جدید"
+                            >
+                                <PlusIcon />
+                            </button>
+                        </div>
+                     ) : (
+                        <div className="flex gap-2 items-end">
+                            <div className="flex-1">
+                                <FormInput 
+                                    label="دسته بندی جدید" 
+                                    id="category" 
+                                    value={formData.category} 
+                                    onChange={handleChange} 
+                                    placeholder="نام دسته بندی..." 
+                                    required 
+                                    autoFocus
+                                />
+                            </div>
+                             <button 
+                                type="button" 
+                                onClick={() => { setIsCustomCategoryMode(false); setFormData(p => ({...p, category: uniqueCats[0]})); }}
+                                className="mb-[1px] p-2.5 bg-slate-700 hover:bg-slate-600 rounded-md text-slate-300 hover:text-white transition"
+                                title="بازگشت به لیست"
+                            >
+                                <CloseIcon />
+                            </button>
+                        </div>
+                     )}
+                </div>
+
+                <FormInput label="مبلغ" id="amount" type="number" value={formData.amount} onChange={handleChange} required />
+                <FormInput label="توضیحات" id="description" value={formData.description} onChange={handleChange} required />
+                <JalaliDatePicker label="تاریخ" id="date" value={formData.date} onChange={(isoDate) => setFormData(p => ({...p, date: isoDate}))} />
+                <FormImageUpload label="رسید" preview={imagePreview} onChange={handleImageChange} />
+            </>
+        );
+    };
     const renderAssetFields = () => (
         <>
             <FormInput label="نام دارایی" id="name" value={formData.name} onChange={handleChange} required />
