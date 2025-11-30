@@ -6,6 +6,7 @@ import { SummaryIcon, TransactionsIcon, AssetsIcon, PeopleIcon, InstallmentsIcon
 import { SI_RATES } from './constants';
 import DarfakView from './DarfakView';
 import { useAccountantStore } from './store';
+import { TransactionVoucherModal } from './TransactionVoucherModal';
 import { isImageRef, saveImageDataURL, getObjectURLByRef, deleteImageByRef } from '../../lib/idb-images';
 import { supabase } from '../../lib/supabase';
 
@@ -806,6 +807,7 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
 export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void; }): React.ReactNode => {
     const [activeTab, setActiveTab] = useState<AccountantTab>('summary');
     const [modal, setModal] = useState<ModalConfig>({ isOpen: false });
+    const [viewTransaction, setViewTransaction] = useState<Transaction | null>(null);
     const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
     const [currentInstallment, setCurrentInstallment] = useState<InstallmentPlan | null>(null);
 
@@ -968,6 +970,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     return (
         <div className="container mx-auto px-4 py-8 sm:py-12">
             <AccountantFormModal isOpen={modal.isOpen} onClose={closeModal} onSave={handleSave} type={modal.type} payload={modal.payload} />
+            <TransactionVoucherModal transaction={viewTransaction} onClose={() => setViewTransaction(null)} />
             
             <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
                 <div className="flex items-center gap-4">
@@ -1038,7 +1041,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
             {/* Content */}
             <div className="animate-fade-in">
                 {activeTab === 'summary' && <SummaryView data={data} />}
-                {activeTab === 'transactions' && <TransactionsView transactions={data.transactions} onEdit={(t) => openModal('transaction', t)} onDelete={(id) => handleDelete('transaction', id)} />}
+                {activeTab === 'transactions' && <TransactionsView transactions={data.transactions} onEdit={(t) => openModal('transaction', t)} onDelete={(id) => handleDelete('transaction', id)} onView={setViewTransaction} />}
                 {activeTab === 'checks' && <ChecksView checks={data.checks} onEdit={(c) => openModal('check', c)} onDelete={(id) => handleDelete('check', id)} onStatusChange={handleUpdateCheckStatus} />}
                 {activeTab === 'installments' && <InstallmentsView installments={data.installments} currentInstallment={currentInstallment} setCurrentInstallment={setCurrentInstallment} onEditPlan={(plan) => openModal('installmentPlan', plan)} onDeletePlan={(id) => handleDelete('installmentPlan', id)} onEditPayment={(p) => openModal('installmentPayment', p)} onTogglePaidStatus={handleTogglePaidStatus} />}
                 {activeTab === 'people' && <PeopleView data={data} onEditPerson={(p) => openModal('person', p)} onDeletePerson={(id) => handleDelete('person', id)} onEditLedger={(l) => openModal('ledger', l)} onDeleteLedger={(personId, ledgerId) => handleDelete('ledger', ledgerId, personId)} onSettle={handleSettle} currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} />}
@@ -1307,7 +1310,7 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
     )
 };
 
-const TransactionsView = ({ transactions, onEdit, onDelete }) => {
+const TransactionsView = ({ transactions, onEdit, onDelete, onView }) => {
     const income = transactions.filter(t => t.type === 'income');
     const expenses = transactions.filter(t => t.type === 'expense');
     
@@ -1316,37 +1319,41 @@ const TransactionsView = ({ transactions, onEdit, onDelete }) => {
             <div>
                 <h3 className="text-2xl font-bold mb-4 text-emerald-400">درآمدها</h3>
                 {income.length > 0 ? (
-                    <TransactionList transactions={income} onEdit={onEdit} onDelete={onDelete} />
+                    <TransactionList transactions={income} onEdit={onEdit} onDelete={onDelete} onView={onView} />
                 ) : <p className="text-slate-500 text-center py-8 bg-slate-800/20 rounded-lg">هنوز درآمدی ثبت نشده است.</p>}
             </div>
              <div>
                 <h3 className="text-2xl font-bold mb-4 text-rose-400">هزینه‌ها</h3>
                 {expenses.length > 0 ? (
-                    <TransactionList transactions={expenses} onEdit={onEdit} onDelete={onDelete} />
+                    <TransactionList transactions={expenses} onEdit={onEdit} onDelete={onDelete} onView={onView} />
                 ) : <p className="text-slate-500 text-center py-8 bg-slate-800/20 rounded-lg">هنوز هزینه‌ای ثبت نشده است.</p>}
             </div>
         </div>
     );
 };
 
-const TransactionList = ({ transactions, onEdit, onDelete }) => (
+const TransactionList = ({ transactions, onEdit, onDelete, onView }) => (
     <div className="space-y-3">
         {transactions.map(t => (
-            <div key={t.id} className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50">
+            <div 
+                key={t.id} 
+                className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition group"
+                onClick={() => onView && onView(t)}
+            >
                 <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
                     {t.receiptImage && (
                         <ImageFromRef srcOrRef={t.receiptImage} className="h-12 w-12 rounded-md object-cover hidden sm:block" />
                     )}
                     <div className="min-w-0">
-                        <p className="font-bold text-slate-100 truncate">{t.description}</p>
+                        <p className="font-bold text-slate-100 truncate group-hover:text-sky-300 transition-colors">{t.description}</p>
                         <p className="text-sm text-slate-400 truncate">{t.category} • {formatDate(t.date)}</p>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
                     <p className={`font-bold text-sm sm:text-base ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(t.amount)}</p>
                      <div className="flex items-center space-x-1 space-x-reverse text-slate-400">
-                       <button onClick={() => onEdit(t)} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition" aria-label="ویرایش"><EditIcon/></button>
-                       <button onClick={() => onDelete(t.id)} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition" aria-label="حذف"><DeleteIcon/></button>
+                       <button onClick={(e) => { e.stopPropagation(); onEdit(t); }} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition" aria-label="ویرایش"><EditIcon/></button>
+                       <button onClick={(e) => { e.stopPropagation(); onDelete(t.id); }} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition" aria-label="حذف"><DeleteIcon/></button>
                     </div>
                 </div>
             </div>
