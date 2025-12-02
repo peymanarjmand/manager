@@ -8,51 +8,89 @@ import { Assets } from './features/assets/Assets';
 import { DailyTasks } from './features/daily-tasks/DailyTasks';
 import { Darfak } from './features/darfak/Darfak';
 import { HealthDashboard } from './features/health-dashboard/HealthDashboard';
-import { SUPABASE_ENABLED } from './lib/supabase';
-import { supabase } from './lib/supabase';
+import { SUPABASE_ENABLED, supabase } from './lib/supabase';
+import { LoginPage } from './features/auth/LoginPage';
+import { SignupPage } from './features/auth/SignupPage';
 
 export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phone-book' | 'daily-tasks' | 'assets' | 'darfak' | 'health-dashboard';
 
 function App(): React.ReactNode {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [sessionInfo, setSessionInfo] = useState<string | undefined>(undefined);
+  const [session, setSession] = useState<any>(null);
+  const [authView, setAuthView] = useState<'login' | 'signup'>('login');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
+  useEffect(() => {
+    if (!SUPABASE_ENABLED) {
+        setSessionInfo('Supabase: disabled');
+        setIsLoading(false);
+        return;
     }
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (session?.user) {
+        // Run healthcheck or setup only when logged in
+        (async () => {
+            try {
+                const ts = new Date().toISOString();
+                // Try to read/write to confirm access
+                const { error } = await supabase
+                  .from('state_settings')
+                  .upsert({ id: 'healthcheck', value: { ts }, updated_at: ts });
+                
+                if (!error) {
+                    setSessionInfo('Online');
+                } else {
+                    console.error('Healthcheck failed', error);
+                    setSessionInfo('Offline / Error');
+                }
+            } catch (e) {
+                console.error(e);
+                setSessionInfo('Error');
+            }
+        })();
+    }
+  }, [session]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    // window.location.reload(); 
   };
 
   const handleNavigate = (view: View) => {
     setCurrentView(view);
   };
 
-  useEffect(() => {
-    (async () => {
-      if (!SUPABASE_ENABLED) {
-        setSessionInfo('Supabase: disabled');
-        return;
+  if (isLoading) {
+      return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>;
+  }
+
+  if (!session && SUPABASE_ENABLED) {
+      if (authView === 'login') {
+          return <LoginPage onLoginSuccess={() => {}} onNavigateToSignup={() => setAuthView('signup')} />;
+      } else {
+          return <SignupPage onSignupSuccess={() => {}} onNavigateToLogin={() => setAuthView('login')} />;
       }
-      try {
-        const ts = new Date().toISOString();
-        const { error: upErr } = await supabase
-          .from('state_settings')
-          .upsert({ id: 'healthcheck', value: { ts }, updated_at: ts });
-        if (upErr) throw upErr;
-        const { data, error: selErr } = await supabase
-          .from('state_settings')
-          .select('id')
-          .eq('id', 'healthcheck')
-          .maybeSingle();
-        if (selErr) throw selErr;
-        setSessionInfo(data?.id ? 'Supabase: OK' : 'Supabase: read failed');
-      } catch (e: any) {
-        setSessionInfo('Supabase error');
-        // eslint-disable-next-line no-console
-        console.error('Supabase healthcheck failed', e);
-      }
-    })();
-  }, []);
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 text-white font-sans">
