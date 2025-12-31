@@ -845,8 +845,8 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
         return (
             <>
                 <FormSelect label="نوع" id="type" value={formData.type} onChange={handleChange} required>
-                    <option value="debt">طلب (او به من بدهکار است)</option>
-                    <option value="credit">بدهی (من به او بدهکارم)</option>
+                    <option value="debt">بهش دادم (او به من بدهکار است)</option>
+                    <option value="credit">ازش گرفتم (من به او بدهکارم)</option>
                 </FormSelect>
                 <FormSelect
                     label="واحد"
@@ -1749,8 +1749,8 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                 {/* Quick add bar */}
                 <div className="mb-5 p-4 bg-slate-900/50 rounded-lg ring-1 ring-slate-700">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <button onClick={() => setQType('debt')} className={`px-3 py-1 rounded-full text-xs border ${qType==='debt' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>طلب (او به من)</button>
-                        <button onClick={() => setQType('credit')} className={`px-3 py-1 rounded-full text-xs border ${qType==='credit' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>بدهی (من به او)</button>
+                        <button onClick={() => setQType('debt')} className={`px-3 py-1 rounded-full text-xs border ${qType==='debt' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>بهش دادم</button>
+                        <button onClick={() => setQType('credit')} className={`px-3 py-1 rounded-full text-xs border ${qType==='credit' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>ازش گرفتم</button>
                         <FormSelect
                             label=""
                             id="qUnit"
