@@ -156,7 +156,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
   const handleMaintenanceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVehicleId) return;
-    if (!maintenanceForm.serviceDate || !maintenanceForm.itemsDescription) return;
+    if (!maintenanceForm.serviceDate) return;
 
     const items = maintenanceForm.items || [];
     if (!items.length) {
@@ -228,17 +228,25 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
 
           <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
             {vehicles.map((v) => (
-              <button
+              <div
                 key={v.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   selectVehicle(v.id);
                   setVehicleForm(v);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    selectVehicle(v.id);
+                    setVehicleForm(v);
+                  }
                 }}
                 className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg border ${
                   v.id === selectedVehicleId
                     ? 'border-sky-400 bg-sky-500/10'
                     : 'border-slate-700 bg-slate-900/40 hover:border-slate-500'
-                } transition`}
+                } transition cursor-pointer`}
               >
                 <div className="flex flex-col text-sm">
                   <span className="font-semibold text-slate-100">{v.name}</span>
@@ -276,7 +284,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     <DeleteIcon />
                   </button>
                 </div>
-              </button>
+              </div>
             ))}
             {vehicles.length === 0 && (
               <p className="text-sm text-slate-400">
