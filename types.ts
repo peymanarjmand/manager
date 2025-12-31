@@ -296,6 +296,18 @@ export interface VehicleMaintenanceRecord {
     createdAt: string; // ISO
 }
 
+export interface VehicleExpense {
+    id: string;
+    vehicleId: string;
+    date: string; // ISO date
+    amount: number;
+    category: string; // e.g. لوازم یدکی، سرویس، هزینه بنزین، ...
+    description?: string;
+    attachmentRef?: string; // receipt image/PDF ref
+    maintenanceId?: string; // link back to maintenance record when auto-created
+    createdAt: string; // ISO
+}
+
 export type View =
   | 'dashboard'
   | 'password-manager'

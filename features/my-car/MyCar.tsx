@@ -5,6 +5,7 @@ import type {
   VehicleInsurance,
   VehicleMaintenanceRecord,
   VehicleInsuranceType,
+  VehicleExpense,
 } from './types';
 import {
   BackIcon,
@@ -22,7 +23,13 @@ interface MyCarProps {
   onNavigateBack: () => void;
 }
 
-type DetailsTab = 'specs' | 'insurance' | 'maintenance';
+type DetailsTab = 'specs' | 'insurance' | 'maintenance' | 'expenses';
+
+const BASE_EXPENSE_CATEGORIES: string[] = [
+  'لوازم یدکی',
+  'سرویس',
+  'هزینه بنزین',
+];
 
 const BASE_SERVICE_ITEMS: string[] = [
   'تعویض روغن موتور',
@@ -70,6 +77,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     vehicles,
     insurances,
     maintenances,
+    expenses,
     selectedVehicleId,
     loading,
     error,
@@ -81,6 +89,8 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     deleteInsurance,
     saveMaintenance,
     deleteMaintenance,
+    saveExpense,
+    deleteExpense,
     selectVehicle,
   } = useMyCarStore();
 
@@ -92,6 +102,10 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     Partial<VehicleMaintenanceRecord>
   >({
     serviceDate: todayIsoDateOnly(),
+  });
+  const [expenseForm, setExpenseForm] = useState<Partial<VehicleExpense>>({
+    date: todayIsoDateOnly(),
+    category: '',
   });
   const [activeTab, setActiveTab] = useState<DetailsTab>('specs');
 
@@ -221,6 +235,49 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     });
   };
 
+  const handleExpenseSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVehicleId) return;
+
+    const amount =
+      expenseForm.amount != null && !Number.isNaN(expenseForm.amount)
+        ? Number(expenseForm.amount)
+        : NaN;
+    if (Number.isNaN(amount)) {
+      window.alert('لطفاً مبلغ را به‌صورت عدد وارد کنید (صفر هم مجاز است).');
+      return;
+    }
+
+    const category = (expenseForm.category || '').trim();
+    if (!category) {
+      window.alert('لطفاً بابت هزینه را مشخص کنید.');
+      return;
+    }
+
+    const date =
+      expenseForm.date && expenseForm.date.length >= 10
+        ? expenseForm.date.slice(0, 10)
+        : todayIsoDateOnly();
+
+    const payload: VehicleExpense = {
+      id: expenseForm.id || '',
+      vehicleId: selectedVehicleId,
+      date,
+      amount,
+      category,
+      description: expenseForm.description,
+      attachmentRef: expenseForm.attachmentRef,
+      maintenanceId: expenseForm.maintenanceId,
+      createdAt: expenseForm.createdAt || new Date().toISOString(),
+    };
+
+    await saveExpense(payload);
+    setExpenseForm({
+      date: todayIsoDateOnly(),
+      category,
+    });
+  };
+
   const filteredInsurances = useMemo(
     () => insurances.filter((i) => i.vehicleId === selectedVehicleId),
     [insurances, selectedVehicleId]
@@ -229,6 +286,11 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
   const filteredMaintenances = useMemo(
     () => maintenances.filter((m) => m.vehicleId === selectedVehicleId),
     [maintenances, selectedVehicleId]
+  );
+
+  const filteredExpenses = useMemo(
+    () => expenses.filter((e) => e.vehicleId === selectedVehicleId),
+    [expenses, selectedVehicleId]
   );
 
   return (
@@ -518,6 +580,16 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     >
                       سوابق فنی و سرویس‌ها
                     </button>
+                    <button
+                      onClick={() => setActiveTab('expenses')}
+                      className={`px-3 py-2 border-b-2 ${
+                        activeTab === 'expenses'
+                          ? 'border-sky-400 text-sky-400'
+                          : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'
+                      }`}
+                    >
+                      مخارج خودرو
+                    </button>
                   </nav>
                 </div>
 
@@ -540,6 +612,15 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     onChange={setMaintenanceForm}
                     onSubmit={handleMaintenanceSubmit}
                     onDelete={deleteMaintenance}
+                  />
+                )}
+                {activeTab === 'expenses' && (
+                  <ExpensesTab
+                    records={filteredExpenses}
+                    form={expenseForm}
+                    onChange={setExpenseForm}
+                    onSubmit={handleExpenseSubmit}
+                    onDelete={deleteExpense}
                   />
                 )}
               </>
@@ -1167,6 +1248,211 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
       )}
     </div>
   </div>
+  );
+};
+
+interface ExpensesTabProps {
+  records: VehicleExpense[];
+  form: Partial<VehicleExpense>;
+  onChange: (f: Partial<VehicleExpense>) => void;
+  onSubmit: (e: React.FormEvent) => Promise<void> | void;
+  onDelete: (id: string) => Promise<void>;
+}
+
+const ExpensesTab: React.FC<ExpensesTabProps> = ({
+  records,
+  form,
+  onChange,
+  onSubmit,
+  onDelete,
+}) => {
+  const allCategories = useMemo(
+    () =>
+      Array.from(
+        new Set<string>([
+          ...BASE_EXPENSE_CATEGORIES,
+          ...(records.map((r) => r.category) || []),
+        ])
+      ),
+    [records]
+  );
+
+  const handleSelectCategory = (label: string) => {
+    onChange({ ...form, category: label });
+  };
+
+  return (
+    <div className="space-y-4">
+      <form
+        onSubmit={onSubmit}
+        className="bg-slate-900/40 rounded-lg p-4 border border-slate-800 space-y-3"
+      >
+        <h4 className="font-semibold text-slate-100 flex items-center gap-2">
+          <PlusIcon />
+          <span>ثبت هزینه / مخارج خودرو</span>
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">
+              مبلغ (تومان) *
+            </label>
+            <input
+              type="number"
+              value={form.amount ?? ''}
+              min={0}
+              onChange={(e) =>
+                onChange({
+                  ...form,
+                  amount: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+              className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">
+              تاریخ هزینه *
+            </label>
+            <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+              <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
+              <div className="flex-1">
+                <JalaliDatePicker
+                  id="vehicle-expense-date"
+                  value={form.date || new Date().toISOString()}
+                  onChange={(iso) =>
+                    onChange({
+                      ...form,
+                      date: iso.slice(0, 10),
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+          <div className="sm:col-span-1">
+            <label className="block text-xs text-slate-400 mb-1">
+              بابت *
+            </label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {allCategories.map((label) => {
+                const selected = form.category === label;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => handleSelectCategory(label)}
+                    className={`px-3 py-1.5 rounded-full border text-xs transition ${
+                      selected
+                        ? 'border-sky-400 bg-sky-500/10 text-sky-200'
+                        : 'border-slate-600 bg-slate-900/40 text-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              type="text"
+              placeholder="بابت دلخواه (مثلاً عوارض، شستشو)"
+              value={
+                form.category &&
+                !BASE_EXPENSE_CATEGORIES.includes(form.category)
+                  ? form.category
+                  : ''
+              }
+              onChange={(e) =>
+                onChange({
+                  ...form,
+                  category: e.target.value,
+                })
+              }
+              className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100 mt-1"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-xs text-slate-400 mb-1">
+              توضیحات
+            </label>
+            <textarea
+              rows={2}
+              value={form.description || ''}
+              onChange={(e) =>
+                onChange({ ...form, description: e.target.value })
+              }
+              className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">
+              رسید هزینه (PDF / تصویر)
+            </label>
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const ref = await fileToImageRef(file);
+                onChange({ ...form, attachmentRef: ref });
+              }}
+              className="w-full text-xs text-slate-300"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold px-4 py-2 rounded-md transition"
+          >
+            <PlusIcon />
+            <span>{form.id ? 'ذخیره هزینه' : 'ثبت هزینه'}</span>
+          </button>
+        </div>
+      </form>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {records.map((r) => (
+          <article
+            key={r.id}
+            className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <h5 className="font-semibold text-slate-100">
+                {r.category} - {r.amount.toLocaleString()} تومان
+              </h5>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('آیا از حذف این هزینه مطمئن هستید؟')) {
+                    onDelete(r.id);
+                  }
+                }}
+                className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
+              >
+                <DeleteIcon />
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">
+              تاریخ: {formatDateLabel(r.date)}
+            </p>
+            {r.description && (
+              <p className="text-xs text-slate-300 border-t border-slate-800/60 pt-2 mt-2">
+                {r.description}
+              </p>
+            )}
+            {r.attachmentRef && (
+              <InsuranceDocumentLink documentRef={r.attachmentRef} />
+            )}
+          </article>
+        ))}
+        {records.length === 0 && (
+          <p className="text-sm text-slate-400">
+            هنوز هیچ هزینه‌ای برای این خودرو ثبت نشده است.
+          </p>
+        )}
+      </div>
+    </div>
   );
 };
 

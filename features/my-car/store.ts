@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../../lib/supabase';
 import { MyCarState } from './types';
-import type { Vehicle, VehicleInsurance, VehicleMaintenanceRecord } from './types';
+import type { Vehicle, VehicleInsurance, VehicleMaintenanceRecord, VehicleExpense } from './types';
 
 // Expected Supabase schema (PostgreSQL):
 // 
@@ -61,6 +61,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
   vehicles: [],
   insurances: [],
   maintenances: [],
+  expenses: [],
   selectedVehicleId: null,
   loading: false,
   error: null,
@@ -105,7 +106,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
 
   async loadDetailsForVehicle(vehicleId: string) {
     set({ loading: true, error: null });
-    const [insRes, maintRes] = await Promise.all([
+    const [insRes, maintRes, expRes] = await Promise.all([
       supabase
         .from('vehicle_insurances')
         .select(
@@ -120,10 +121,17 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
         )
         .eq('vehicle_id', vehicleId)
         .order('service_date', { ascending: false }),
+      supabase
+        .from('vehicle_expenses')
+        .select(
+          'id,vehicle_id,date,amount,category,description,attachment_ref,maintenance_id,created_at'
+        )
+        .eq('vehicle_id', vehicleId)
+        .order('date', { ascending: false }),
     ]);
 
-    if (insRes.error || maintRes.error) {
-      console.error('Load vehicle details error', insRes.error || maintRes.error);
+    if (insRes.error || maintRes.error || expRes.error) {
+      console.error('Load vehicle details error', insRes.error || maintRes.error || expRes.error);
       set({ loading: false, error: 'خطا در بارگذاری جزئیات خودرو' });
       return;
     }
@@ -164,9 +172,23 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
         createdAt: row.created_at || new Date().toISOString(),
       })) ?? [];
 
+    const expenses: VehicleExpense[] =
+      (expRes.data || []).map((row: any) => ({
+        id: row.id,
+        vehicleId: row.vehicle_id,
+        date: row.date,
+        amount: Number(row.amount) || 0,
+        category: row.category,
+        description: row.description || undefined,
+        attachmentRef: row.attachment_ref || undefined,
+        maintenanceId: row.maintenance_id || undefined,
+        createdAt: row.created_at || new Date().toISOString(),
+      })) ?? [];
+
     set({
       insurances,
       maintenances,
+      expenses,
       selectedVehicleId: vehicleId,
       loading: false,
     });
@@ -336,6 +358,46 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
         ),
       };
     });
+
+    // Auto-create/update expense entry for this maintenance when it has a cost
+    if (record.cost != null && !Number.isNaN(record.cost) && record.cost > 0) {
+      const expense: VehicleExpense = {
+        id, // keep 1:1 with maintenance
+        vehicleId: record.vehicleId,
+        date: record.serviceDate,
+        amount: record.cost,
+        category: 'سرویس',
+        description: record.itemsDescription,
+        attachmentRef: record.invoiceRef,
+        maintenanceId: record.id,
+        createdAt: record.createdAt,
+      };
+
+      const { error: expErr } = await supabase.from('vehicle_expenses').upsert({
+        id: expense.id,
+        vehicle_id: expense.vehicleId,
+        date: expense.date,
+        amount: expense.amount,
+        category: expense.category,
+        description: expense.description || null,
+        attachment_ref: expense.attachmentRef || null,
+        maintenance_id: expense.maintenanceId || null,
+        created_at: expense.createdAt,
+      });
+
+      if (expErr) {
+        console.error('Save maintenance-linked expense error', expErr);
+      } else {
+        set((state) => {
+          const others = state.expenses.filter((e) => e.id !== expense.id);
+          return {
+            expenses: [expense, ...others].sort((a, b) =>
+              b.date.localeCompare(a.date)
+            ),
+          };
+        });
+      }
+    }
   },
 
   async deleteMaintenance(id) {
@@ -351,6 +413,59 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
 
     set((state) => ({
       maintenances: state.maintenances.filter((m) => m.id !== id),
+      expenses: state.expenses.filter((e) => e.maintenanceId !== id && e.id !== id),
+    }));
+  },
+
+  async saveExpense(input) {
+    const id = input.id || genId();
+    const expense: VehicleExpense = {
+      ...input,
+      id,
+      createdAt: input.createdAt || new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('vehicle_expenses').upsert({
+      id: expense.id,
+      vehicle_id: expense.vehicleId,
+      date: expense.date,
+      amount: expense.amount,
+      category: expense.category,
+      description: expense.description || null,
+      attachment_ref: expense.attachmentRef || null,
+      maintenance_id: expense.maintenanceId || null,
+      created_at: expense.createdAt,
+    });
+
+    if (error) {
+      console.error('Save vehicle expense error', error);
+      set({ error: 'خطا در ذخیره مخارج خودرو' });
+      return;
+    }
+
+    set((state) => {
+      const others = state.expenses.filter((e) => e.id !== id);
+      return {
+        expenses: [expense, ...others].sort((a, b) =>
+          b.date.localeCompare(a.date)
+        ),
+      };
+    });
+  },
+
+  async deleteExpense(id) {
+    const { error } = await supabase
+      .from('vehicle_expenses')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      console.error('Delete vehicle expense error', error);
+      set({ error: 'خطا در حذف مخارج خودرو' });
+      return;
+    }
+
+    set((state) => ({
+      expenses: state.expenses.filter((e) => e.id !== id),
     }));
   },
 }));

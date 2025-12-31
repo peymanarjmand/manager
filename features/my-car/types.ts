@@ -1,11 +1,12 @@
-import { Vehicle, VehicleInsurance, VehicleMaintenanceRecord, VehicleInsuranceType } from '../../types';
+import { Vehicle, VehicleInsurance, VehicleMaintenanceRecord, VehicleInsuranceType, VehicleExpense } from '../../types';
 
-export type { Vehicle, VehicleInsurance, VehicleMaintenanceRecord, VehicleInsuranceType };
+export type { Vehicle, VehicleInsurance, VehicleMaintenanceRecord, VehicleInsuranceType, VehicleExpense };
 
 export interface MyCarState {
   vehicles: Vehicle[];
   insurances: VehicleInsurance[];
   maintenances: VehicleMaintenanceRecord[];
+  expenses: VehicleExpense[];
   selectedVehicleId: string | null;
   loading: boolean;
   error: string | null;
@@ -26,6 +27,10 @@ export interface MyCarState {
   // Maintenance CRUD
   saveMaintenance: (record: Omit<VehicleMaintenanceRecord, 'createdAt'>) => Promise<void>;
   deleteMaintenance: (id: string) => Promise<void>;
+
+  // Expenses CRUD
+  saveExpense: (expense: Omit<VehicleExpense, 'createdAt'>) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
 }
 
 
