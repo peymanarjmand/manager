@@ -235,6 +235,25 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     });
   };
 
+  const handleDeleteMaintenanceWithExpense = async (id: string) => {
+    const proceed = window.confirm('آیا از حذف این سرویس مطمئن هستید؟');
+    if (!proceed) return;
+
+    const linkedExpense = expenses.find(
+      (e) => e.maintenanceId === id || e.id === id
+    );
+    if (linkedExpense) {
+      const alsoDelete = window.confirm(
+        'برای این سرویس یک تراکنش در مخارج خودرو ثبت شده است. آیا می‌خواهید آن تراکنش هم حذف شود؟'
+      );
+      if (alsoDelete) {
+        await deleteExpense(linkedExpense.id);
+      }
+    }
+
+    await deleteMaintenance(id);
+  };
+
   const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVehicleId) return;
@@ -611,7 +630,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     form={maintenanceForm}
                     onChange={setMaintenanceForm}
                     onSubmit={handleMaintenanceSubmit}
-                    onDelete={deleteMaintenance}
+                    onDelete={handleDeleteMaintenanceWithExpense}
                   />
                 )}
                 {activeTab === 'expenses' && (
@@ -1223,11 +1242,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (window.confirm('آیا از حذف این سرویس مطمئن هستید؟')) {
-                      onDelete(r.id);
-                    }
-                  }}
+                  onClick={() => onDelete(r.id)}
                   className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
                 >
                   <DeleteIcon />

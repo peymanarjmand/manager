@@ -413,7 +413,6 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
 
     set((state) => ({
       maintenances: state.maintenances.filter((m) => m.id !== id),
-      expenses: state.expenses.filter((e) => e.maintenanceId !== id && e.id !== id),
     }));
   },
 
