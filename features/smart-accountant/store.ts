@@ -422,7 +422,7 @@ export const useAccountantStore = create<AccountantState>()(
                 if (personIds.length > 0) {
                     const { data: ledgerData, error: ledgerError } = await supabase
                         .from('ledger_entries')
-                        .select('id,person_id,type,amount,description,date,is_settled,receipt_ref')
+                        .select('id,person_id,type,amount,description,date,is_settled,receipt_ref,unit')
                         .in('person_id', personIds);
                     if (ledgerError) {
                         console.warn('Ledger load error', ledgerError);
@@ -434,6 +434,8 @@ export const useAccountantStore = create<AccountantState>()(
                             personId: row.person_id,
                             type: row.type,
                             amount: Number(row.amount) || 0,
+                            // default to 'toman' for older rows without unit
+                            unit: (row.unit || 'toman') as any,
                             description: row.description,
                             date: row.date,
                             isSettled: !!row.is_settled,
@@ -491,15 +493,19 @@ export const useAccountantStore = create<AccountantState>()(
                         .select('id');
                     (allLedgerIds || []).forEach((r: any) => supLedgerIds.push(r.id));
 
-                    const missingLedgerRows = Object.values(mergedLedger).flat().filter(e => !supLedgerIds.includes(e.id)).map(e => ({
-                        id: e.id,
-                        person_id: e.personId,
-                        type: e.type,
-                        amount: Number(e.amount) || 0,
-                        description: e.description,
-                        date: e.date,
-                        is_settled: !!e.isSettled,
-                    }));
+                    const missingLedgerRows = Object.values(mergedLedger)
+                        .flat()
+                        .filter(e => !supLedgerIds.includes(e.id))
+                        .map(e => ({
+                            id: e.id,
+                            person_id: e.personId,
+                            type: e.type,
+                            amount: Number(e.amount) || 0,
+                            description: e.description,
+                            date: e.date,
+                            is_settled: !!e.isSettled,
+                            unit: (e as any).unit || 'toman',
+                        }));
                     if (missingLedgerRows.length > 0) {
                         const { error: upErr } = await supabase.from('ledger_entries').upsert(missingLedgerRows);
                         if (upErr) console.error('Ledger migrate upsert error', upErr);
@@ -732,6 +738,7 @@ export const useAccountantStore = create<AccountantState>()(
                             date: e.date,
                             is_settled: !!e.isSettled,
                             receipt_ref: e.receiptImage || null,
+                            unit: (e as any).unit || 'toman',
                         });
                     if (error) console.error('Ledger entry upsert error', error);
                 })();

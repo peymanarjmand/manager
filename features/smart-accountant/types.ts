@@ -27,12 +27,15 @@ export interface Person {
     avatar?: string; // base64
 }
 
+export type LedgerUnit = 'toman' | 'gold_mg' | 'btc' | 'usdt';
+
 // A single entry in a ledger with a person
 export interface LedgerEntry {
     id:string;
     personId: string;
     type: 'debt' | 'credit'; // debt: they owe me, credit: I owe them
     amount: number;
+    unit?: LedgerUnit; // default: 'toman' for backward compatibility
     description: string;
     date: string; // ISO string
     isSettled: boolean;

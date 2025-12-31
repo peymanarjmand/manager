@@ -17,6 +17,29 @@ type ModalConfig = { isOpen: boolean; type?: 'transaction' | 'asset' | 'person' 
 
 // HELPERS
 const formatCurrency = (amount: number) => `${(amount || 0).toLocaleString('fa-IR')} تومان`;
+const LEDGER_UNITS: { id: 'toman' | 'gold_mg' | 'btc' | 'usdt'; label: string; suffix: string; step: string; maxDecimals: number }[] = [
+    { id: 'toman', label: 'تومان', suffix: 'تومان', step: '1', maxDecimals: 0 },
+    { id: 'gold_mg', label: 'طلا (میلی‌گرم)', suffix: 'mg طلا', step: '1', maxDecimals: 0 },
+    { id: 'btc', label: 'بیت‌کوین', suffix: 'BTC', step: '0.0000000001', maxDecimals: 10 },
+    { id: 'usdt', label: 'تتر', suffix: 'USDT', step: '0.001', maxDecimals: 3 },
+];
+
+const getLedgerUnitConfig = (unit: string | undefined) => {
+    return LEDGER_UNITS.find(u => u.id === unit) || LEDGER_UNITS[0];
+};
+
+const formatLedgerAmount = (entry: LedgerEntry) => {
+    const cfg = getLedgerUnitConfig((entry as any).unit);
+    const amount = Number(entry.amount) || 0;
+    const value =
+        cfg.maxDecimals > 0
+            ? amount.toLocaleString('fa-IR', {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: cfg.maxDecimals,
+              })
+            : amount.toLocaleString('fa-IR');
+    return `${value} ${cfg.suffix}`;
+};
 const formatDate = (date: string) => moment(date).locale('fa').format('dddd، jD jMMMM jYYYY');
 
 // Reusable Form Components
@@ -817,18 +840,50 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
             <FormImageUpload label="آواتار" preview={imagePreview} onChange={handleImageChange} />
         </>
     );
-    const renderLedgerFields = () => (
-         <>
-            <FormSelect label="نوع" id="type" value={formData.type} onChange={handleChange} required>
-                <option value="debt">طلب (او به من بدهکار است)</option>
-                <option value="credit">بدهی (من به او بدهکارم)</option>
-            </FormSelect>
-            <FormInput label="مبلغ" id="amount" type="number" value={formData.amount} onChange={handleChange} required />
-            <FormInput label="توضیحات" id="description" value={formData.description} onChange={handleChange} required />
-            <JalaliDatePicker label="تاریخ" id="date" value={formData.date} onChange={(isoDate) => setFormData(p => ({...p, date: isoDate}))} />
-            <FormImageUpload label="رسید (اختیاری)" preview={imagePreview} onChange={handleImageChange} />
-        </>
-    );
+    const renderLedgerFields = () => {
+        const cfg = getLedgerUnitConfig(formData.unit || 'toman');
+        return (
+            <>
+                <FormSelect label="نوع" id="type" value={formData.type} onChange={handleChange} required>
+                    <option value="debt">طلب (او به من بدهکار است)</option>
+                    <option value="credit">بدهی (من به او بدهکارم)</option>
+                </FormSelect>
+                <FormSelect
+                    label="واحد"
+                    id="unit"
+                    value={formData.unit || 'toman'}
+                    onChange={handleChange}
+                    required
+                >
+                    {LEDGER_UNITS.map(u => (
+                        <option key={u.id} value={u.id}>{u.label}</option>
+                    ))}
+                </FormSelect>
+                <FormInput
+                    label={`مقدار (${cfg.label})`}
+                    id="amount"
+                    type="number"
+                    value={formData.amount}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                        const raw = e.target.value;
+                        // محدود کردن تعداد اعشار بر اساس واحد
+                        const parts = raw.split('.');
+                        if (parts[1] && parts[1].length > cfg.maxDecimals) {
+                            const trimmed = `${parts[0]}.${parts[1].slice(0, cfg.maxDecimals)}`;
+                            setFormData(p => ({ ...p, amount: trimmed }));
+                        } else {
+                            setFormData(p => ({ ...p, amount: raw }));
+                        }
+                    }}
+                    step={cfg.step}
+                    required
+                />
+                <FormInput label="توضیحات" id="description" value={formData.description} onChange={handleChange} required />
+                <JalaliDatePicker label="تاریخ" id="date" value={formData.date} onChange={(isoDate) => setFormData(p => ({...p, date: isoDate}))} />
+                <FormImageUpload label="رسید (اختیاری)" preview={imagePreview} onChange={handleImageChange} />
+            </>
+        );
+    };
     const renderInstallmentPlanFields = () => (
         <>
             <FormInput label="عنوان" id="title" value={formData.title} onChange={handleChange} placeholder="مثلا خرید گوشی" required />
@@ -957,9 +1012,18 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
             case 'person':
                 actions.savePerson({ ...itemData, id });
                 break;
-            case 'ledger':
-                actions.saveLedgerEntry({ ...itemData, id, amount: parseFloat(itemData.amount) || 0 });
+            case 'ledger': {
+                const unitCfg = getLedgerUnitConfig(itemData.unit || 'toman');
+                const parsedAmount = parseFloat(String(itemData.amount));
+                const safeAmount = isNaN(parsedAmount) ? 0 : Number(parsedAmount.toFixed(unitCfg.maxDecimals));
+                actions.saveLedgerEntry({
+                    ...itemData,
+                    id,
+                    amount: safeAmount,
+                    unit: unitCfg.id,
+                });
                 break;
+            }
             case 'installmentPlan': {
                 const { title, loanAmount, paymentAmount, installmentsCount, firstPaymentDate, id: planId } = itemData;
                 if (planId) { 
@@ -1236,6 +1300,9 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
         Object.values(data.ledger).forEach((personEntries: any[]) => {
             const netForPerson = (personEntries || []).reduce((acc, entry) => {
                 if (entry.isSettled) return acc;
+                // فقط ردیف‌های تومانی در خلاصه لحاظ می‌شوند
+                const unit = (entry as any).unit || 'toman';
+                if (unit !== 'toman') return acc;
                 if (entry.type === 'debt') return acc + entry.amount;   // آنها به من بدهکارند
                 return acc - entry.amount;                               // من به آنها بدهکارم
             }, 0);
@@ -1606,6 +1673,7 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
     // Quick add ledger state (must be top-level to honor React rules of hooks)
     const { saveLedgerEntry } = useAccountantStore.getState();
     const [qType, setQType] = useState<'debt' | 'credit'>('debt');
+    const [qUnit, setQUnit] = useState<'toman' | 'gold_mg' | 'btc' | 'usdt'>('toman');
     const [qAmount, setQAmount] = useState<string>('');
     const [qDesc, setQDesc] = useState<string>('');
     const [qDate, setQDate] = useState<string>(() => new Date().toISOString());
@@ -1622,11 +1690,14 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
         if (!currentPerson) return;
         const amountNum = parseFloat(String(qAmount));
         if (!amountNum || !qDesc) return;
+        const cfg = getLedgerUnitConfig(qUnit);
+        const safeAmount = Number(amountNum.toFixed(cfg.maxDecimals));
         const newEntry = {
             id: Date.now().toString(),
             personId: currentPerson.id,
             type: qType,
-            amount: amountNum,
+            amount: safeAmount,
+            unit: cfg.id,
             description: qDesc,
             date: qDate,
             isSettled: false,
@@ -1636,17 +1707,24 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
         setQAmount('');
         setQDesc('');
         setQType('debt');
+        setQUnit('toman');
         setQDate(new Date().toISOString());
         setQReceiptRef(undefined);
         setQReceiptURL(null);
     };
 
     if (currentPerson) {
-        const ledger = data.ledger[currentPerson.id] || [];
+        const ledger = (data.ledger[currentPerson.id] || []).map(e => ({
+            ...e,
+            unit: (e as any).unit || 'toman',
+        }));
         const { balance } = ledger.reduce((acc, entry) => {
             if (!entry.isSettled) {
-                if (entry.type === 'debt') acc.balance += entry.amount; // They owe me
-                else acc.balance -= entry.amount; // I owe them
+                // فقط ردیف‌های تومانی برای مانده ریالی
+                if ((entry as any).unit === 'toman') {
+                    if (entry.type === 'debt') acc.balance += entry.amount; // They owe me
+                    else acc.balance -= entry.amount; // I owe them
+                }
             }
             return acc;
         }, { balance: 0 });
@@ -1673,6 +1751,16 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                     <div className="flex flex-wrap items-center gap-2 mb-3">
                         <button onClick={() => setQType('debt')} className={`px-3 py-1 rounded-full text-xs border ${qType==='debt' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>طلب (او به من)</button>
                         <button onClick={() => setQType('credit')} className={`px-3 py-1 rounded-full text-xs border ${qType==='credit' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>بدهی (من به او)</button>
+                        <FormSelect
+                            label=""
+                            id="qUnit"
+                            value={qUnit}
+                            onChange={(e: ChangeEvent<HTMLSelectElement>) => setQUnit(e.target.value as any)}
+                        >
+                            {LEDGER_UNITS.map(u => (
+                                <option key={u.id} value={u.id}>{u.label}</option>
+                            ))}
+                        </FormSelect>
                         <div className="ml-auto flex items-center gap-2 text-xs text-slate-400">
                             <label className="flex items-center gap-1 cursor-pointer select-none">
                                 <input type="checkbox" checked={showOnlyOpen} onChange={(e) => setShowOnlyOpen(e.target.checked)} />
@@ -1682,7 +1770,25 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
                         <div className="md:col-span-1">
-                            <FormInput label="مبلغ" id="qAmount" type="number" value={qAmount} onChange={(e) => setQAmount((e.target as HTMLInputElement).value)} required />
+                            <FormInput
+                                label="مبلغ"
+                                id="qAmount"
+                                type="number"
+                                value={qAmount}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                                    const cfg = getLedgerUnitConfig(qUnit);
+                                    const raw = e.target.value;
+                                    const parts = raw.split('.');
+                                    if (parts[1] && parts[1].length > cfg.maxDecimals) {
+                                        const trimmed = `${parts[0]}.${parts[1].slice(0, cfg.maxDecimals)}`;
+                                        setQAmount(trimmed);
+                                    } else {
+                                        setQAmount(raw);
+                                    }
+                                }}
+                                step={getLedgerUnitConfig(qUnit).step}
+                                required
+                            />
                         </div>
                         <div className="md:col-span-2">
                             <FormInput label="توضیحات" id="qDesc" value={qDesc} onChange={(e) => setQDesc((e.target as HTMLInputElement).value)} required />
@@ -1740,7 +1846,7 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
-                                <p className={`font-bold text-sm sm:text-base ${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(entry.amount)}</p>
+                                <p className={`font-bold text-sm sm:text-base ${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatLedgerAmount(entry)}</p>
                                 {entry.receiptImage && (
                                     <button
                                         onClick={() => setReceiptPreviewRef(entry.receiptImage!)}
@@ -1836,11 +1942,20 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {data.people.map(person => {
-                const ledger = data.ledger[person.id] || [];
-                const balance = ledger.reduce((sum, entry) => {
-                    if (entry.isSettled) return sum;
-                    return sum + (entry.type === 'debt' ? entry.amount : -entry.amount);
-                }, 0);
+                const ledger = (data.ledger[person.id] || []).map(e => ({
+                    ...e,
+                    unit: (e as any).unit || 'toman',
+                }));
+
+                const totalsByUnit = ledger.reduce((acc: Record<string, number>, entry) => {
+                    if (entry.isSettled) return acc;
+                    const unit = (entry as any).unit || 'toman';
+                    const sign = entry.type === 'debt' ? 1 : -1;
+                    acc[unit] = (acc[unit] || 0) + sign * entry.amount;
+                    return acc;
+                }, {});
+
+                const tomanBalance = totalsByUnit['toman'] || 0;
                 return (
                     <div key={person.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 cursor-pointer transition-all hover:ring-sky-400 hover:-translate-y-1" onClick={() => setCurrentPerson(person)}>
                         <div className="flex justify-between items-start">
@@ -1852,9 +1967,31 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                                 </div>
                                 <div>
                                     <h4 className="font-bold text-slate-100 text-lg">{person.name}</h4>
-                                     <p className={`text-sm font-semibold ${balance > 0 ? 'text-emerald-400' : balance < 0 ? 'text-rose-400' : 'text-slate-400'}`}>
-                                        {balance > 0 ? `طلب: ${formatCurrency(balance)}` : balance < 0 ? `بدهی: ${formatCurrency(Math.abs(balance))}` : 'تسویه'}
+                                    <p className={`text-sm font-semibold ${tomanBalance > 0 ? 'text-emerald-400' : tomanBalance < 0 ? 'text-rose-400' : 'text-slate-400'}`}>
+                                        {tomanBalance > 0 ? `طلب: ${formatCurrency(tomanBalance)}` : tomanBalance < 0 ? `بدهی: ${formatCurrency(Math.abs(tomanBalance))}` : 'تسویه (تومان)'}
                                     </p>
+                                    {Object.entries(totalsByUnit)
+                                        .filter(([unit]) => unit !== 'toman' && Math.abs(totalsByUnit[unit]) > 0)
+                                        .map(([unit, value]) => {
+                                            const cfg = getLedgerUnitConfig(unit);
+                                            const isReceivable = value > 0;
+                                            const amountStr =
+                                                cfg.maxDecimals > 0
+                                                    ? Math.abs(value).toLocaleString('fa-IR', {
+                                                          maximumFractionDigits: cfg.maxDecimals,
+                                                      })
+                                                    : Math.abs(value).toLocaleString('fa-IR');
+                                            return (
+                                                <p
+                                                    key={unit}
+                                                    className={`text-xs mt-0.5 ${isReceivable ? 'text-emerald-300' : 'text-rose-300'}`}
+                                                >
+                                                    {isReceivable
+                                                        ? `طلب: ${amountStr} ${cfg.suffix}`
+                                                        : `بدهی: ${amountStr} ${cfg.suffix}`}
+                                                </p>
+                                            );
+                                        })}
                                 </div>
                             </div>
                              <div className="flex flex-col items-center space-y-1 text-slate-400">
