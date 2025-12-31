@@ -9,6 +9,7 @@ import { useAccountantStore } from './store';
 import { TransactionVoucherModal } from './TransactionVoucherModal';
 import { isImageRef, saveImageDataURL, getObjectURLByRef, deleteImageByRef } from '../../lib/idb-images';
 import { supabase } from '../../lib/supabase';
+import { ConfirmDialog } from './ConfirmDialog';
 
  // CONFIG
  type AccountantTab = 'summary' | 'transactions' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
@@ -186,28 +187,6 @@ const JalaliDatePicker = ({ value, onChange, id, label }) => {
     );
 };
 
-// Reusable Confirm Dialog (styled)
-const ConfirmDialog = ({ open, title = 'تایید عملیات', message, confirmText = 'تایید', cancelText = 'لغو', tone = 'warning', onConfirm, onClose }: { open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void; onClose: () => void; }) => {
-    if (!open) return null;
-    const confirmClasses = tone === 'danger' ? 'bg-rose-600 hover:bg-rose-500' : tone === 'success' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-amber-600 hover:bg-amber-500';
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={onClose}>
-            <div className="absolute inset-0 bg-black/70" />
-            <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
-                    <h3 className="text-slate-100 font-bold text-lg">{title}</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white"><CloseIcon /></button>
-                </div>
-                <div className="p-5 text-slate-200 leading-7">{message}</div>
-                <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
-                    <button onClick={onClose} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">{cancelText}</button>
-                    <button onClick={() => { onConfirm(); onClose(); }} className={`px-4 py-2 rounded-md text-white text-sm font-bold ${confirmClasses}`}>{confirmText}</button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 const SocialInsuranceView = () => {
     const { socialInsurance } = useAccountantStore();
     const { saveSocialInsurance, deleteSocialInsurance, settleSocialInsurance, settleSocialInsuranceMonth } = useAccountantStore.getState();
@@ -354,13 +333,68 @@ const SocialInsuranceView = () => {
                                         <div className="flex items-center gap-2 text-slate-400">
                                             {rec ? (
                                                 <>
-                                                    {rec.receiptRef && <button onClick={() => setPreviewRef(rec.receiptRef!)} className="hover:text-sky-400" title="مشاهده فیش"><EyeIcon/></button>}
-                                                    {!rec.isSettled && <button onClick={() => { setEditing(rec); setModalOpen(true); }} className="hover:text-sky-400 text-xs">ویرایش</button>}
-                                                    {!rec.isSettled && <button onClick={() => deleteSocialInsurance(rec.id)} className="hover:text-rose-400 text-xs">حذف</button>}
+                                                    {rec.receiptRef && (
+                                                        <button
+                                                            onClick={() => setPreviewRef(rec.receiptRef!)}
+                                                            className="hover:text-sky-400"
+                                                            title="مشاهده فیش"
+                                                        >
+                                                            <EyeIcon />
+                                                        </button>
+                                                    )}
+                                                    {!rec.isSettled && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditing(rec);
+                                                                setModalOpen(true);
+                                                            }}
+                                                            className="hover:text-sky-400 text-xs"
+                                                        >
+                                                            ویرایش
+                                                        </button>
+                                                    )}
+                                                    {!rec.isSettled && (
+                                                        <button
+                                                            onClick={() =>
+                                                                setConfirmState({
+                                                                    open: true,
+                                                                    title: 'حذف رکورد بیمه',
+                                                                    message: 'این رکورد پرداخت بیمه به طور کامل حذف می‌شود و قابل بازگشت نیست. مطمئن هستید؟',
+                                                                    confirmText: 'بله، حذف شود',
+                                                                    cancelText: 'انصراف',
+                                                                    tone: 'danger',
+                                                                    onConfirm: () => deleteSocialInsurance(rec.id),
+                                                                })
+                                                            }
+                                                            className="hover:text-rose-400 text-xs"
+                                                        >
+                                                            حذف
+                                                        </button>
+                                                    )}
                                                     {!rec.isSettled ? (
-                                                        <button onClick={() => setConfirmState({ open: true, title: 'تسویه نهایی', message: 'تسویه این ماه غیرقابل بازگشت است. تایید می‌کنید؟', confirmText: '✓✓ تسویه نهایی', tone: 'success', onConfirm: () => settleSocialInsurance(rec.id) })} className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs" title="تسویه (غیرقابل بازگشت)">✓✓ تسویه</button>
+                                                        <button
+                                                            onClick={() =>
+                                                                setConfirmState({
+                                                                    open: true,
+                                                                    title: 'تسویه نهایی',
+                                                                    message: 'تسویه این ماه غیرقابل بازگشت است. تایید می‌کنید؟',
+                                                                    confirmText: '✓✓ تسویه نهایی',
+                                                                    tone: 'success',
+                                                                    onConfirm: () => settleSocialInsurance(rec.id),
+                                                                })
+                                                            }
+                                                            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs"
+                                                            title="تسویه (غیرقابل بازگشت)"
+                                                        >
+                                                            ✓✓ تسویه
+                                                        </button>
                                                     ) : (
-                                                        <span className="px-2 py-1 bg-emerald-700 text-white rounded-md text-xs" title="تسویه شده">✓✓ تسویه‌شده</span>
+                                                        <span
+                                                            className="px-2 py-1 bg-emerald-700 text-white rounded-md text-xs"
+                                                            title="تسویه شده"
+                                                        >
+                                                            ✓✓ تسویه‌شده
+                                                        </span>
                                                     )}
                                                 </>
                                             ) : (
@@ -874,6 +908,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     const [viewTransaction, setViewTransaction] = useState<Transaction | null>(null);
     const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
     const [currentInstallment, setCurrentInstallment] = useState<InstallmentPlan | null>(null);
+    const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void } | null>(null);
 
     const data = useAccountantStore();
     const actions = useAccountantStore.getState();
@@ -961,26 +996,63 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     };
 
     const handleDelete = (itemType: string, id: string, personId?: string) => {
-        if (!window.confirm("آیا از حذف این مورد اطمینان دارید؟")) return;
+        const performDelete = () => {
+            switch (itemType) {
+                case 'transaction':
+                    actions.deleteTransaction(id);
+                    break;
+                // assets moved out
+                case 'person':
+                    actions.deletePerson(id);
+                    break;
+                case 'ledger':
+                    if (personId) actions.deleteLedgerEntry(personId, id);
+                    break;
+                case 'installmentPlan':
+                    actions.deleteInstallmentPlan(id);
+                    setCurrentInstallment(null);
+                    break;
+                case 'check':
+                    actions.deleteCheck(id);
+                    break;
+            }
+        };
+
+        let title = 'حذف مورد';
+        let message = 'آیا از حذف این مورد اطمینان دارید؟ این عملیات قابل بازگشت نیست.';
+
         switch (itemType) {
             case 'transaction':
-                actions.deleteTransaction(id);
+                title = 'حذف تراکنش';
+                message = 'این تراکنش به طور کامل از تاریخچه شما حذف می‌شود و قابل بازگشت نیست. مطمئن هستید؟';
                 break;
-            // assets moved out
             case 'person':
-                actions.deletePerson(id);
+                title = 'حذف شخص و سوابق حساب';
+                message = 'با حذف این شخص، تمام ردیف‌های حساب مربوط به او نیز حذف می‌شود. آیا از انجام این کار اطمینان دارید؟';
                 break;
             case 'ledger':
-                if (personId) actions.deleteLedgerEntry(personId, id);
+                title = 'حذف ردیف حساب';
+                message = 'این ردیف حساب بین شما و این شخص حذف می‌شود و روی مانده حساب او تاثیر می‌گذارد. مطمئن هستید؟';
                 break;
             case 'installmentPlan':
-                actions.deleteInstallmentPlan(id);
-                setCurrentInstallment(null);
+                title = 'حذف طرح اقساط';
+                message = 'با حذف این طرح، تمام اقساط ثبت شده برای آن نیز حذف می‌شوند. آیا از انجام این کار اطمینان دارید؟';
                 break;
             case 'check':
-                actions.deleteCheck(id);
+                title = 'حذف چک';
+                message = 'این چک و وضعیت‌های ثبت شده برای آن حذف می‌شود. آیا از انجام این کار اطمینان دارید؟';
                 break;
         }
+
+        setConfirmState({
+            open: true,
+            title,
+            message,
+            confirmText: 'بله، حذف شود',
+            cancelText: 'انصراف',
+            tone: 'danger',
+            onConfirm: performDelete,
+        });
     };
     
     const handleSettle = (personId: string, ledgerId: string) => {
@@ -1035,6 +1107,24 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
         <div className="container mx-auto px-4 py-8 sm:py-12">
             <AccountantFormModal isOpen={modal.isOpen} onClose={closeModal} onSave={handleSave} type={modal.type} payload={modal.payload} />
             <TransactionVoucherModal transaction={viewTransaction} onClose={() => setViewTransaction(null)} />
+            {confirmState && (
+                <ConfirmDialog
+                    open={!!confirmState.open}
+                    title={confirmState.title || 'تایید عملیات'}
+                    message={confirmState.message || ''}
+                    confirmText={confirmState.confirmText || 'تایید'}
+                    cancelText={confirmState.cancelText || 'لغو'}
+                    tone={confirmState.tone || 'warning'}
+                    onConfirm={() => {
+                        try {
+                            confirmState.onConfirm();
+                        } finally {
+                            // closing handled in onClose
+                        }
+                    }}
+                    onClose={() => setConfirmState(null)}
+                />
+            )}
             
             <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
                 <div className="flex items-center gap-4">
@@ -1526,6 +1616,7 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
     const [qReceiptURL, setQReceiptURL] = useState<string | null>(null);
     const [qUploading, setQUploading] = useState<boolean>(false);
     const [receiptPreviewRef, setReceiptPreviewRef] = useState<string | null>(null);
+    const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void } | null>(null);
 
     const handleQuickAdd = () => {
         if (!currentPerson) return;
@@ -1661,13 +1752,17 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                                 )}
                                 <button
                                     onClick={() => {
-                                        const confirmed = window.confirm(
-                                            entry.isSettled
+                                        setConfirmState({
+                                            open: true,
+                                            title: entry.isSettled ? 'لغو تسویه ردیف' : 'تسویه ردیف',
+                                            message: entry.isSettled
                                                 ? 'آیا از لغو تسویه این ردیف اطمینان دارید؟'
-                                                : 'آیا از تسویه این ردیف اطمینان دارید؟ (در صورت فعال بودن فیلتر \"فقط موارد تسویه‌نشده\"، این ردیف از لیست پنهان می‌شود.)'
-                                        );
-                                        if (!confirmed) return;
-                                        onSettle(currentPerson.id, entry.id);
+                                                : 'آیا از تسویه این ردیف اطمینان دارید؟ در صورت فعال بودن فیلتر «فقط موارد تسویه‌نشده»، این ردیف از لیست پنهان می‌شود.',
+                                            confirmText: entry.isSettled ? 'بله، لغو تسویه شود' : 'بله، تسویه شود',
+                                            cancelText: 'انصراف',
+                                            tone: entry.isSettled ? 'warning' : 'success',
+                                            onConfirm: () => onSettle(currentPerson.id, entry.id),
+                                        });
                                     }}
                                     className="p-1.5 hover:bg-slate-700 rounded-full"
                                     title={entry.isSettled ? 'لغو تسویه' : 'تسویه'}
@@ -1710,6 +1805,24 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                             }
                         }}
                         onClose={() => setReceiptPreviewRef(null)}
+                    />
+                )}
+                {confirmState && (
+                    <ConfirmDialog
+                        open={!!confirmState.open}
+                        title={confirmState.title || 'تایید عملیات'}
+                        message={confirmState.message || ''}
+                        confirmText={confirmState.confirmText || 'تایید'}
+                        cancelText={confirmState.cancelText || 'لغو'}
+                        tone={confirmState.tone || 'warning'}
+                        onConfirm={() => {
+                            try {
+                                confirmState.onConfirm();
+                            } finally {
+                                // closing handled in onClose
+                            }
+                        }}
+                        onClose={() => setConfirmState(null)}
                     />
                 )}
             </div>

@@ -3,6 +3,7 @@ import moment from 'jalali-moment';
 import { useAccountantStore } from './store';
 import { DarfakExpense } from './types';
 import { PlusIcon, SearchIcon, EyeIcon } from '../../components/Icons';
+import { ConfirmDialog } from './ConfirmDialog';
 import { saveImageDataURL, getObjectURLByRef, isImageRef } from '../../lib/idb-images';
 
 export default function DarfakView() {
@@ -13,6 +14,7 @@ export default function DarfakView() {
     const [search, setSearch] = useState('');
     const [tags, setTags] = useState<string[]>([]);
     const [previewRef, setPreviewRef] = useState<string | null>(null);
+    const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void } | null>(null);
 
     const allTags = useMemo(() => {
         const s = new Set<string>();
@@ -72,7 +74,22 @@ export default function DarfakView() {
                             <p className="font-bold text-sky-300 text-lg">{e.amount.toLocaleString('fa-IR')} تومان</p>
                             <div className="flex gap-2 mt-2">
                                 <button onClick={() => openEdit(e)} className="text-slate-400 hover:text-sky-400 text-sm">ویرایش</button>
-                                <button onClick={() => deleteDarfak(e.id)} className="text-rose-400 hover:text-rose-300 text-sm">حذف</button>
+                                <button
+                                    onClick={() =>
+                                        setConfirmState({
+                                            open: true,
+                                            title: 'حذف هزینه درفک',
+                                            message: `هزینه «${e.title || 'بدون عنوان'}» به طور کامل حذف می‌شود و قابل بازگشت نیست. مطمئن هستید؟`,
+                                            confirmText: 'بله، حذف شود',
+                                            cancelText: 'انصراف',
+                                            tone: 'danger',
+                                            onConfirm: () => deleteDarfak(e.id),
+                                        })
+                                    }
+                                    className="text-rose-400 hover:text-rose-300 text-sm"
+                                >
+                                    حذف
+                                </button>
                                 {e.attachment && <button onClick={() => setPreviewRef(e.attachment!)} className="text-slate-400 hover:text-sky-400 text-sm inline-flex items-center gap-1"><EyeIcon/> مشاهده رسید</button>}
                             </div>
                         </div>
@@ -85,6 +102,24 @@ export default function DarfakView() {
 
             <DarfakModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSave={(payload) => { saveDarfak(payload); setModalOpen(false); }} expense={editing} />
             <ReceiptPreview refOrUrl={previewRef} onClose={() => setPreviewRef(null)} />
+            {confirmState && (
+                <ConfirmDialog
+                    open={!!confirmState.open}
+                    title={confirmState.title || 'تایید عملیات'}
+                    message={confirmState.message || ''}
+                    confirmText={confirmState.confirmText || 'تایید'}
+                    cancelText={confirmState.cancelText || 'لغو'}
+                    tone={confirmState.tone || 'warning'}
+                    onConfirm={() => {
+                        try {
+                            confirmState.onConfirm();
+                        } finally {
+                            // closing handled در onClose
+                        }
+                    }}
+                    onClose={() => setConfirmState(null)}
+                />
+            )}
         </div>
     );
 }
