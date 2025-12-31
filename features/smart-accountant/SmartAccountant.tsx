@@ -1672,6 +1672,8 @@ const AssetsView = ({ assets, onEdit, onDelete }) => {
 const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDeleteLedger, onSettle, currentPerson, setCurrentPerson }) => {
     // Quick add ledger state (must be top-level to honor React rules of hooks)
     const { saveLedgerEntry } = useAccountantStore.getState();
+    const peopleOrder = useAccountantStore(state => state.peopleOrder);
+    const setPeopleOrder = useAccountantStore(state => state.setPeopleOrder);
     const [qType, setQType] = useState<'debt' | 'credit'>('debt');
     const [qUnit, setQUnit] = useState<'toman' | 'gold_mg' | 'btc' | 'usdt'>('toman');
     const [qAmount, setQAmount] = useState<string>('');
@@ -1685,6 +1687,7 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
     const [qUploading, setQUploading] = useState<boolean>(false);
     const [receiptPreviewRef, setReceiptPreviewRef] = useState<string | null>(null);
     const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void } | null>(null);
+    const [draggingId, setDraggingId] = useState<string | null>(null);
 
     const handleQuickAdd = () => {
         if (!currentPerson) return;
@@ -1939,9 +1942,34 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
         return <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">هنوز شخصی برای حساب و کتاب اضافه نشده است.</p>;
     }
 
+    const orderedPeople = useMemo(() => {
+        const map = new Map(data.people.map(p => [p.id, p] as const));
+        const ordered: Person[] = [];
+        (peopleOrder || []).forEach(id => {
+            const p = map.get(id);
+            if (p) {
+                ordered.push(p);
+                map.delete(id);
+            }
+        });
+        // افراد جدیدی که هنوز در peopleOrder نیستند را در انتهای لیست اضافه می‌کنیم (مرتب بر اساس نام)
+        const remaining = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+        return [...ordered, ...remaining];
+    }, [data.people, peopleOrder]);
+
+    const handlePersonDrop = (fromId: string | null, toId: string) => {
+        if (!fromId || fromId === toId) return;
+        const current = peopleOrder && peopleOrder.length ? [...peopleOrder] : orderedPeople.map(p => p.id);
+        const fromIdx = current.indexOf(fromId);
+        const toIdx = current.indexOf(toId);
+        if (fromIdx === -1 || toIdx === -1) return;
+        current.splice(toIdx, 0, current.splice(fromIdx, 1)[0]);
+        setPeopleOrder(current);
+    };
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {data.people.map(person => {
+            {orderedPeople.map(person => {
                 const ledger = (data.ledger[person.id] || []).map(e => ({
                     ...e,
                     unit: (e as any).unit || 'toman',
@@ -1957,7 +1985,24 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
 
                 const tomanBalance = totalsByUnit['toman'] || 0;
                 return (
-                    <div key={person.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 cursor-pointer transition-all hover:ring-sky-400 hover:-translate-y-1" onClick={() => setCurrentPerson(person)}>
+                    <div
+                        key={person.id}
+                        draggable
+                        onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', person.id);
+                            setDraggingId(person.id);
+                        }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            const fromId = e.dataTransfer.getData('text/plain') || draggingId;
+                            handlePersonDrop(fromId, person.id);
+                            setDraggingId(null);
+                        }}
+                        onDragEnd={() => setDraggingId(null)}
+                        className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 cursor-pointer transition-all hover:ring-sky-400 hover:-translate-y-1"
+                        onClick={() => setCurrentPerson(person)}
+                    >
                         <div className="flex justify-between items-start">
                              <div className="flex items-center space-x-4 space-x-reverse">
                                 <div className="w-16 h-16 bg-slate-700 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">

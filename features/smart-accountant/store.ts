@@ -17,6 +17,7 @@ interface AccountantState extends AccountantData {
     funds: MonthlyFund[];
     // UI preferences
     tabsOrder: AccountantTab[]; // persisted order of tabs in Smart Accountant
+    peopleOrder: string[]; // custom order of people cards (by person id)
     loadDarfak: () => Promise<void>;
     loadInstallments: () => Promise<void>;
     loadTransactions: () => Promise<void>;
@@ -30,6 +31,7 @@ interface AccountantState extends AccountantData {
     setInstallmentsSortMode: (mode: 'nearest' | 'highest_month' | 'earliest_loan' | 'custom') => void;
     setInstallmentsCustomOrder: (order: string[]) => void;
     setTabsOrder: (order: AccountantTab[]) => void;
+    setPeopleOrder: (order: string[]) => void;
     loadFunds: () => Promise<void>;
     saveMonthlyFund: (fund: MonthlyFund) => void;
     deleteMonthlyFund: (id: string) => void;
@@ -74,6 +76,7 @@ export const useAccountantStore = create<AccountantState>()(
             socialInsurance: [],
             funds: [],
             tabsOrder: ['summary','transactions','checks','installments','people','social_insurance','darfak'],
+            peopleOrder: [],
             installmentsSortMode: 'nearest',
             installmentsCustomOrder: [],
             customCategories: { income: [], expense: [] },
@@ -90,6 +93,7 @@ export const useAccountantStore = create<AccountantState>()(
             setInstallmentsSortMode: (mode) => set({ installmentsSortMode: mode }),
             setInstallmentsCustomOrder: (order) => set({ installmentsCustomOrder: order }),
             setTabsOrder: (order) => set({ tabsOrder: order }),
+            setPeopleOrder: (order) => set({ peopleOrder: order }),
             loadFunds: async () => {
                 try {
                     const { data, error } = await supabase
@@ -694,8 +698,14 @@ export const useAccountantStore = create<AccountantState>()(
             savePerson: (person) => {
                 set(state => {
                     const items = state.people.filter(p => p.id !== person.id);
-                    const newLedger = state.ledger[person.id] ? {} : {[person.id]: []};
-                    return { people: [...items, person], ledger: {...state.ledger, ...newLedger} };
+                    const isNew = !state.people.some(p => p.id === person.id);
+                    const newPeople = [...items, person];
+                    const currentOrder = (state as any).peopleOrder || [];
+                    const newOrder = isNew && !currentOrder.includes(person.id)
+                        ? [...currentOrder, person.id]
+                        : currentOrder;
+                    const newLedger = state.ledger[person.id] ? {} : { [person.id]: [] };
+                    return { people: newPeople, ledger: { ...state.ledger, ...newLedger }, peopleOrder: newOrder } as any;
                 });
                 (async () => {
                     const p = person;
@@ -709,7 +719,9 @@ export const useAccountantStore = create<AccountantState>()(
                 set(state => {
                     const newLedger = {...state.ledger};
                     delete newLedger[id];
-                    return { people: state.people.filter(p => p.id !== id), ledger: newLedger };
+                    const currentOrder = (state as any).peopleOrder || [];
+                    const newOrder = currentOrder.filter(pid => pid !== id);
+                    return { people: state.people.filter(p => p.id !== id), ledger: newLedger, peopleOrder: newOrder } as any;
                 });
                 (async () => {
                     const { error: delLedger } = await supabase.from('ledger_entries').delete().eq('person_id', id);
