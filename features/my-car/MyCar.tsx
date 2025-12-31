@@ -15,6 +15,7 @@ import {
   CarIcon,
   FileTextIcon,
 } from '../../components/Icons';
+import JalaliDatePicker from '../assets/components/JalaliDatePicker';
 import { isImageRef, getObjectURLByRef, saveImageDataURL } from '../../lib/idb-images';
 
 interface MyCarProps {
@@ -599,28 +600,38 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
         </div>
         <div>
           <label className="block text-xs text-slate-400 mb-1">تاریخ شروع</label>
-          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3">
+          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
             <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
-            <input
-              type="date"
-              required
-              value={form.startDate || ''}
-              onChange={(e) => onChange({ ...form, startDate: e.target.value })}
-              className="w-full bg-transparent border-none text-sm text-slate-100 focus:outline-none"
-            />
+            <div className="flex-1">
+              <JalaliDatePicker
+                id="vehicle-ins-start"
+                value={form.startDate || new Date().toISOString()}
+                onChange={(iso) =>
+                  onChange({
+                    ...form,
+                    startDate: iso.slice(0, 10),
+                  })
+                }
+              />
+            </div>
           </div>
         </div>
         <div>
           <label className="block text-xs text-slate-400 mb-1">تاریخ پایان</label>
-          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3">
+          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
             <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
-            <input
-              type="date"
-              required
-              value={form.endDate || ''}
-              onChange={(e) => onChange({ ...form, endDate: e.target.value })}
-              className="w-full bg-transparent border-none text-sm text-slate-100 focus:outline-none"
-            />
+            <div className="flex-1">
+              <JalaliDatePicker
+                id="vehicle-ins-end"
+                value={form.endDate || new Date().toISOString()}
+                onChange={(iso) =>
+                  onChange({
+                    ...form,
+                    endDate: iso.slice(0, 10),
+                  })
+                }
+              />
+            </div>
           </div>
         </div>
         <div>
@@ -809,15 +820,20 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
         <div>
           <label className="block text-xs text-slate-400 mb-1">تاریخ سرویس *</label>
-          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3">
+          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
             <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
-            <input
-              type="date"
-              required
-              value={form.serviceDate || ''}
-              onChange={(e) => onChange({ ...form, serviceDate: e.target.value })}
-              className="w-full bg-transparent border-none text-sm text-slate-100 focus:outline-none"
-            />
+            <div className="flex-1">
+              <JalaliDatePicker
+                id="vehicle-service-date"
+                value={form.serviceDate || new Date().toISOString()}
+                onChange={(iso) =>
+                  onChange({
+                    ...form,
+                    serviceDate: iso.slice(0, 10),
+                  })
+                }
+              />
+            </div>
           </div>
         </div>
         <div>
@@ -865,14 +881,20 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
         </div>
         <div>
           <label className="block text-xs text-slate-400 mb-1">تاریخ پیشنهادی سرویس بعدی</label>
-          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3">
+          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
             <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
-            <input
-              type="date"
-              value={form.nextServiceDate || ''}
-              onChange={(e) => onChange({ ...form, nextServiceDate: e.target.value })}
-              className="w-full bg-transparent border-none text-sm text-slate-100 focus:outline-none"
-            />
+            <div className="flex-1">
+              <JalaliDatePicker
+                id="vehicle-next-service-date"
+                value={form.nextServiceDate || new Date().toISOString()}
+                onChange={(iso) =>
+                  onChange({
+                    ...form,
+                    nextServiceDate: iso.slice(0, 10),
+                  })
+                }
+              />
+            </div>
           </div>
         </div>
         <div>
