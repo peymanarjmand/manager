@@ -1194,22 +1194,46 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
           key={r.id}
           className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2"
         >
-          <div className="flex items-center justify-between">
-            <h5 className="font-semibold text-slate-100">
-              سرویس در {formatDateLabel(r.serviceDate)}
-            </h5>
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm('آیا از حذف این سرویس مطمئن هستید؟')) {
-                  onDelete(r.id);
-                }
-              }}
-              className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
-            >
-              <DeleteIcon />
-            </button>
-          </div>
+            <div className="flex items-center justify-between gap-2">
+              <h5 className="font-semibold text-slate-100">
+                سرویس در {formatDateLabel(r.serviceDate)}
+              </h5>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({
+                      id: r.id,
+                      vehicleId: r.vehicleId,
+                      serviceDate: r.serviceDate,
+                      odometerKm: r.odometerKm,
+                      nextOdometerKm: r.nextOdometerKm,
+                      items: r.items || [],
+                      itemsDescription: r.itemsDescription,
+                      nextServiceDate: r.nextServiceDate,
+                      cost: r.cost,
+                      notes: r.notes,
+                      invoiceRef: r.invoiceRef,
+                    });
+                  }}
+                  className="p-1 rounded-full hover:bg-slate-800 text-slate-300"
+                  aria-label="ویرایش سرویس"
+                >
+                  <EditIcon />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('آیا از حذف این سرویس مطمئن هستید؟')) {
+                      onDelete(r.id);
+                    }
+                  }}
+                  className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
+                >
+                  <DeleteIcon />
+                </button>
+              </div>
+            </div>
           <p className="text-xs text-slate-400">
             کیلومتر فعلی:{' '}
             {r.odometerKm != null ? r.odometerKm.toLocaleString() + ' km' : '-'}
@@ -1417,21 +1441,42 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
             key={r.id}
             className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h5 className="font-semibold text-slate-100">
                 {r.category} - {r.amount.toLocaleString()} تومان
               </h5>
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.confirm('آیا از حذف این هزینه مطمئن هستید؟')) {
-                    onDelete(r.id);
-                  }
-                }}
-                className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
-              >
-                <DeleteIcon />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({
+                      id: r.id,
+                      vehicleId: r.vehicleId,
+                      date: r.date,
+                      amount: r.amount,
+                      category: r.category,
+                      description: r.description,
+                      attachmentRef: r.attachmentRef,
+                      maintenanceId: r.maintenanceId,
+                    });
+                  }}
+                  className="p-1 rounded-full hover:bg-slate-800 text-slate-300"
+                  aria-label="ویرایش هزینه"
+                >
+                  <EditIcon />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('آیا از حذف این هزینه مطمئن هستید؟')) {
+                      onDelete(r.id);
+                    }
+                  }}
+                  className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
+                >
+                  <DeleteIcon />
+                </button>
+              </div>
             </div>
             <p className="text-xs text-slate-400">
               تاریخ: {formatDateLabel(r.date)}
