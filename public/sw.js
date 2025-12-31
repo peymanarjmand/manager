@@ -17,6 +17,11 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
+  // Ignore non-http(s) schemes (e.g. chrome-extension://) to avoid Cache API errors
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req).then((res) => {
