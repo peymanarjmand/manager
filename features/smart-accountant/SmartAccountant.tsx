@@ -1519,7 +1519,9 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
     const [qAmount, setQAmount] = useState<string>('');
     const [qDesc, setQDesc] = useState<string>('');
     const [qDate, setQDate] = useState<string>(() => new Date().toISOString());
-    const [showOnlyOpen, setShowOnlyOpen] = useState<boolean>(true);
+    // Default to showing both settled and unsettled items so marking an entry as settled
+    // does not visually look like a deletion the first time.
+    const [showOnlyOpen, setShowOnlyOpen] = useState<boolean>(false);
     const [qReceiptRef, setQReceiptRef] = useState<string | undefined>(undefined);
     const [qReceiptURL, setQReceiptURL] = useState<string | null>(null);
     const [qUploading, setQUploading] = useState<boolean>(false);
@@ -1649,11 +1651,27 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                             <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
                                 <p className={`font-bold text-sm sm:text-base ${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatCurrency(entry.amount)}</p>
                                 {entry.receiptImage && (
-                                    <button onClick={() => setReceiptPreviewRef(entry.receiptImage!)} className="p-1.5 text-slate-400 hover:bg-slate-700 rounded-full hover:text-sky-400 transition" title="مشاهده رسید">
+                                    <button
+                                        onClick={() => setReceiptPreviewRef(entry.receiptImage!)}
+                                        className="p-1.5 text-slate-400 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"
+                                        title="مشاهده رسید"
+                                    >
                                         <EyeIcon />
                                     </button>
                                 )}
-                                <button onClick={() => onSettle(currentPerson.id, entry.id)} className="p-1.5 hover:bg-slate-700 rounded-full" title={entry.isSettled ? 'لغو تسویه' : 'تسویه'}>
+                                <button
+                                    onClick={() => {
+                                        const confirmed = window.confirm(
+                                            entry.isSettled
+                                                ? 'آیا از لغو تسویه این ردیف اطمینان دارید؟'
+                                                : 'آیا از تسویه این ردیف اطمینان دارید؟ (در صورت فعال بودن فیلتر \"فقط موارد تسویه‌نشده\"، این ردیف از لیست پنهان می‌شود.)'
+                                        );
+                                        if (!confirmed) return;
+                                        onSettle(currentPerson.id, entry.id);
+                                    }}
+                                    className="p-1.5 hover:bg-slate-700 rounded-full"
+                                    title={entry.isSettled ? 'لغو تسویه' : 'تسویه'}
+                                >
                                    {entry.isSettled ? <CloseIcon /> : <CheckCircleIcon />}
                                 </button>
                                 <div className="flex items-center space-x-1 space-x-reverse text-slate-400">

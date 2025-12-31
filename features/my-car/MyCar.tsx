@@ -15,6 +15,7 @@ import {
   CalendarIcon,
   CarIcon,
   FileTextIcon,
+  XIcon,
 } from '../../components/Icons';
 import JalaliDatePicker from '../assets/components/JalaliDatePicker';
 import { isImageRef, getObjectURLByRef, saveImageDataURL } from '../../lib/idb-images';
@@ -116,6 +117,13 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     confirmLabel?: string;
     cancelLabel?: string;
     resolve?: (value: boolean) => void;
+  } | null>(null);
+  const [detailState, setDetailState] = useState<{
+    open: boolean;
+    kind: 'insurance' | 'maintenance' | 'expense';
+    insurance?: VehicleInsurance;
+    maintenance?: VehicleMaintenanceRecord;
+    expense?: VehicleExpense;
   } | null>(null);
 
   const selectedVehicle: Vehicle | undefined = useMemo(
@@ -352,6 +360,30 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     () => expenses.filter((e) => e.vehicleId === selectedVehicleId),
     [expenses, selectedVehicleId]
   );
+
+  const openInsuranceDetails = (ins: VehicleInsurance) => {
+    setDetailState({
+      open: true,
+      kind: 'insurance',
+      insurance: ins,
+    });
+  };
+
+  const openMaintenanceDetails = (rec: VehicleMaintenanceRecord) => {
+    setDetailState({
+      open: true,
+      kind: 'maintenance',
+      maintenance: rec,
+    });
+  };
+
+  const openExpenseDetails = (exp: VehicleExpense) => {
+    setDetailState({
+      open: true,
+      kind: 'expense',
+      expense: exp,
+    });
+  };
 
   const openConfirm = (options: {
     title: string;
@@ -719,6 +751,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     onChange={setInsuranceForm}
                     onSubmit={handleInsuranceSubmit}
                     onDelete={handleDeleteInsurance}
+                    onShowDetails={openInsuranceDetails}
                   />
                 )}
                 {activeTab === 'maintenance' && (
@@ -728,6 +761,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     onChange={setMaintenanceForm}
                     onSubmit={handleMaintenanceSubmit}
                     onDelete={handleDeleteMaintenanceWithExpense}
+                    onShowDetails={openMaintenanceDetails}
                   />
                 )}
                 {activeTab === 'expenses' && (
@@ -737,6 +771,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     onChange={setExpenseForm}
                     onSubmit={handleExpenseSubmit}
                     onDelete={handleDeleteExpense}
+                    onShowDetails={openExpenseDetails}
                   />
                 )}
               </>
@@ -776,6 +811,147 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
               >
                 {confirmState.confirmLabel}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detailState?.open && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/70 px-4">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-slate-900 rounded-2xl shadow-xl ring-1 ring-slate-700">
+            <div className="px-5 pt-4 pb-3 border-b border-slate-700/80 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-100">
+                  {detailState.kind === 'insurance' && 'جزئیات بیمه‌نامه'}
+                  {detailState.kind === 'maintenance' && 'جزئیات سرویس فنی'}
+                  {detailState.kind === 'expense' && 'جزئیات هزینه خودرو'}
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-1 hidden sm:block">
+                  خلاصه‌ای از اطلاعات ثبت‌شده برای بررسی سریع شما.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailState(null)}
+                className="p-1 rounded-full hover:bg-slate-800 text-slate-300"
+                aria-label="بستن"
+              >
+                <XIcon />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4 text-sm text-slate-100">
+              {detailState.kind === 'insurance' && detailState.insurance && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <SpecItem label="نوع بیمه" value={detailState.insurance.type === 'third_party' ? 'شخص ثالث' : 'بیمه بدنه'} />
+                    <SpecItem label="شرکت بیمه" value={detailState.insurance.company} />
+                    <SpecItem label="شماره بیمه‌نامه" value={detailState.insurance.policyNumber} />
+                    <SpecItem
+                      label="بازه اعتبار"
+                      value={`${formatDateLabel(detailState.insurance.startDate)} تا ${formatDateLabel(detailState.insurance.endDate)}`}
+                    />
+                    <SpecItem
+                      label="درصد تخفیف"
+                      value={detailState.insurance.discountPercent != null ? `${detailState.insurance.discountPercent}%` : '-'}
+                    />
+                    <SpecItem
+                      label="مبلغ حق بیمه"
+                      value={detailState.insurance.premiumAmount != null ? `${detailState.insurance.premiumAmount.toLocaleString()} تومان` : '-'}
+                    />
+                  </div>
+                  {detailState.insurance.coverageDescription && (
+                    <div className="pt-2 border-t border-slate-800/70">
+                      <p className="text-xs text-slate-400 mb-1">پوشش‌ها</p>
+                      <p className="text-sm text-slate-200 leading-relaxed">
+                        {detailState.insurance.coverageDescription}
+                      </p>
+                    </div>
+                  )}
+                  {detailState.insurance.documentRef && (
+                    <div className="pt-2 border-t border-slate-800/70">
+                      <p className="text-xs text-slate-400 mb-1">فایل بیمه‌نامه</p>
+                      <InsuranceDocumentLink documentRef={detailState.insurance.documentRef} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {detailState.kind === 'maintenance' && detailState.maintenance && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <SpecItem label="تاریخ سرویس" value={formatDateLabel(detailState.maintenance.serviceDate)} />
+                    <SpecItem
+                      label="مبلغ سرویس"
+                      value={detailState.maintenance.cost != null ? `${detailState.maintenance.cost.toLocaleString()} تومان` : '-'}
+                    />
+                    <SpecItem
+                      label="کیلومتر فعلی"
+                      value={detailState.maintenance.odometerKm != null ? detailState.maintenance.odometerKm.toLocaleString() : '-'}
+                    />
+                    <SpecItem
+                      label="کیلومتر سرویس بعدی"
+                      value={detailState.maintenance.nextOdometerKm != null ? detailState.maintenance.nextOdometerKm.toLocaleString() : '-'}
+                    />
+                    <SpecItem
+                      label="تاریخ پیشنهادی سرویس بعدی"
+                      value={detailState.maintenance.nextServiceDate ? formatDateLabel(detailState.maintenance.nextServiceDate) : '-'}
+                    />
+                  </div>
+                  <div className="pt-2 border-t border-slate-800/70">
+                    <p className="text-xs text-slate-400 mb-1">موارد انجام‌شده</p>
+                    <p className="text-sm text-slate-200 leading-relaxed">
+                      {detailState.maintenance.items?.length
+                        ? detailState.maintenance.items.join('، ')
+                        : detailState.maintenance.itemsDescription}
+                    </p>
+                  </div>
+                  {detailState.maintenance.notes && (
+                    <div className="pt-2 border-t border-slate-800/70">
+                      <p className="text-xs text-slate-400 mb-1">یادداشت</p>
+                      <p className="text-sm text-slate-200 leading-relaxed">
+                        {detailState.maintenance.notes}
+                      </p>
+                    </div>
+                  )}
+                  {detailState.maintenance.invoiceRef && (
+                    <div className="pt-2 border-t border-slate-800/70">
+                      <p className="text-xs text-slate-400 mb-1">فاکتور سرویس</p>
+                      <InsuranceDocumentLink documentRef={detailState.maintenance.invoiceRef} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {detailState.kind === 'expense' && detailState.expense && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <SpecItem label="بابت" value={detailState.expense.category} />
+                    <SpecItem
+                      label="مبلغ"
+                      value={`${detailState.expense.amount.toLocaleString()} تومان`}
+                    />
+                    <SpecItem label="تاریخ" value={formatDateLabel(detailState.expense.date)} />
+                    <SpecItem
+                      label="مرتبط با سرویس"
+                      value={detailState.expense.maintenanceId ? 'بله' : 'خیر'}
+                    />
+                  </div>
+                  {detailState.expense.description && (
+                    <div className="pt-2 border-t border-slate-800/70">
+                      <p className="text-xs text-slate-400 mb-1">توضیحات</p>
+                      <p className="text-sm text-slate-200 leading-relaxed">
+                        {detailState.expense.description}
+                      </p>
+                    </div>
+                  )}
+                  {detailState.expense.attachmentRef && (
+                    <div className="pt-2 border-t border-slate-800/70">
+                      <p className="text-xs text-slate-400 mb-1">رسید هزینه</p>
+                      <InsuranceDocumentLink documentRef={detailState.expense.attachmentRef} />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -844,6 +1020,7 @@ interface InsuranceTabProps {
   onChange: (f: Partial<VehicleInsurance>) => void;
   onSubmit: (e: React.FormEvent) => Promise<void> | void;
   onDelete: (id: string) => Promise<void>;
+  onShowDetails: (ins: VehicleInsurance) => void;
 }
 
 const InsuranceTab: React.FC<InsuranceTabProps> = ({
@@ -852,6 +1029,7 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
   onChange,
   onSubmit,
   onDelete,
+  onShowDetails,
 }) => (
   <div className="space-y-4">
     <form onSubmit={onSubmit} className="bg-slate-900/40 rounded-lg p-4 border border-slate-800 space-y-3">
@@ -1000,19 +1178,48 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
       {insurances.map((ins) => (
         <article
           key={ins.id}
-          className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2"
+          className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2 cursor-pointer hover:border-sky-500/60 transition"
+          onClick={() => onShowDetails(ins)}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h5 className="font-semibold text-slate-100">
               {ins.type === 'third_party' ? 'بیمه شخص ثالث' : 'بیمه بدنه'}
             </h5>
-            <button
-              type="button"
-              onClick={() => onDelete(ins.id)}
-              className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
-            >
-              <DeleteIcon />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange({
+                    id: ins.id,
+                    vehicleId: ins.vehicleId,
+                    type: ins.type,
+                    company: ins.company,
+                    policyNumber: ins.policyNumber,
+                    startDate: ins.startDate,
+                    endDate: ins.endDate,
+                    discountPercent: ins.discountPercent,
+                    premiumAmount: ins.premiumAmount,
+                    coverageDescription: ins.coverageDescription,
+                    documentRef: ins.documentRef,
+                  });
+                }}
+                className="p-1 rounded-full hover:bg-slate-800 text-slate-300"
+                aria-label="ویرایش بیمه"
+              >
+                <EditIcon />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(ins.id);
+                }}
+                className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
+              >
+                <DeleteIcon />
+              </button>
+            </div>
           </div>
           <p className="text-xs text-slate-400">
             {ins.company || '-'} {ins.policyNumber && ` | شماره: ${ins.policyNumber}`}
@@ -1088,6 +1295,7 @@ interface MaintenanceTabProps {
   onChange: (f: Partial<VehicleMaintenanceRecord>) => void;
   onSubmit: (e: React.FormEvent) => Promise<void> | void;
   onDelete: (id: string) => Promise<void>;
+  onShowDetails: (rec: VehicleMaintenanceRecord) => void;
 }
 
 const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
@@ -1096,6 +1304,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
   onChange,
   onSubmit,
   onDelete,
+  onShowDetails,
 }) => {
   const [customItem, setCustomItem] = useState('');
   const items = form.items || [];
@@ -1333,7 +1542,8 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
       {records.map((r) => (
         <article
           key={r.id}
-          className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2"
+          className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2 cursor-pointer hover:border-sky-500/60 transition"
+          onClick={() => onShowDetails(r)}
         >
             <div className="flex items-center justify-between gap-2">
               <h5 className="font-semibold text-slate-100">
@@ -1342,7 +1552,8 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onChange({
                       id: r.id,
                       vehicleId: r.vehicleId,
@@ -1364,7 +1575,10 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onDelete(r.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(r.id);
+                  }}
                   className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
                 >
                   <DeleteIcon />
@@ -1418,6 +1632,7 @@ interface ExpensesTabProps {
   onChange: (f: Partial<VehicleExpense>) => void;
   onSubmit: (e: React.FormEvent) => Promise<void> | void;
   onDelete: (id: string) => Promise<void>;
+  onShowDetails: (exp: VehicleExpense) => void;
 }
 
 const ExpensesTab: React.FC<ExpensesTabProps> = ({
@@ -1426,6 +1641,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
   onChange,
   onSubmit,
   onDelete,
+  onShowDetails,
 }) => {
   const allCategories = useMemo(
     () =>
@@ -1576,7 +1792,8 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
         {records.map((r) => (
           <article
             key={r.id}
-            className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2"
+            className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2 cursor-pointer hover:border-sky-500/60 transition"
+            onClick={() => onShowDetails(r)}
           >
             <div className="flex items-center justify-between gap-2">
               <h5 className="font-semibold text-slate-100">
@@ -1585,7 +1802,8 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onChange({
                       id: r.id,
                       vehicleId: r.vehicleId,
@@ -1604,10 +1822,9 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (window.confirm('آیا از حذف این هزینه مطمئن هستید؟')) {
-                      onDelete(r.id);
-                    }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(r.id);
                   }}
                   className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
                 >
