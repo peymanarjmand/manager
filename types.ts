@@ -287,7 +287,8 @@ export interface VehicleMaintenanceRecord {
     serviceDate: string; // ISO date
     odometerKm?: number;
     nextOdometerKm?: number;
-    itemsDescription: string; // e.g. "تعویض روغن موتور + فیلتر روغن"
+    itemsDescription: string; // Human readable summary
+    items?: string[]; // structured list of performed service items
     nextServiceDate?: string; // ISO date
     cost?: number;
     notes?: string;

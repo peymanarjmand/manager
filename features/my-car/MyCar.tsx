@@ -24,6 +24,16 @@ interface MyCarProps {
 
 type DetailsTab = 'specs' | 'insurance' | 'maintenance';
 
+const BASE_SERVICE_ITEMS: string[] = [
+  'تعویض روغن موتور',
+  'تعویض فیلتر روغن',
+  'تعویض فیلتر هوا',
+  'تعویض فیلتر سوخت',
+  'تعویض فیلتر کابین',
+  'بازرسی ترمزها',
+  'تعویض ضدیخ / آب رادیاتور',
+];
+
 function formatDateLabel(iso: string | undefined) {
   if (!iso) return '-';
   try {
@@ -148,13 +158,21 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     if (!selectedVehicleId) return;
     if (!maintenanceForm.serviceDate || !maintenanceForm.itemsDescription) return;
 
+    const items = maintenanceForm.items || [];
+    if (!items.length) {
+      window.alert('حداقل یک مورد سرویس را انتخاب کنید.');
+      return;
+    }
+
     const payload: VehicleMaintenanceRecord = {
       id: maintenanceForm.id || '',
       vehicleId: selectedVehicleId,
       serviceDate: maintenanceForm.serviceDate,
       odometerKm: maintenanceForm.odometerKm,
       nextOdometerKm: maintenanceForm.nextOdometerKm,
-      itemsDescription: maintenanceForm.itemsDescription,
+      itemsDescription:
+        maintenanceForm.itemsDescription || items.join('، '),
+      items,
       nextServiceDate: maintenanceForm.nextServiceDate,
       cost: maintenanceForm.cost,
       notes: maintenanceForm.notes,
@@ -810,7 +828,28 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
   onChange,
   onSubmit,
   onDelete,
-}) => (
+}) => {
+  const [customItem, setCustomItem] = useState('');
+  const items = form.items || [];
+
+  const toggleItem = (label: string) => {
+    const exists = items.includes(label);
+    const next = exists ? items.filter((i) => i !== label) : [...items, label];
+    onChange({ ...form, items: next });
+  };
+
+  const handleAddCustomItem = () => {
+    const trimmed = customItem.trim();
+    if (!trimmed) return;
+    if (items.includes(trimmed)) {
+      setCustomItem('');
+      return;
+    }
+    onChange({ ...form, items: [...items, trimmed] });
+    setCustomItem('');
+  };
+
+  return (
   <div className="space-y-4">
     <form onSubmit={onSubmit} className="bg-slate-900/40 rounded-lg p-4 border border-slate-800 space-y-3">
       <h4 className="font-semibold text-slate-100 flex items-center gap-2">
@@ -867,17 +906,69 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
         </div>
         <div className="sm:col-span-3">
           <label className="block text-xs text-slate-400 mb-1">
-            موارد انجام‌شده (روغن موتور، فیلتر روغن، فیلتر هوا، فیلتر سوخت، ... ) *
+            موارد انجام‌شده * (حداقل یک مورد را تیک بزنید)
           </label>
-          <textarea
-            required
-            rows={2}
-            value={form.itemsDescription || ''}
-            onChange={(e) =>
-              onChange({ ...form, itemsDescription: e.target.value })
-            }
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
-          />
+          <div className="flex flex-wrap gap-2 mb-2">
+            {BASE_SERVICE_ITEMS.map((label) => {
+              const checked = items.includes(label);
+              return (
+                <label
+                  key={label}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs cursor-pointer ${
+                    checked
+                      ? 'border-emerald-400 bg-emerald-500/10 text-emerald-200'
+                      : 'border-slate-600 bg-slate-900/40 text-slate-200 hover:border-slate-400'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-emerald-500"
+                    checked={checked}
+                    onChange={() => toggleItem(label)}
+                  />
+                  <span>{label}</span>
+                </label>
+              );
+            })}
+            {items
+              .filter((it) => !BASE_SERVICE_ITEMS.includes(it))
+              .map((label) => (
+                <label
+                  key={label}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-sky-400 bg-sky-500/10 text-xs text-sky-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    className="accent-sky-500"
+                    checked
+                    onChange={() => toggleItem(label)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customItem}
+              onChange={(e) => setCustomItem(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCustomItem();
+                }
+              }}
+              placeholder="افزودن مورد دلخواه (مثلاً تعویض لنت جلو)"
+              className="flex-1 bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            />
+            <button
+              type="button"
+              onClick={handleAddCustomItem}
+              className="inline-flex items-center justify-center px-3 rounded-md bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold"
+            >
+              +
+            </button>
+          </div>
         </div>
         <div>
           <label className="block text-xs text-slate-400 mb-1">تاریخ پیشنهادی سرویس بعدی</label>
@@ -1006,6 +1097,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
       )}
     </div>
   </div>
-);
+  );
+};
 
 

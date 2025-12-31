@@ -116,7 +116,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       supabase
         .from('vehicle_maintenances')
         .select(
-          'id,vehicle_id,service_date,odometer_km,next_odometer_km,items_description,next_service_date,cost,notes,invoice_ref,created_at'
+          'id,vehicle_id,service_date,odometer_km,next_odometer_km,items_description,items,next_service_date,cost,notes,invoice_ref,created_at'
         )
         .eq('vehicle_id', vehicleId)
         .order('service_date', { ascending: false }),
@@ -156,6 +156,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
         nextOdometerKm:
           row.next_odometer_km != null ? Number(row.next_odometer_km) : undefined,
         itemsDescription: row.items_description,
+        items: Array.isArray(row.items) ? row.items : undefined,
         nextServiceDate: row.next_service_date || undefined,
         cost: row.cost != null ? Number(row.cost) : undefined,
         notes: row.notes || undefined,
@@ -313,6 +314,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       odometer_km: record.odometerKm ?? null,
       next_odometer_km: record.nextOdometerKm ?? null,
       items_description: record.itemsDescription,
+      items: record.items ?? null,
       next_service_date: record.nextServiceDate || null,
       cost: record.cost ?? null,
       notes: record.notes || null,
