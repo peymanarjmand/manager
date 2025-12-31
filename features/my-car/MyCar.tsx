@@ -108,6 +108,14 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     category: '',
   });
   const [activeTab, setActiveTab] = useState<DetailsTab>('specs');
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    resolve?: (value: boolean) => void;
+  } | null>(null);
 
   const selectedVehicle: Vehicle | undefined = useMemo(
     () => vehicles.find((v) => v.id === selectedVehicleId),
@@ -236,22 +244,53 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
   };
 
   const handleDeleteMaintenanceWithExpense = async (id: string) => {
-    const proceed = window.confirm('آیا از حذف این سرویس مطمئن هستید؟');
+    const proceed = await openConfirm({
+      title: 'حذف سرویس',
+      message: 'آیا از حذف این سرویس مطمئن هستید؟ این عمل می‌تواند روی مخارج خودرو نیز تاثیر بگذارد.',
+      confirmLabel: 'بله، حذف شود',
+      cancelLabel: 'انصراف',
+    });
     if (!proceed) return;
 
     const linkedExpense = expenses.find(
       (e) => e.maintenanceId === id || e.id === id
     );
     if (linkedExpense) {
-      const alsoDelete = window.confirm(
-        'برای این سرویس یک تراکنش در مخارج خودرو ثبت شده است. آیا می‌خواهید آن تراکنش هم حذف شود؟'
-      );
+      const alsoDelete = await openConfirm({
+        title: 'حذف تراکنش مرتبط',
+        message:
+          'برای این سرویس یک تراکنش در مخارج خودرو ثبت شده است. آیا می‌خواهید آن تراکنش هم حذف شود؟',
+        confirmLabel: 'بله، سرویس و تراکنش را حذف کن',
+        cancelLabel: 'فقط سرویس را حذف کن',
+      });
       if (alsoDelete) {
         await deleteExpense(linkedExpense.id);
       }
     }
 
     await deleteMaintenance(id);
+  };
+
+  const handleDeleteInsurance = async (id: string) => {
+    const proceed = await openConfirm({
+      title: 'حذف بیمه‌نامه',
+      message: 'آیا از حذف این بیمه‌نامه مطمئن هستید؟ این عمل قابل بازگشت نیست.',
+      confirmLabel: 'بله، حذف شود',
+      cancelLabel: 'انصراف',
+    });
+    if (!proceed) return;
+    await deleteInsurance(id);
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    const proceed = await openConfirm({
+      title: 'حذف هزینه',
+      message: 'آیا از حذف این هزینه مطمئن هستید؟',
+      confirmLabel: 'بله، حذف شود',
+      cancelLabel: 'انصراف',
+    });
+    if (!proceed) return;
+    await deleteExpense(id);
   };
 
   const handleExpenseSubmit = async (e: React.FormEvent) => {
@@ -311,6 +350,31 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     () => expenses.filter((e) => e.vehicleId === selectedVehicleId),
     [expenses, selectedVehicleId]
   );
+
+  const openConfirm = (options: {
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+  }): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setConfirmState({
+        open: true,
+        title: options.title,
+        message: options.message,
+        confirmLabel: options.confirmLabel ?? 'تایید',
+        cancelLabel: options.cancelLabel ?? 'انصراف',
+        resolve,
+      });
+    });
+  };
+
+  const handleConfirmClose = (value: boolean) => {
+    if (confirmState?.resolve) {
+      confirmState.resolve(value);
+    }
+    setConfirmState(null);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 sm:py-12">
@@ -621,7 +685,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     form={insuranceForm}
                     onChange={setInsuranceForm}
                     onSubmit={handleInsuranceSubmit}
-                    onDelete={deleteInsurance}
+                    onDelete={handleDeleteInsurance}
                   />
                 )}
                 {activeTab === 'maintenance' && (
@@ -639,7 +703,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     form={expenseForm}
                     onChange={setExpenseForm}
                     onSubmit={handleExpenseSubmit}
-                    onDelete={deleteExpense}
+                    onDelete={handleDeleteExpense}
                   />
                 )}
               </>
@@ -880,13 +944,7 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
             </h5>
             <button
               type="button"
-              onClick={() => {
-                if (
-                  window.confirm('آیا از حذف این بیمه‌نامه مطمئن هستید؟ این عمل قابل بازگشت نیست.')
-                ) {
-                  onDelete(ins.id);
-                }
-              }}
+              onClick={() => onDelete(ins.id)}
               className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
             >
               <DeleteIcon />
