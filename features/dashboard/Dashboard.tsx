@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { DASHBOARD_ITEMS } from './constants';
 import { DashboardItem, View } from '../../types';
 import { DateTimeDisplay } from '../../components/DateTimeDisplay';
 import { FocusTimer } from './components/FocusTimer';
 import { SettingsModal } from '../settings/SettingsModal';
+import { useDashboardStore } from './store';
 
 
 interface DashboardCardProps {
@@ -43,7 +44,34 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ item, onNavigate, onOpenS
 
 export const Dashboard = ({ onNavigate }: { onNavigate: (view: View) => void }): React.ReactNode => {
     const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
-    
+    const itemsOrder = useDashboardStore(state => state.itemsOrder);
+    const setItemsOrder = useDashboardStore(state => state.setItemsOrder);
+    const [draggingId, setDraggingId] = useState<string | null>(null);
+
+    const orderedItems: DashboardItem[] = useMemo(() => {
+        const map = new Map(DASHBOARD_ITEMS.map(i => [i.id, i] as const));
+        const ordered: DashboardItem[] = [];
+        (itemsOrder || []).forEach(id => {
+            const item = map.get(id);
+            if (item) {
+                ordered.push(item);
+                map.delete(id);
+            }
+        });
+        const remaining = DASHBOARD_ITEMS.filter(i => map.has(i.id));
+        return [...ordered, ...remaining];
+    }, [itemsOrder]);
+
+    const handleDrop = (fromId: string | null, toId: string) => {
+        if (!fromId || fromId === toId) return;
+        const current = itemsOrder && itemsOrder.length ? [...itemsOrder] : DASHBOARD_ITEMS.map(i => i.id);
+        const fromIdx = current.indexOf(fromId);
+        const toIdx = current.indexOf(toId);
+        if (fromIdx === -1 || toIdx === -1) return;
+        current.splice(toIdx, 0, current.splice(fromIdx, 1)[0]);
+        setItemsOrder(current);
+    };
+
     return (
         <div className="container mx-auto px-4 py-8 sm:py-12">
             <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
@@ -63,8 +91,25 @@ export const Dashboard = ({ onNavigate }: { onNavigate: (view: View) => void }):
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {DASHBOARD_ITEMS.map((item) => (
-                    <DashboardCard key={item.id} item={item} onNavigate={onNavigate} onOpenSettings={() => setSettingsModalOpen(true)} />
+                {orderedItems.map((item) => (
+                    <div
+                        key={item.id}
+                        draggable
+                        onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', item.id);
+                            setDraggingId(item.id);
+                        }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            const fromId = e.dataTransfer.getData('text/plain') || draggingId;
+                            handleDrop(fromId, item.id);
+                            setDraggingId(null);
+                        }}
+                        onDragEnd={() => setDraggingId(null)}
+                    >
+                        <DashboardCard item={item} onNavigate={onNavigate} onOpenSettings={() => setSettingsModalOpen(true)} />
+                    </div>
                 ))}
             </div>
         </div>
