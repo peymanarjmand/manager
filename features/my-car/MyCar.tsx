@@ -61,6 +61,10 @@ async function fileToImageRef(file: File): Promise<string> {
   });
 }
 
+function todayIsoDateOnly(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
   const {
     vehicles,
@@ -86,7 +90,9 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
   });
   const [maintenanceForm, setMaintenanceForm] = useState<
     Partial<VehicleMaintenanceRecord>
-  >({});
+  >({
+    serviceDate: todayIsoDateOnly(),
+  });
   const [activeTab, setActiveTab] = useState<DetailsTab>('specs');
 
   const selectedVehicle: Vehicle | undefined = useMemo(
@@ -156,7 +162,6 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
   const handleMaintenanceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVehicleId) return;
-    if (!maintenanceForm.serviceDate) return;
 
     const items = maintenanceForm.items || [];
     if (!items.length) {
@@ -164,10 +169,33 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
       return;
     }
 
+    // Odometer (current km) is required (0 allowed)
+    if (
+      maintenanceForm.odometerKm === undefined ||
+      maintenanceForm.odometerKm === null ||
+      Number.isNaN(maintenanceForm.odometerKm as number)
+    ) {
+      window.alert('لطفاً کیلومتر فعلی را وارد کنید.');
+      return;
+    }
+
+    // Cost is required (0 allowed)
+    if (
+      maintenanceForm.cost === undefined ||
+      maintenanceForm.cost === null ||
+      Number.isNaN(maintenanceForm.cost as number)
+    ) {
+      window.alert('لطفاً مبلغ سرویس را وارد کنید (صفر هم قابل قبول است).');
+      return;
+    }
+
+    const serviceDate =
+      maintenanceForm.serviceDate || new Date().toISOString().slice(0, 10);
+
     const payload: VehicleMaintenanceRecord = {
       id: maintenanceForm.id || '',
       vehicleId: selectedVehicleId,
-      serviceDate: maintenanceForm.serviceDate,
+      serviceDate,
       odometerKm: maintenanceForm.odometerKm,
       nextOdometerKm: maintenanceForm.nextOdometerKm,
       itemsDescription:
@@ -180,7 +208,17 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
       createdAt: maintenanceForm.createdAt || new Date().toISOString(),
     };
     await saveMaintenance(payload);
-    setMaintenanceForm({});
+    setMaintenanceForm({
+      serviceDate: todayIsoDateOnly(),
+      odometerKm: undefined,
+      nextOdometerKm: undefined,
+      items: [],
+      nextServiceDate: undefined,
+      cost: undefined,
+      notes: undefined,
+      invoiceRef: undefined,
+      itemsDescription: '',
+    });
   };
 
   const filteredInsurances = useMemo(
@@ -884,7 +922,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
           </div>
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">کیلومتر فعلی</label>
+          <label className="block text-xs text-slate-400 mb-1">کیلومتر فعلی *</label>
           <input
             type="number"
             value={form.odometerKm ?? ''}
@@ -894,6 +932,8 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
                 odometerKm: e.target.value ? Number(e.target.value) : undefined,
               })
             }
+            required
+            min={0}
             className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
             placeholder="مثلاً ۱۲۳۰۰۰"
           />
@@ -979,10 +1019,30 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
           </div>
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">تاریخ پیشنهادی سرویس بعدی</label>
+          <label className="block text-xs text-slate-400 mb-1 flex items-center gap-2">
+            <span>تاریخ پیشنهادی سرویس بعدی</span>
+            <span className="flex items-center gap-1 text-[11px] text-slate-400">
+              <input
+                type="checkbox"
+                className="accent-sky-500"
+                checked={!!form.nextServiceDate}
+                onChange={(e) => {
+                  if (!e.target.checked) {
+                    onChange({ ...form, nextServiceDate: undefined });
+                  } else {
+                    onChange({
+                      ...form,
+                      nextServiceDate: (form.nextServiceDate as string) || todayIsoDateOnly(),
+                    });
+                  }
+                }}
+              />
+              <span>فعال</span>
+            </span>
+          </label>
           <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
             <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
-            <div className="flex-1">
+            <div className="flex-1 opacity-100">
               <JalaliDatePicker
                 id="vehicle-next-service-date"
                 value={form.nextServiceDate || new Date().toISOString()}
@@ -997,7 +1057,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
           </div>
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">مبلغ کل سرویس (تومان)</label>
+          <label className="block text-xs text-slate-400 mb-1">مبلغ کل سرویس (تومان) *</label>
           <input
             type="number"
             value={form.cost ?? ''}
@@ -1007,6 +1067,8 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
                 cost: e.target.value ? Number(e.target.value) : undefined,
               })
             }
+            required
+            min={0}
             className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
           />
         </div>
