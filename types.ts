@@ -247,4 +247,59 @@ export interface HealthEvent {
     recurrence?: 'daily' | 'weekly' | 'monthly';
     metadata?: Record<string, any>;
 }
-export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phone-book' | 'health-dashboard' | 'medical-records';
+
+// Vehicle / Car Management
+export type VehicleInsuranceType = 'third_party' | 'body';
+
+export interface Vehicle {
+    id: string;
+    name: string; // e.g. "پراید سفید بابک"
+    brand?: string;
+    model?: string;
+    year?: number;
+    plateNumber?: string;
+    color?: string;
+    engineNumber?: string;
+    chassisNumber?: string;
+    vin?: string;
+    imageRef?: string; // Supabase storage ref or data URL
+    createdAt: string; // ISO
+}
+
+export interface VehicleInsurance {
+    id: string;
+    vehicleId: string;
+    type: VehicleInsuranceType;
+    company?: string;
+    policyNumber?: string;
+    startDate: string; // ISO date (yyyy-mm-dd)
+    endDate: string;   // ISO date (yyyy-mm-dd)
+    discountPercent?: number;
+    premiumAmount?: number;
+    coverageDescription?: string;
+    documentRef?: string; // Ref for PDF/image of policy
+    createdAt: string; // ISO
+}
+
+export interface VehicleMaintenanceRecord {
+    id: string;
+    vehicleId: string;
+    serviceDate: string; // ISO date
+    odometerKm?: number;
+    nextOdometerKm?: number;
+    itemsDescription: string; // e.g. "تعویض روغن موتور + فیلتر روغن"
+    nextServiceDate?: string; // ISO date
+    cost?: number;
+    notes?: string;
+    invoiceRef?: string; // Ref for uploaded invoice (image/PDF)
+    createdAt: string; // ISO
+}
+
+export type View =
+  | 'dashboard'
+  | 'password-manager'
+  | 'smart-accountant'
+  | 'phone-book'
+  | 'health-dashboard'
+  | 'medical-records'
+  | 'my-car';

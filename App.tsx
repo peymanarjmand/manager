@@ -11,8 +11,8 @@ import { HealthDashboard } from './features/health-dashboard/HealthDashboard';
 import { SUPABASE_ENABLED, supabase } from './lib/supabase';
 import { LoginPage } from './features/auth/LoginPage';
 import { SignupPage } from './features/auth/SignupPage';
-
-export type View = 'dashboard' | 'password-manager' | 'smart-accountant' | 'phone-book' | 'daily-tasks' | 'assets' | 'darfak' | 'health-dashboard';
+import { View } from './types';
+import { MyCar } from './features/my-car/MyCar';
 
 function App(): React.ReactNode {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -114,7 +114,7 @@ function App(): React.ReactNode {
         {currentView === 'daily-tasks' && <DailyTasks onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'assets' && <Assets onNavigateBack={() => handleNavigate('dashboard')} />}
         {currentView === 'darfak' && <Darfak onNavigateBack={() => handleNavigate('dashboard')} />}
-
+        {currentView === 'my-car' && <MyCar onNavigateBack={() => handleNavigate('dashboard')} />}
       </main>
       <footer className="text-center py-6 text-slate-500 text-sm">
         <p>

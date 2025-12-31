@@ -1,6 +1,6 @@
 import React from 'react';
 import { DashboardItem } from '../../types';
-import { KeyIcon, CalculatorIcon, PhoneBookIcon, TodoIcon, SettingsIcon, HomeBuildIcon, AssetsIcon, HeartIcon } from '../../components/Icons';
+import { KeyIcon, CalculatorIcon, PhoneBookIcon, TodoIcon, SettingsIcon, AssetsIcon, HeartIcon, CarIcon } from '../../components/Icons';
 
 export const DASHBOARD_ITEMS: DashboardItem[] = [
   {
@@ -9,7 +9,6 @@ export const DASHBOARD_ITEMS: DashboardItem[] = [
     title: 'داشبورد سلامتی',
     description: 'مدیریت جامع سلامتی، تغذیه، داروها و فشار خون خود را دنبال کنید.',
   },
-
   {
     id: 'password-manager',
     icon: React.createElement(KeyIcon),
@@ -27,6 +26,12 @@ export const DASHBOARD_ITEMS: DashboardItem[] = [
     icon: React.createElement(CalculatorIcon),
     title: 'حسابدار هوشمند',
     description: 'درآمد و هزینه‌های خود را بدون زحمت پیگیری کنید.',
+  },
+  {
+    id: 'my-car',
+    icon: React.createElement(CarIcon),
+    title: 'خودروی من',
+    description: 'مدیریت مشخصات خودرو، بیمه‌ها و سوابق فنی به‌صورت یکجا.',
   },
   {
     id: 'daily-tasks',
