@@ -108,6 +108,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     category: '',
   });
   const [activeTab, setActiveTab] = useState<DetailsTab>('specs');
+  const [isVehicleFormOpen, setIsVehicleFormOpen] = useState(false);
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
     title: string;
@@ -156,6 +157,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
     };
     await saveVehicle(payload);
     setVehicleForm({});
+    setIsVehicleFormOpen(false);
   };
 
   const handleInsuranceSubmit = async (e: React.FormEvent) => {
@@ -377,7 +379,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 sm:py-12">
+    <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
         <div className="flex items-center gap-4">
           <button
@@ -400,13 +402,31 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <section className="bg-slate-800/50 rounded-xl p-5 ring-1 ring-slate-700 space-y-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xl font-semibold">لیست خودروها</h3>
-            <span className="text-xs text-slate-400">
-              {loading ? 'در حال بارگذاری...' : `${vehicles.length} خودرو`}
-            </span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
+        <section className="bg-slate-800/50 rounded-xl p-4 sm:p-5 ring-1 ring-slate-700 space-y-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="text-xl font-semibold">لیست خودروها</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                برای مشاهده جزئیات، یک خودرو را انتخاب کنید.
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <span className="text-xs text-slate-400">
+                {loading ? 'در حال بارگذاری...' : `${vehicles.length} خودرو`}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setVehicleForm({});
+                  setIsVehicleFormOpen((open) => !open);
+                }}
+                className="inline-flex items-center gap-1 rounded-full bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold px-3 py-1.5 transition"
+              >
+                <PlusIcon />
+                <span>{isVehicleFormOpen ? 'بستن فرم' : 'افزودن خودرو'}</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
@@ -443,6 +463,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                     onClick={(e) => {
                       e.stopPropagation();
                       setVehicleForm(v);
+                      setIsVehicleFormOpen(true);
                     }}
                     className="p-1 rounded-full hover:bg-slate-700 text-slate-300"
                     aria-label="ویرایش خودرو"
@@ -451,15 +472,17 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      if (
-                        window.confirm(
-                          'آیا از حذف این خودرو و تمام اطلاعات وابسته (بیمه و سرویس‌ها) مطمئن هستید؟'
-                        )
-                      ) {
-                        deleteVehicle(v.id);
-                      }
+                      const proceed = await openConfirm({
+                        title: 'حذف خودرو',
+                        message:
+                          'آیا از حذف این خودرو و تمام اطلاعات وابسته (بیمه، سرویس‌ها و مخارج) مطمئن هستید؟',
+                        confirmLabel: 'بله، حذف شود',
+                        cancelLabel: 'انصراف',
+                      });
+                      if (!proceed) return;
+                      await deleteVehicle(v.id);
                     }}
                     className="p-1 rounded-full hover:bg-slate-700 text-rose-400"
                     aria-label="حذف خودرو"
@@ -479,10 +502,19 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
 
           <hr className="border-slate-700/60 my-3" />
 
-          <form onSubmit={handleVehicleSubmit} className="space-y-3">
+          <div
+            className={`transition-all duration-300 origin-top ${
+              isVehicleFormOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-95 pointer-events-none h-0 overflow-hidden'
+            }`}
+          >
+          <form onSubmit={handleVehicleSubmit} className="space-y-3 pt-1">
             <h4 className="font-semibold text-slate-100 flex items-center gap-2">
-              <PlusIcon />
-              <span>{vehicleForm.id ? 'ویرایش خودرو' : 'افزودن خودرو جدید'}</span>
+              <span className="inline-flex items-center justify-center rounded-full bg-sky-500/10 text-sky-400 p-1.5">
+                <PlusIcon />
+              </span>
+              <span className="text-sm">
+                {vehicleForm.id ? 'ویرایش خودرو انتخاب‌شده' : 'افزودن خودرو جدید'}
+              </span>
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -609,10 +641,11 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
               </button>
             </div>
           </form>
+          </div>
         </section>
 
         <section className="lg:col-span-2 space-y-4">
-          <div className="bg-slate-800/50 rounded-xl p-5 ring-1 ring-slate-700">
+          <div className="bg-slate-800/50 rounded-xl p-4 sm:p-5 ring-1 ring-slate-700">
             {selectedVehicle ? (
               <>
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -716,6 +749,37 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
           </div>
         </section>
       </div>
+
+      {confirmState?.open && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 px-4">
+          <div className="w-full max-w-sm bg-slate-900 rounded-2xl shadow-xl ring-1 ring-slate-700">
+            <div className="px-5 pt-4 pb-3 border-b border-slate-700/80 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-100">
+                {confirmState.title}
+              </h3>
+            </div>
+            <div className="px-5 py-4 text-sm text-slate-300">
+              {confirmState.message}
+            </div>
+            <div className="px-5 pb-4 pt-2 flex flex-col sm:flex-row sm:justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => handleConfirmClose(false)}
+                className="w-full sm:w-auto inline-flex justify-center items-center rounded-md border border-slate-600 bg-slate-800 hover:bg-slate-700 text-sm font-medium text-slate-100 px-4 py-2 transition"
+              >
+                {confirmState.cancelLabel}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleConfirmClose(true)}
+                className="w-full sm:w-auto inline-flex justify-center items-center rounded-md bg-rose-500 hover:bg-rose-600 text-sm font-bold text-white px-4 py-2 transition"
+              >
+                {confirmState.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
