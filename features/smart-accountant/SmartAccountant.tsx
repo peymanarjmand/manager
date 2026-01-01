@@ -1689,6 +1689,31 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
     const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void } | null>(null);
     const [draggingId, setDraggingId] = useState<string | null>(null);
 
+    const orderedPeople = useMemo(() => {
+        const map = new Map(data.people.map(p => [p.id, p] as const));
+        const ordered: Person[] = [];
+        (peopleOrder || []).forEach(id => {
+            const p = map.get(id);
+            if (p) {
+                ordered.push(p);
+                map.delete(id);
+            }
+        });
+        // افراد جدیدی که هنوز در peopleOrder نیستند را در انتهای لیست اضافه می‌کنیم (مرتب بر اساس نام)
+        const remaining = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+        return [...ordered, ...remaining];
+    }, [data.people, peopleOrder]);
+
+    const handlePersonDrop = (fromId: string | null, toId: string) => {
+        if (!fromId || fromId === toId) return;
+        const current = peopleOrder && peopleOrder.length ? [...peopleOrder] : orderedPeople.map(p => p.id);
+        const fromIdx = current.indexOf(fromId);
+        const toIdx = current.indexOf(toId);
+        if (fromIdx === -1 || toIdx === -1) return;
+        current.splice(toIdx, 0, current.splice(fromIdx, 1)[0]);
+        setPeopleOrder(current);
+    };
+
     const handleQuickAdd = () => {
         if (!currentPerson) return;
         const amountNum = parseFloat(String(qAmount));
@@ -1941,31 +1966,6 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
     if (data.people.length === 0) {
         return <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">هنوز شخصی برای حساب و کتاب اضافه نشده است.</p>;
     }
-
-    const orderedPeople = useMemo(() => {
-        const map = new Map(data.people.map(p => [p.id, p] as const));
-        const ordered: Person[] = [];
-        (peopleOrder || []).forEach(id => {
-            const p = map.get(id);
-            if (p) {
-                ordered.push(p);
-                map.delete(id);
-            }
-        });
-        // افراد جدیدی که هنوز در peopleOrder نیستند را در انتهای لیست اضافه می‌کنیم (مرتب بر اساس نام)
-        const remaining = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'fa'));
-        return [...ordered, ...remaining];
-    }, [data.people, peopleOrder]);
-
-    const handlePersonDrop = (fromId: string | null, toId: string) => {
-        if (!fromId || fromId === toId) return;
-        const current = peopleOrder && peopleOrder.length ? [...peopleOrder] : orderedPeople.map(p => p.id);
-        const fromIdx = current.indexOf(fromId);
-        const toIdx = current.indexOf(toId);
-        if (fromIdx === -1 || toIdx === -1) return;
-        current.splice(toIdx, 0, current.splice(fromIdx, 1)[0]);
-        setPeopleOrder(current);
-    };
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
