@@ -1660,6 +1660,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
   const [filterStart, setFilterStart] = useState<string | undefined>();
   const [filterEnd, setFilterEnd] = useState<string | undefined>();
   const [filterCategories, setFilterCategories] = useState<string[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const handleToggleFilterCategory = (label: string) => {
     setFilterCategories((prev) =>
@@ -1726,141 +1727,163 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
     });
   }, [records, filterStart, filterEnd, filterCategories]);
 
+  const totalAmount = useMemo(
+    () => visibleRecords.reduce((sum, r) => sum + (r.amount ?? 0), 0),
+    [visibleRecords]
+  );
+
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800 space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <h4 className="text-sm font-semibold text-slate-100">فیلتر مخارج خودرو</h4>
-            <p className="text-[11px] text-slate-400 mt-1">
-              بازه زمانی و دسته‌بندی‌های مورد نظر خود را برای گزارش‌گیری انتخاب کنید.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-[11px]">
-            <button
-              type="button"
-              onClick={() => applyPreset('all')}
-              className={`px-3 py-1.5 rounded-full border transition ${
-                filterPreset === 'all'
-                  ? 'bg-sky-500/10 border-sky-400 text-sky-300'
-                  : 'border-slate-600 text-slate-300 hover:border-slate-400'
-              }`}
-            >
-              همه
-            </button>
-            <button
-              type="button"
-              onClick={() => applyPreset('this_month')}
-              className={`px-3 py-1.5 rounded-full border transition ${
-                filterPreset === 'this_month'
-                  ? 'bg-sky-500/10 border-sky-400 text-sky-300'
-                  : 'border-slate-600 text-slate-300 hover:border-slate-400'
-              }`}
-            >
-              ماه جاری
-            </button>
-            <button
-              type="button"
-              onClick={() => applyPreset('last_3')}
-              className={`px-3 py-1.5 rounded-full border transition ${
-                filterPreset === 'last_3'
-                  ? 'bg-sky-500/10 border-sky-400 text-sky-300'
-                  : 'border-slate-600 text-slate-300 hover:border-slate-400'
-              }`}
-            >
-              ۳ ماه گذشته
-            </button>
-            <button
-              type="button"
-              onClick={() => applyPreset('last_6')}
-              className={`px-3 py-1.5 rounded-full border transition ${
-                filterPreset === 'last_6'
-                  ? 'bg-sky-500/10 border-sky-400 text-sky-300'
-                  : 'border-slate-600 text-slate-300 hover:border-slate-400'
-              }`}
-            >
-              ۶ ماه گذشته
-            </button>
-            <button
-              type="button"
-              onClick={() => applyPreset('last_12')}
-              className={`px-3 py-1.5 rounded-full border transition ${
-                filterPreset === 'last_12'
-                  ? 'bg-sky-500/10 border-sky-400 text-sky-300'
-                  : 'border-slate-600 text-slate-300 hover:border-slate-400'
-              }`}
-            >
-              یک سال گذشته
-            </button>
-          </div>
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <h4 className="text-sm font-semibold text-slate-100">گزارش مخارج خودرو</h4>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            جمع کل هزینه‌های نمایش‌داده‌شده و امکان فیلتر پیشرفته.
+          </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div>
-            <label className="block text-[11px] text-slate-400 mb-1">از تاریخ</label>
-            <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
-              <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
-              <div className="flex-1">
-                <JalaliDatePicker
-                  id="vehicle-expense-filter-from"
-                  value={filterStart || new Date(0).toISOString()}
-                  onChange={(iso) => {
-                    setFilterPreset('custom');
-                    setFilterStart(iso.slice(0, 10));
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          <div>
-            <label className="block text-[11px] text-slate-400 mb-1">تا تاریخ</label>
-            <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
-              <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
-              <div className="flex-1">
-                <JalaliDatePicker
-                  id="vehicle-expense-filter-to"
-                  value={filterEnd || new Date().toISOString()}
-                  onChange={(iso) => {
-                    setFilterPreset('custom');
-                    setFilterEnd(iso.slice(0, 10));
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-          <div>
-            <label className="block text-[11px] text-slate-400 mb-1">دسته‌بندی‌ها</label>
-            <div className="flex flex-wrap gap-1.5">
-              {allCategories.map((label) => {
-                const active = filterCategories.includes(label);
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => handleToggleFilterCategory(label)}
-                    className={`px-2.5 py-1 rounded-full border text-[11px] transition ${
-                      active
-                        ? 'bg-emerald-500/10 border-emerald-400 text-emerald-200'
-                        : 'border-slate-600 text-slate-300 hover:border-slate-400'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-              {filterCategories.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setFilterCategories([])}
-                  className="px-2.5 py-1 rounded-full border border-slate-600 text-[11px] text-slate-300 hover:border-slate-400"
-                >
-                  پاک‌سازی
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((v) => !v)}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-slate-600 bg-slate-900/60 text-[11px] text-slate-200 hover:border-sky-400 hover:text-sky-200 transition"
+        >
+          <span>{filtersOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}</span>
+        </button>
       </div>
+
+      {filtersOpen && (
+        <div className="bg-slate-900/40 rounded-lg p-4 border border-slate-800 space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h5 className="text-xs font-semibold text-slate-100">فیلتر مخارج خودرو</h5>
+              <p className="text-[11px] text-slate-400 mt-1">
+                بازه زمانی و دسته‌بندی‌های مورد نظر خود را برای گزارش‌گیری انتخاب کنید.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-[11px]">
+              <button
+                type="button"
+                onClick={() => applyPreset('all')}
+                className={`px-3 py-1.5 rounded-full border transition ${
+                  filterPreset === 'all'
+                    ? 'bg-sky-500/10 border-sky-400 text-sky-300'
+                    : 'border-slate-600 text-slate-300 hover:border-slate-400'
+                }`}
+              >
+                همه
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPreset('this_month')}
+                className={`px-3 py-1.5 rounded-full border transition ${
+                  filterPreset === 'this_month'
+                    ? 'bg-sky-500/10 border-sky-400 text-sky-300'
+                    : 'border-slate-600 text-slate-300 hover:border-slate-400'
+                }`}
+              >
+                ماه جاری
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPreset('last_3')}
+                className={`px-3 py-1.5 rounded-full border transition ${
+                  filterPreset === 'last_3'
+                    ? 'bg-sky-500/10 border-sky-400 text-sky-300'
+                    : 'border-slate-600 text-slate-300 hover:border-slate-400'
+                }`}
+              >
+                ۳ ماه گذشته
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPreset('last_6')}
+                className={`px-3 py-1.5 rounded-full border transition ${
+                  filterPreset === 'last_6'
+                    ? 'bg-sky-500/10 border-sky-400 text-sky-300'
+                    : 'border-slate-600 text-slate-300 hover:border-slate-400'
+                }`}
+              >
+                ۶ ماه گذشته
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPreset('last_12')}
+                className={`px-3 py-1.5 rounded-full border transition ${
+                  filterPreset === 'last_12'
+                    ? 'bg-sky-500/10 border-sky-400 text-sky-300'
+                    : 'border-slate-600 text-slate-300 hover:border-slate-400'
+                }`}
+              >
+                یک سال گذشته
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">از تاریخ</label>
+              <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+                <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
+                <div className="flex-1">
+                  <JalaliDatePicker
+                    id="vehicle-expense-filter-from"
+                    value={filterStart || new Date(0).toISOString()}
+                    onChange={(iso) => {
+                      setFilterPreset('custom');
+                      setFilterStart(iso.slice(0, 10));
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">تا تاریخ</label>
+              <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+                <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
+                <div className="flex-1">
+                  <JalaliDatePicker
+                    id="vehicle-expense-filter-to"
+                    value={filterEnd || new Date().toISOString()}
+                    onChange={(iso) => {
+                      setFilterPreset('custom');
+                      setFilterEnd(iso.slice(0, 10));
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] text-slate-400 mb-1">دسته‌بندی‌ها</label>
+              <div className="flex flex-wrap gap-1.5">
+                {allCategories.map((label) => {
+                  const active = filterCategories.includes(label);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => handleToggleFilterCategory(label)}
+                      className={`px-2.5 py-1 rounded-full border text-[11px] transition ${
+                        active
+                          ? 'bg-emerald-500/10 border-emerald-400 text-emerald-200'
+                          : 'border-slate-600 text-slate-300 hover:border-slate-400'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+                {filterCategories.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterCategories([])}
+                    className="px-2.5 py-1 rounded-full border border-slate-600 text-[11px] text-slate-300 hover:border-slate-400"
+                  >
+                    پاک‌سازی
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={onSubmit}
@@ -1989,6 +2012,13 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
           </button>
         </div>
       </form>
+
+      <div className="bg-slate-900/40 rounded-lg p-3 border border-slate-800 flex items-center justify-between text-xs sm:text-sm">
+        <span className="text-slate-300">جمع کل هزینه‌های نمایش‌داده‌شده</span>
+        <span className="font-semibold text-emerald-300">
+          {totalAmount.toLocaleString()} تومان
+        </span>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {visibleRecords.map((r) => (
