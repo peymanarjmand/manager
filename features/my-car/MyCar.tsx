@@ -768,7 +768,12 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   <ExpensesTab
                     records={filteredExpenses}
                     form={expenseForm}
-                    onChange={setExpenseForm}
+                    onChange={(patch) =>
+                      setExpenseForm((prev) => ({
+                        ...(prev || {}),
+                        ...patch,
+                      }))
+                    }
                     onSubmit={handleExpenseSubmit}
                     onDelete={handleDeleteExpense}
                     onShowDetails={openExpenseDetails}
@@ -1662,6 +1667,10 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
   const [filterCategories, setFilterCategories] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const handleSelectCategory = (label: string) => {
+    onChange({ category: label });
+  };
+
   const handleToggleFilterCategory = (label: string) => {
     setFilterCategories((prev) =>
       prev.includes(label) ? prev.filter((c) => c !== label) : [...prev, label]
@@ -1904,7 +1913,6 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
               min={0}
               onChange={(e) =>
                 onChange({
-                  ...form,
                   amount: e.target.value ? Number(e.target.value) : undefined,
                 })
               }
@@ -1922,10 +1930,9 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
                   id="vehicle-expense-date"
                   value={form.date || new Date().toISOString()}
                   onChange={(iso) =>
-                    onChange({
-                      ...form,
-                      date: iso.slice(0, 10),
-                    })
+                  onChange({
+                    date: iso.slice(0, 10),
+                  })
                   }
                 />
               </div>
@@ -1965,7 +1972,6 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
               }
               onChange={(e) =>
                 onChange({
-                  ...form,
                   category: e.target.value,
                 })
               }
@@ -1980,7 +1986,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
               rows={2}
               value={form.description || ''}
               onChange={(e) =>
-                onChange({ ...form, description: e.target.value })
+                onChange({ description: e.target.value })
               }
               className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
             />
@@ -1996,7 +2002,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
                 const file = e.target.files?.[0];
                 if (!file) return;
                 const ref = await fileToImageRef(file);
-                onChange({ ...form, attachmentRef: ref });
+                onChange({ attachmentRef: ref });
               }}
               className="w-full text-xs text-slate-300"
             />
@@ -2045,6 +2051,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
                       description: r.description,
                       attachmentRef: r.attachmentRef,
                       maintenanceId: r.maintenanceId,
+                      createdAt: r.createdAt,
                     });
                   }}
                   className="p-1 rounded-full hover:bg-slate-800 text-slate-300"
