@@ -961,12 +961,17 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     const [activeTab, setActiveTab] = useState<AccountantTab>('summary');
     const [modal, setModal] = useState<ModalConfig>({ isOpen: false });
     const [viewTransaction, setViewTransaction] = useState<Transaction | null>(null);
+    const [viewLedgerEntry, setViewLedgerEntry] = useState<LedgerEntry | null>(null);
     const [currentPerson, setCurrentPerson] = useState<Person | null>(null);
     const [currentInstallment, setCurrentInstallment] = useState<InstallmentPlan | null>(null);
     const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void } | null>(null);
 
     const data = useAccountantStore();
     const actions = useAccountantStore.getState();
+    const viewLedgerPerson = useMemo(() => {
+        if (!viewLedgerEntry) return null;
+        return data.people.find(p => p.id === viewLedgerEntry.personId) || null;
+    }, [viewLedgerEntry, data.people]);
 
     useEffect(() => {
         const { loadInstallments, loadTransactions, loadAssets, loadPeopleAndLedger, loadChecks, loadSocialInsurance } = useAccountantStore.getState();
@@ -1171,6 +1176,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
         <div className="container mx-auto px-4 py-8 sm:py-12">
             <AccountantFormModal isOpen={modal.isOpen} onClose={closeModal} onSave={handleSave} type={modal.type} payload={modal.payload} />
             <TransactionVoucherModal transaction={viewTransaction} onClose={() => setViewTransaction(null)} />
+            <LedgerEntrySummaryModal entry={viewLedgerEntry} person={viewLedgerPerson} onClose={() => setViewLedgerEntry(null)} />
             {confirmState && (
                 <ConfirmDialog
                     open={!!confirmState.open}
@@ -1262,7 +1268,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                 {activeTab === 'transactions' && <TransactionsView transactions={data.transactions} onEdit={(t) => openModal('transaction', t)} onDelete={(id) => handleDelete('transaction', id)} onView={setViewTransaction} />}
                 {activeTab === 'checks' && <ChecksView checks={data.checks} onEdit={(c) => openModal('check', c)} onDelete={(id) => handleDelete('check', id)} onStatusChange={handleUpdateCheckStatus} />}
                 {activeTab === 'installments' && <InstallmentsView installments={data.installments} currentInstallment={currentInstallment} setCurrentInstallment={setCurrentInstallment} onEditPlan={(plan) => openModal('installmentPlan', plan)} onDeletePlan={(id) => handleDelete('installmentPlan', id)} onEditPayment={(p) => openModal('installmentPayment', p)} onTogglePaidStatus={handleTogglePaidStatus} />}
-                {activeTab === 'people' && <PeopleView data={data} onEditPerson={(p) => openModal('person', p)} onDeletePerson={(id) => handleDelete('person', id)} onEditLedger={(l) => openModal('ledger', l)} onDeleteLedger={(personId, ledgerId) => handleDelete('ledger', ledgerId, personId)} onSettle={handleSettle} currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} />}
+                {activeTab === 'people' && <PeopleView data={data} onEditPerson={(p) => openModal('person', p)} onDeletePerson={(id) => handleDelete('person', id)} onEditLedger={(l) => openModal('ledger', l)} onDeleteLedger={(personId, ledgerId) => handleDelete('ledger', ledgerId, personId)} onSettle={handleSettle} currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} onViewLedger={setViewLedgerEntry} />}
                 {activeTab === 'social_insurance' && <SocialInsuranceView />}
                 {activeTab === 'darfak' && <DarfakView />}
             </div>
@@ -1420,7 +1426,8 @@ const SummaryView = ({ data }: { data: AccountantData }) => {
     const checksIn = useMemo(() => checksCashed.filter(c => c.type === 'received').reduce((s, c) => s + c.amount, 0), [checksCashed]);
     const checksOut = useMemo(() => checksCashed.filter(c => c.type === 'issued').reduce((s, c) => s + c.amount, 0), [checksCashed]);
 
-    const socialOut = useMemo(() => (data as any).socialInsurance?.filter((p: any) => p.payDate && moment(p.payDate).isBetween(startOfSelected, endOfSelected, undefined, '[]')).reduce((s: number, p: any) => s + (Number(p.amount) || 0), 0) || 0, [data.socialInsurance, selectedMonthISO]);
+    const socialInsurance = (data as any).socialInsurance as any[] | undefined;
+    const socialOut = useMemo(() => socialInsurance?.filter((p: any) => p.payDate && moment(p.payDate).isBetween(startOfSelected, endOfSelected, undefined, '[]')).reduce((s: number, p: any) => s + (Number(p.amount) || 0), 0) || 0, [socialInsurance, selectedMonthISO]);
     const darfakOut = useMemo(() => (useAccountantStore.getState().darfak || []).filter((e: any) => e.date && moment(e.date).isBetween(startOfSelected, endOfSelected, undefined, '[]')).reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0), [selectedMonthISO]);
 
     const inflowTotal = useMemo(() => incomeTx + ledgerInflow + checksIn, [incomeTx, ledgerInflow, checksIn]);
@@ -1642,6 +1649,71 @@ const TransactionList = ({ transactions, onEdit, onDelete, onView }) => (
     </div>
 );
 
+const LedgerEntrySummaryModal = ({ entry, person, onClose }: { entry: LedgerEntry | null; person: Person | null; onClose: () => void }) => {
+    if (!entry) return null;
+    const isDebt = entry.type === 'debt';
+    const typeLabel = isDebt ? 'بهش دادم' : 'ازش گرفتم';
+    const statusLabel = entry.isSettled ? 'تسویه شده' : 'تسویه نشده';
+    const colorClass = isDebt ? 'text-emerald-400' : 'text-rose-400';
+    const bgClass = isDebt ? 'bg-emerald-500/10' : 'bg-rose-500/10';
+    const borderClass = isDebt ? 'border-emerald-500/20' : 'border-rose-500/20';
+    const unitCfg = getLedgerUnitConfig((entry as any).unit || 'toman');
+    const dateLabel = moment(entry.date).locale('fa').format('dddd jD jMMMM jYYYY - HH:mm');
+
+    return (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true">
+            <div className="bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl ring-1 ring-slate-700 overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <div className="bg-slate-800 p-6 border-b border-slate-700">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-100">خلاصه تراکنش</h3>
+                            <p className="text-xs text-slate-400 mt-1">{person?.name || 'نامشخص'}</p>
+                        </div>
+                        <button onClick={onClose} className="text-slate-400 hover:text-white transition p-1 hover:bg-slate-700 rounded-full">
+                            <CloseIcon />
+                        </button>
+                    </div>
+                    <div className="text-center mt-2">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-2 ${bgClass} ${colorClass} border ${borderClass}`}>{typeLabel}</span>
+                        <h2 className={`text-3xl font-bold ${colorClass} tracking-tight`}>{formatLedgerAmount(entry)}</h2>
+                    </div>
+                </div>
+                <div className="p-6 space-y-4 overflow-y-auto">
+                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                        <span className="text-slate-500 text-sm">تاریخ</span>
+                        <span className="text-slate-200 text-sm">{dateLabel}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                        <span className="text-slate-500 text-sm">وضعیت</span>
+                        <span className={`text-sm font-medium ${entry.isSettled ? 'text-emerald-400' : 'text-amber-400'}`}>{statusLabel}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                        <span className="text-slate-500 text-sm">واحد</span>
+                        <span className="text-slate-200 text-sm">{unitCfg.label}</span>
+                    </div>
+                    <div className="py-2">
+                        <span className="text-slate-500 text-sm block mb-2">بابت</span>
+                        <p className="text-slate-200 text-base leading-relaxed bg-slate-800/50 p-3 rounded-lg border border-slate-800">{entry.description || 'بدون توضیحات'}</p>
+                    </div>
+                    {entry.receiptImage && (
+                        <div>
+                            <span className="text-slate-500 text-sm block mb-2">رسید</span>
+                            <div className="rounded-xl overflow-hidden border border-slate-700">
+                                <ImageFromRef srcOrRef={entry.receiptImage} className="w-full h-auto object-cover max-h-64 bg-slate-950" />
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <div className="p-4 border-t border-slate-800 bg-slate-800/50 text-left">
+                    <button onClick={onClose} className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition shadow-lg">
+                        بستن
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AssetsView = ({ assets, onEdit, onDelete }) => {
     if (assets.length === 0) {
         return <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">هنوز دارایی ثبت نشده است.</p>
@@ -1669,7 +1741,7 @@ const AssetsView = ({ assets, onEdit, onDelete }) => {
     );
 };
 
-const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDeleteLedger, onSettle, currentPerson, setCurrentPerson }) => {
+const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDeleteLedger, onSettle, currentPerson, setCurrentPerson, onViewLedger }: { data: AccountantData; onEditPerson: (person: Person) => void; onDeletePerson: (id: string) => void; onEditLedger: (entry: LedgerEntry) => void; onDeleteLedger: (personId: string, ledgerId: string) => void; onSettle: (personId: string, ledgerId: string) => void; currentPerson: Person | null; setCurrentPerson: (person: Person | null) => void; onViewLedger?: (entry: LedgerEntry) => void }) => {
     // Quick add ledger state (must be top-level to honor React rules of hooks)
     const { saveLedgerEntry } = useAccountantStore.getState();
     const peopleOrder = useAccountantStore(state => state.peopleOrder);
@@ -1866,7 +1938,11 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                 {safeLedger.length === 0 ? <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">موردی یافت نشد.</p> :
                 <div className="space-y-3">
                     {safeLedger.map(entry => (
-                        <div key={entry.id} className={`bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 ${entry.isSettled ? 'opacity-50' : ''}`}>
+                        <div
+                            key={entry.id}
+                            className={`bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition ${entry.isSettled ? 'opacity-50' : ''}`}
+                            onClick={() => onViewLedger && onViewLedger(entry)}
+                        >
                             <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
                                 <div className="min-w-0">
                                     <p className="font-bold text-slate-100 truncate">{entry.description}</p>
@@ -1877,7 +1953,10 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                                 <p className={`font-bold text-sm sm:text-base ${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatLedgerAmount(entry)}</p>
                                 {entry.receiptImage && (
                                     <button
-                                        onClick={() => setReceiptPreviewRef(entry.receiptImage!)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setReceiptPreviewRef(entry.receiptImage!);
+                                        }}
                                         className="p-1.5 text-slate-400 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"
                                         title="مشاهده رسید"
                                     >
@@ -1885,7 +1964,8 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                                     </button>
                                 )}
                                 <button
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.stopPropagation();
                                         setConfirmState({
                                             open: true,
                                             title: entry.isSettled ? 'لغو تسویه ردیف' : 'تسویه ردیف',
@@ -1904,8 +1984,8 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                                    {entry.isSettled ? <CloseIcon /> : <CheckCircleIcon />}
                                 </button>
                                 <div className="flex items-center space-x-1 space-x-reverse text-slate-400">
-                                   <button onClick={() => onEditLedger({...entry, personId: currentPerson.id})} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"><EditIcon/></button>
-                                   <button onClick={() => onDeleteLedger(currentPerson.id, entry.id)} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition"><DeleteIcon/></button>
+                                   <button onClick={(e) => { e.stopPropagation(); onEditLedger({...entry, personId: currentPerson.id}); }} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"><EditIcon/></button>
+                                   <button onClick={(e) => { e.stopPropagation(); onDeleteLedger(currentPerson.id, entry.id); }} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition"><DeleteIcon/></button>
                                 </div>
                             </div>
                         </div>
@@ -2015,7 +2095,7 @@ const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDelete
                                     <p className={`text-sm font-semibold ${tomanBalance > 0 ? 'text-emerald-400' : tomanBalance < 0 ? 'text-rose-400' : 'text-slate-400'}`}>
                                         {tomanBalance > 0 ? `طلب: ${formatCurrency(tomanBalance)}` : tomanBalance < 0 ? `بدهی: ${formatCurrency(Math.abs(tomanBalance))}` : 'تسویه (تومان)'}
                                     </p>
-                                    {Object.entries(totalsByUnit)
+                                    {(Object.entries(totalsByUnit) as [string, number][])
                                         .filter(([unit]) => unit !== 'toman' && Math.abs(totalsByUnit[unit]) > 0)
                                         .map(([unit, value]) => {
                                             const cfg = getLedgerUnitConfig(unit);
