@@ -472,6 +472,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
     const [receiptPreviewRef, setReceiptPreviewRef] = useState<string | null>(null);
     const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void } | null>(null);
     const [draggingId, setDraggingId] = useState<string | null>(null);
+    const [expandedLedgerId, setExpandedLedgerId] = useState<string | null>(null);
 
     const orderedPeople = useMemo(() => {
         const map = new Map(data.people.map(p => [p.id, p] as const));
@@ -647,57 +648,102 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                 {safeLedger.length === 0 ? <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">موردی یافت نشد.</p> :
                 <div className="space-y-3">
                     {safeLedger.map(entry => (
-                        <div
-                            key={entry.id}
-                            className={`bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition ${entry.isSettled ? 'opacity-50' : ''}`}
-                            onClick={() => onViewLedger && onViewLedger(entry)}
-                        >
-                            <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
-                                <div className="min-w-0">
-                                    <p className="font-bold text-slate-100 truncate">{entry.description}</p>
-                                    <p className="text-sm text-slate-400 truncate">{formatDate(entry.date)}</p>
+                        <React.Fragment key={entry.id}>
+                            <div
+                                className={`bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition ${entry.isSettled ? 'opacity-50' : ''}`}
+                                onClick={() => {
+                                    if (onViewLedger) onViewLedger(entry);
+                                    else setExpandedLedgerId(prev => prev === entry.id ? null : entry.id);
+                                }}
+                            >
+                                <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
+                                    <div className="min-w-0">
+                                        <p className="font-bold text-slate-100 truncate">{entry.description}</p>
+                                        <p className="text-sm text-slate-400 truncate">{formatDate(entry.date)}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
-                                <p className={`font-bold text-sm sm:text-base ${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatLedgerAmount(entry)}</p>
-                                {entry.receiptImage && (
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setReceiptPreviewRef(entry.receiptImage!);
-                                        }}
-                                        className="p-1.5 text-slate-400 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"
-                                        title="مشاهده رسید"
-                                    >
-                                        <EyeIcon />
-                                    </button>
-                                )}
+                                <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
+                                    <p className={`font-bold text-sm sm:text-base ${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatLedgerAmount(entry)}</p>
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        setConfirmState({
-                                            open: true,
-                                            title: entry.isSettled ? 'لغو تسویه ردیف' : 'تسویه ردیف',
-                                            message: entry.isSettled
-                                                ? 'آیا از لغو تسویه این ردیف اطمینان دارید؟'
-                                                : 'آیا از تسویه این ردیف اطمینان دارید؟ در صورت فعال بودن فیلتر «فقط موارد تسویه‌نشده»، این ردیف از لیست پنهان می‌شود.',
-                                            confirmText: entry.isSettled ? 'بله، لغو تسویه شود' : 'بله، تسویه شود',
-                                            cancelText: 'انصراف',
-                                            tone: entry.isSettled ? 'warning' : 'success',
-                                            onConfirm: () => onSettle(currentPerson.id, entry.id),
-                                        });
+                                        setExpandedLedgerId(prev => prev === entry.id ? null : entry.id);
                                     }}
-                                    className="p-1.5 hover:bg-slate-700 rounded-full"
-                                    title={entry.isSettled ? 'لغو تسویه' : 'تسویه'}
+                                    className="px-2 py-1 rounded-md text-[11px] bg-slate-700/60 text-slate-200 hover:bg-slate-700 transition"
                                 >
-                                   {entry.isSettled ? <CloseIcon /> : <CheckCircleIcon />}
+                                    جزئیات
                                 </button>
-                                <div className="flex items-center space-x-1 space-x-reverse text-slate-400">
-                                   <button onClick={(e) => { e.stopPropagation(); onEditLedger({...entry, personId: currentPerson.id}); }} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"><EditIcon/></button>
-                                   <button onClick={(e) => { e.stopPropagation(); onDeleteLedger(currentPerson.id, entry.id); }} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition"><DeleteIcon/></button>
+                                    {entry.receiptImage && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setReceiptPreviewRef(entry.receiptImage!);
+                                            }}
+                                            className="p-1.5 text-slate-400 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"
+                                            title="مشاهده رسید"
+                                        >
+                                            <EyeIcon />
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setConfirmState({
+                                                open: true,
+                                                title: entry.isSettled ? 'لغو تسویه ردیف' : 'تسویه ردیف',
+                                                message: entry.isSettled
+                                                    ? 'آیا از لغو تسویه این ردیف اطمینان دارید؟'
+                                                    : 'آیا از تسویه این ردیف اطمینان دارید؟ در صورت فعال بودن فیلتر «فقط موارد تسویه‌نشده»، این ردیف از لیست پنهان می‌شود.',
+                                                confirmText: entry.isSettled ? 'بله، لغو تسویه شود' : 'بله، تسویه شود',
+                                                cancelText: 'انصراف',
+                                                tone: entry.isSettled ? 'warning' : 'success',
+                                                onConfirm: () => onSettle(currentPerson.id, entry.id),
+                                            });
+                                        }}
+                                        className="p-1.5 hover:bg-slate-700 rounded-full"
+                                        title={entry.isSettled ? 'لغو تسویه' : 'تسویه'}
+                                    >
+                                       {entry.isSettled ? <CloseIcon /> : <CheckCircleIcon />}
+                                    </button>
+                                    <div className="flex items-center space-x-1 space-x-reverse text-slate-400">
+                                       <button onClick={(e) => { e.stopPropagation(); onEditLedger({...entry, personId: currentPerson.id}); }} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"><EditIcon/></button>
+                                       <button onClick={(e) => { e.stopPropagation(); onDeleteLedger(currentPerson.id, entry.id); }} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition"><DeleteIcon/></button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            {expandedLedgerId === entry.id && (
+                                <div className="bg-slate-900/60 rounded-lg p-3 ring-1 ring-slate-700">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-slate-500">نوع</span>
+                                            <span className={`${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'} font-medium`}>{entry.type === 'debt' ? 'بهش دادم' : 'ازش گرفتم'}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-slate-500">وضعیت</span>
+                                            <span className={`${entry.isSettled ? 'text-emerald-400' : 'text-amber-400'} font-medium`}>{entry.isSettled ? 'تسویه شده' : 'تسویه نشده'}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-slate-500">واحد</span>
+                                            <span className="text-slate-200">{getLedgerUnitConfig((entry as any).unit || 'toman').label}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-slate-500">تاریخ</span>
+                                            <span className="text-slate-200">{moment(entry.date).locale('fa').format('dddd jD jMMMM jYYYY - HH:mm')}</span>
+                                        </div>
+                                    </div>
+                                    <div className="mt-3">
+                                        <span className="text-slate-500 block mb-1">بابت</span>
+                                        <p className="text-slate-200 bg-slate-800/50 p-2 rounded-md border border-slate-700">{entry.description || 'بدون توضیحات'}</p>
+                                    </div>
+                                    {entry.receiptImage && (
+                                        <div className="mt-3">
+                                            <span className="text-slate-500 block mb-1">رسید</span>
+                                            <ImageFromRef srcOrRef={entry.receiptImage} className="w-full h-auto object-cover max-h-48 bg-slate-950 rounded-md ring-1 ring-slate-700" />
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </React.Fragment>
                     ))}
                 </div>
                 }
@@ -754,85 +800,126 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {orderedPeople.map(person => {
-                const ledger = (data.ledger[person.id] || []).map(e => ({
-                    ...e,
-                    unit: (e as any).unit || 'toman',
-                }));
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {orderedPeople.map(person => {
+                    const ledger = (data.ledger[person.id] || []).map(e => ({
+                        ...e,
+                        unit: (e as any).unit || 'toman',
+                    }));
 
-                const totalsByUnit = ledger.reduce((acc: Record<string, number>, entry) => {
-                    if (entry.isSettled) return acc;
-                    const unit = (entry as any).unit || 'toman';
-                    const sign = entry.type === 'debt' ? 1 : -1;
-                    acc[unit] = (acc[unit] || 0) + sign * entry.amount;
-                    return acc;
-                }, {});
+                    const totalsByUnit = ledger.reduce((acc: Record<string, number>, entry) => {
+                        if (entry.isSettled) return acc;
+                        const unit = (entry as any).unit || 'toman';
+                        const sign = entry.type === 'debt' ? 1 : -1;
+                        acc[unit] = (acc[unit] || 0) + sign * entry.amount;
+                        return acc;
+                    }, {});
 
-                const tomanBalance = totalsByUnit['toman'] || 0;
-                return (
-                    <div
-                        key={person.id}
-                        draggable
-                        onDragStart={(e) => {
-                            e.dataTransfer.setData('text/plain', person.id);
-                            setDraggingId(person.id);
-                        }}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                            e.preventDefault();
-                            const fromId = e.dataTransfer.getData('text/plain') || draggingId;
-                            handlePersonDrop(fromId, person.id);
-                            setDraggingId(null);
-                        }}
-                        onDragEnd={() => setDraggingId(null)}
-                        className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 cursor-pointer transition-all hover:ring-sky-400 hover:-translate-y-1"
-                        onClick={() => setCurrentPerson(person)}
-                    >
-                        <div className="flex justify-between items-start">
-                             <div className="flex items-center space-x-4 space-x-reverse">
-                                <div className="w-16 h-16 bg-slate-700 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
-                                    {person.avatar ? (
-                                      <ImageFromRef srcOrRef={person.avatar} className="w-full h-full object-cover" alt={person.name} />
-                                    ) : <UserCircleIcon />}
+                    const tomanBalance = totalsByUnit['toman'] || 0;
+                    return (
+                        <div
+                            key={person.id}
+                            draggable
+                            onDragStart={(e) => {
+                                e.dataTransfer.setData('text/plain', person.id);
+                                setDraggingId(person.id);
+                            }}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                const fromId = e.dataTransfer.getData('text/plain') || draggingId;
+                                handlePersonDrop(fromId, person.id);
+                                setDraggingId(null);
+                            }}
+                            onDragEnd={() => setDraggingId(null)}
+                            className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 cursor-pointer transition-all hover:ring-sky-400 hover:-translate-y-1"
+                            onClick={() => setCurrentPerson(person)}
+                        >
+                            <div className="flex justify-between items-start">
+                                 <div className="flex items-center space-x-4 space-x-reverse">
+                                    <div className="w-16 h-16 bg-slate-700 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
+                                        {person.avatar ? (
+                                          <ImageFromRef srcOrRef={person.avatar} className="w-full h-full object-cover" alt={person.name} />
+                                        ) : <UserCircleIcon />}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-slate-100 text-lg">{person.name}</h4>
+                                        <p className={`text-sm font-semibold ${tomanBalance > 0 ? 'text-emerald-400' : tomanBalance < 0 ? 'text-rose-400' : 'text-slate-400'}`}>
+                                            {tomanBalance > 0 ? `طلب: ${formatCurrency(tomanBalance)}` : tomanBalance < 0 ? `بدهی: ${formatCurrency(Math.abs(tomanBalance))}` : 'تسویه (تومان)'}
+                                        </p>
+                                        {(Object.entries(totalsByUnit) as [string, number][])
+                                            .filter(([unit]) => unit !== 'toman' && Math.abs(totalsByUnit[unit]) > 0)
+                                            .map(([unit, value]) => {
+                                                const cfg = getLedgerUnitConfig(unit);
+                                                const isReceivable = value > 0;
+                                                const amountStr =
+                                                    cfg.maxDecimals > 0
+                                                        ? Math.abs(value).toLocaleString('fa-IR', {
+                                                              maximumFractionDigits: cfg.maxDecimals,
+                                                          })
+                                                        : Math.abs(value).toLocaleString('fa-IR');
+                                                return (
+                                                    <p
+                                                        key={unit}
+                                                        className={`text-xs mt-0.5 ${isReceivable ? 'text-emerald-300' : 'text-rose-300'}`}
+                                                    >
+                                                        {isReceivable
+                                                            ? `طلب: ${amountStr} ${cfg.suffix}`
+                                                            : `بدهی: ${amountStr} ${cfg.suffix}`}
+                                                    </p>
+                                                );
+                                            })}
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-100 text-lg">{person.name}</h4>
-                                    <p className={`text-sm font-semibold ${tomanBalance > 0 ? 'text-emerald-400' : tomanBalance < 0 ? 'text-rose-400' : 'text-slate-400'}`}>
-                                        {tomanBalance > 0 ? `طلب: ${formatCurrency(tomanBalance)}` : tomanBalance < 0 ? `بدهی: ${formatCurrency(Math.abs(tomanBalance))}` : 'تسویه (تومان)'}
-                                    </p>
-                                    {(Object.entries(totalsByUnit) as [string, number][])
-                                        .filter(([unit]) => unit !== 'toman' && Math.abs(totalsByUnit[unit]) > 0)
-                                        .map(([unit, value]) => {
-                                            const cfg = getLedgerUnitConfig(unit);
-                                            const isReceivable = value > 0;
-                                            const amountStr =
-                                                cfg.maxDecimals > 0
-                                                    ? Math.abs(value).toLocaleString('fa-IR', {
-                                                          maximumFractionDigits: cfg.maxDecimals,
-                                                      })
-                                                    : Math.abs(value).toLocaleString('fa-IR');
-                                            return (
-                                                <p
-                                                    key={unit}
-                                                    className={`text-xs mt-0.5 ${isReceivable ? 'text-emerald-300' : 'text-rose-300'}`}
-                                                >
-                                                    {isReceivable
-                                                        ? `طلب: ${amountStr} ${cfg.suffix}`
-                                                        : `بدهی: ${amountStr} ${cfg.suffix}`}
-                                                </p>
-                                            );
-                                        })}
+                                 <div className="flex flex-col items-center space-y-1 text-slate-400">
+                                   <button onClick={(e) => { e.stopPropagation(); onEditPerson(person);}} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"><EditIcon/></button>
+                                   <button onClick={(e) => { e.stopPropagation(); onDeletePerson(person.id);}} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition"><DeleteIcon/></button>
                                 </div>
-                            </div>
-                             <div className="flex flex-col items-center space-y-1 text-slate-400">
-                               <button onClick={(e) => { e.stopPropagation(); onEditPerson(person);}} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"><EditIcon/></button>
-                               <button onClick={(e) => { e.stopPropagation(); onDeletePerson(person.id);}} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition"><DeleteIcon/></button>
                             </div>
                         </div>
-                    </div>
-                )
-            })}
+                    )
+                })}
+            </div>
+            <div>
+                <h3 className="text-lg font-bold text-slate-100 mb-3">تراکنش‌های اخیر با دیگران</h3>
+                {(() => {
+                    const recent = Object.values(data.ledger || {})
+                        .flat()
+                        .map(e => ({ ...e, unit: (e as any).unit || 'toman' }))
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .slice(0, 30);
+                    if (recent.length === 0) {
+                        return <p className="text-slate-500 text-sm bg-slate-800/20 rounded-lg p-4">هنوز تراکنشی ثبت نشده است.</p>;
+                    }
+                    return (
+                        <div className="space-y-3">
+                            {recent.map(entry => {
+                                const person = data.people.find(p => p.id === entry.personId);
+                                return (
+                                    <div
+                                        key={entry.id}
+                                        className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition"
+                                        onClick={() => onViewLedger && onViewLedger(entry)}
+                                    >
+                                        <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-slate-100 truncate">{entry.description || '—'}</p>
+                                                <p className="text-xs text-slate-400 truncate">
+                                                    {person?.name || 'نامشخص'} • {formatDate(entry.date)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
+                                            <p className={`font-bold text-sm sm:text-base ${entry.type === 'debt' ? 'text-emerald-400' : 'text-rose-400'}`}>{formatLedgerAmount(entry)}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
+            </div>
         </div>
     );
 };
