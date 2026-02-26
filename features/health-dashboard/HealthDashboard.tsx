@@ -164,6 +164,7 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = ({ onNavigateBack
                   data={weightRecords}
                   type="weight"
                   color="#10B981"
+                  healthProfile={healthProfile}
                 />
               )}
               {bloodPressureReadings && bloodPressureReadings.length > 0 && (
@@ -172,6 +173,7 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = ({ onNavigateBack
                   data={bloodPressureReadings}
                   type="blood-pressure"
                   color="#3B82F6"
+                  healthProfile={healthProfile}
                 />
               )}
             </div>

@@ -1,5 +1,20 @@
 import { FileMetadata } from '../types/medicalRecords.types';
-import { generateFileChecksum, encryptFile, decryptFile } from '../../../lib/crypto';
+import { generateFileChecksum, encryptFile, decryptFile, bytesToBase64, base64ToBytes } from '../../../lib/crypto';
+
+const generateEncryptionKey = async (): Promise<{ key: CryptoKey; keyString: string }> => {
+  const key = await crypto.subtle.generateKey(
+    { name: 'AES-GCM', length: 256 },
+    true,
+    ['encrypt', 'decrypt']
+  );
+  const raw = await crypto.subtle.exportKey('raw', key);
+  return { key, keyString: bytesToBase64(raw) };
+};
+
+const importEncryptionKey = async (keyString: string): Promise<CryptoKey> => {
+  const raw = base64ToBytes(keyString);
+  return crypto.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+};
 
 export class FileStorageService {
   private static readonly DB_NAME = 'MedicalRecordsDB';
@@ -36,15 +51,17 @@ export class FileStorageService {
     }
 
     const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const checksum = await generateFileChecksum(file);
+    let checksum = await generateFileChecksum(file);
     
-    let fileData: ArrayBuffer;
+    let fileData: ArrayBuffer | { iv: string; ct: string };
     let encryptionKey: string | undefined;
 
     if (encrypt) {
-      const encryptionResult = await encryptFile(file);
-      fileData = encryptionResult.encryptedData;
-      encryptionKey = encryptionResult.key;
+      const { key, keyString } = await generateEncryptionKey();
+      const encryptionResult = await encryptFile(file, key);
+      fileData = { iv: encryptionResult.iv, ct: encryptionResult.ct };
+      encryptionKey = keyString;
+      checksum = encryptionResult.checksum;
     } else {
       fileData = await file.arrayBuffer();
     }
@@ -93,10 +110,13 @@ export class FileStorageService {
           return;
         }
 
-        let fileData: ArrayBuffer = result.data;
+        let fileData: ArrayBuffer;
 
         if (result.encrypted && result.encryptionKey) {
-          fileData = await decryptFile(fileData, result.encryptionKey);
+          const key = await importEncryptionKey(result.encryptionKey);
+          fileData = await decryptFile(result.data, key);
+        } else {
+          fileData = result.data;
         }
 
         const file = new File([fileData], result.originalName, { type: result.fileType });

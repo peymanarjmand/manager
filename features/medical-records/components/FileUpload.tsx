@@ -34,16 +34,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     e.preventDefault();
     setIsDragging(false);
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFile(files[0]);
+    const files = Array.from(e.dataTransfer.files) as File[];
+    const f = files[0];
+    if (f) {
+      handleFile(f);
     }
   }, [onFileUpload]);
 
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      handleFile(files[0]);
+      const f = files[0];
+      if (f) handleFile(f as File);
     }
   }, [onFileUpload]);
 

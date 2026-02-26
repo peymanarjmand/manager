@@ -199,7 +199,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
     const vehicleToSave: Vehicle = {
       ...vehicleInput,
       id,
-      createdAt: vehicleInput.createdAt || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
 
     const { error } = await supabase.from('vehicles').upsert({
@@ -274,7 +274,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
     const insurance: VehicleInsurance = {
       ...insuranceInput,
       id,
-      createdAt: insuranceInput.createdAt || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
 
     const { error } = await supabase.from('vehicle_insurances').upsert({
@@ -326,7 +326,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
     const record: VehicleMaintenanceRecord = {
       ...input,
       id,
-      createdAt: input.createdAt || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
 
     const { error } = await supabase.from('vehicle_maintenances').upsert({
@@ -421,7 +421,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
     const expense: VehicleExpense = {
       ...input,
       id,
-      createdAt: input.createdAt || new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
 
     const { error } = await supabase.from('vehicle_expenses').upsert({

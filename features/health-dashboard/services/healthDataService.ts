@@ -210,7 +210,7 @@ export class IndexedDBHealthDataService implements HealthDataService {
 
   async getActiveMedicines(): Promise<Medicine[]> {
     const db = await this.getDB();
-    return await db.getAllFromIndex('medicines', 'isActive', true);
+    return await db.getAllFromIndex('medicines', 'isActive', IDBKeyRange.only(true));
   }
 
   async updateMedicine(id: string, medicine: Partial<Medicine>): Promise<void> {

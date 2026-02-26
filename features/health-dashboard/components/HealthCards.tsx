@@ -3,10 +3,7 @@ import {
   HeartIcon, 
   ClockIcon, 
   CalendarIcon, 
-  PlusIcon,
-  WeightIcon,
-  PillIcon,
-  ChartIcon 
+  PlusIcon
 } from '../../../components/Icons';
 import { WeightRecord, BloodPressureReading, Meal, Medicine, HealthProfile } from '../../../types';
 

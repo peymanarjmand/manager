@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ZoomIn, ZoomOut, Download, Trash2, Calendar, User, MapPin } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, Download, Trash2, Calendar, User, MapPin, Image as ImageIcon } from 'lucide-react';
 import { MedicalImage } from '../types/medicalRecords.types';
 
 interface ImageViewerProps {
@@ -163,7 +163,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
             )}
             {!imageUrl && (
               <div className="text-center">
-                <Image className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <ImageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 dark:text-gray-400">تصویر در دسترس نیست</p>
               </div>
             )}

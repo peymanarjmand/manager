@@ -13,7 +13,7 @@ import {
   Plugin
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { WeightRecord, BloodPressureReading } from '../../../types';
+import { WeightRecord, BloodPressureReading, HealthProfile } from '../../../types';
 
 // Register Chart.js components
 ChartJS.register(
@@ -31,9 +31,10 @@ interface ChartContainerProps {
   data: WeightRecord[] | BloodPressureReading[];
   type: 'weight' | 'blood-pressure';
   color: string;
+  healthProfile?: HealthProfile | null;
 }
 
-export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, type, color }) => {
+export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, type, color, healthProfile }) => {
   const chartRef = useRef<ChartJS<'line'> | null>(null);
 
   const prepareChartData = (): ChartData<'line'> => {
@@ -141,8 +142,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
       scales: {
         x: {
           grid: {
-            color: '#334155',
-            borderColor: '#475569'
+            color: '#334155'
           },
           ticks: {
             color: '#94a3b8',
@@ -154,8 +154,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
         },
         y: {
           grid: {
-            color: '#334155',
-            borderColor: '#475569'
+            color: '#334155'
           },
           ticks: {
             color: '#94a3b8',
@@ -173,7 +172,8 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
     };
 
     if (type === 'blood-pressure') {
-      baseOptions.plugins!.annotation = {
+      const plugins = baseOptions.plugins as any;
+      plugins.annotation = {
         annotations: {
           normalSystolic: {
             type: 'line',
@@ -220,6 +220,11 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
 
   const chartData = prepareChartData();
   const options = getChartOptions();
+  const toNumber = (value: any) => {
+    if (typeof value === 'number') return value;
+    if (value && typeof value.y === 'number') return value.y;
+    return Number(value) || 0;
+  };
 
   // Check if there's no data
   if (!data || data.length === 0) {
@@ -307,8 +312,8 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
                 <p className="text-slate-400">میانگین</p>
                 <p className="text-slate-200 font-medium">
                   {chartData.datasets.length > 0 && chartData.datasets[0].data.length > 0 && (
-                    `${Math.round(chartData.datasets[0].data.reduce((a, b) => a + b, 0) / chartData.datasets[0].data.length)}/${
-                      chartData.datasets.length > 1 && chartData.datasets[1].data.length > 0 ? Math.round(chartData.datasets[1].data.reduce((a, b) => a + b, 0) / chartData.datasets[1].data.length) : 0
+                    `${Math.round(chartData.datasets[0].data.reduce((a, b) => toNumber(a) + toNumber(b), 0) / chartData.datasets[0].data.length)}/${
+                      chartData.datasets.length > 1 && chartData.datasets[1].data.length > 0 ? Math.round(chartData.datasets[1].data.reduce((a, b) => toNumber(a) + toNumber(b), 0) / chartData.datasets[1].data.length) : 0
                     }`
                   )}
                 </p>
@@ -324,7 +329,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
                   : 'text-slate-400'
               }`}>
                 {chartData.datasets.length > 0 && chartData.datasets[0].data.length >= 2
-                  ? `${((chartData.datasets[0].data[chartData.datasets[0].data.length - 1] - chartData.datasets[0].data[0]) / chartData.datasets[0].data[0] * 100).toFixed(1)}%`
+                  ? `${((toNumber(chartData.datasets[0].data[chartData.datasets[0].data.length - 1]) - toNumber(chartData.datasets[0].data[0])) / toNumber(chartData.datasets[0].data[0]) * 100).toFixed(1)}%`
                   : '0%'
                 }
               </p>

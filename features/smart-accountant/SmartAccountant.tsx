@@ -406,8 +406,6 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
 
 // Form Modal Component
 const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen: boolean, onClose: () => void, onSave: (type:string, data:any)=>void, type?:string, payload?:any}) => {
-    if (!isOpen) return null;
-
     const { customCategories, addCustomCategory } = useAccountantStore();
     const [formData, setFormData] = useState(payload || {});
     const [imagePreview, setImagePreview] = useState(payload?.receiptImage || payload?.avatar || null);
@@ -450,6 +448,8 @@ const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen
             }
         })();
     }, [isOpen, type, payload]);
+
+    if (!isOpen) return null;
 
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

@@ -65,7 +65,7 @@ export const Darfak = ({ onNavigateBack }: { onNavigateBack: () => void; }): Rea
                         {Object.entries(totals.byTag).map(([tag, amount]) => (
                             <div key={tag} className="px-3 py-1 rounded-full bg-slate-700/60 text-slate-200 text-sm">
                                 <span className="ml-1 text-sky-300">{tag}</span>
-                                <span>{amount.toLocaleString('fa-IR')} تومان</span>
+                                <span>{Number(amount).toLocaleString('fa-IR')} تومان</span>
                             </div>
                         ))}
                     </div>

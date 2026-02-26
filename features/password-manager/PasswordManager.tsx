@@ -39,10 +39,9 @@ const FormInput = ({ label, id, value, onChange, type = 'text', required = false
 
 // Form Modal Component
 const ItemFormModal = ({ isOpen, onClose, onSave, entry, category }) => {
-    if (!isOpen) return null;
-
     const [formData, setFormData] = useState(entry || {});
     const [imagePreview, setImagePreview] = useState(entry?.image || null);
+    if (!isOpen) return null;
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target as HTMLInputElement;

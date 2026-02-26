@@ -287,7 +287,15 @@ const Sidebar = ({ activeFilter, setActiveFilter, projects, tasks, onAddProject,
 };
 
 // Filter Button Component
-const FilterButton = ({ label, icon, isActive, count, onClick, onEdit=null }) => (
+interface FilterButtonProps {
+    label: React.ReactNode;
+    icon: React.ReactNode;
+    isActive: boolean;
+    count: number | null;
+    onClick: () => void;
+    onEdit?: () => void;
+}
+const FilterButton: React.FC<FilterButtonProps> = ({ label, icon, isActive, count, onClick, onEdit=null }) => (
     <button onClick={onClick} className={`w-full flex items-center justify-between text-right px-3 py-2 rounded-lg transition-colors group ${isActive ? 'bg-sky-500/10 text-sky-400' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
         <div className="flex items-center gap-3">
             {icon}
@@ -443,7 +451,12 @@ const TaskList = ({ filter, onSelectTask, projects, tasks, calendarDate }) => {
 };
 
 // Task Card Component
-const TaskCard = ({ task, onSelectTask, projects }) => {
+interface TaskCardProps {
+    task: any;
+    onSelectTask: (t: any) => void;
+    projects: any[];
+}
+const TaskCard: React.FC<TaskCardProps> = ({ task, onSelectTask, projects }) => {
     const { toggleTaskCompletion } = useDailyTasksStore.getState();
     const project = projects.find(p => p.id === task.projectId);
     const completedSubtasks = task.subtasks.filter(s => s.isCompleted).length;
@@ -611,11 +624,10 @@ const TaskDetails = ({ task, onClose, projects }) => {
 
 
 const ProjectModal = ({ isOpen, onClose, project }) => {
-    if (!isOpen) return null;
-
     const { addProject, updateProject, deleteProject } = useDailyTasksStore.getState();
     const [name, setName] = useState(project?.name || '');
     const [color, setColor] = useState(project?.color || PROJECTS_COLORS[0]);
+    if (!isOpen) return null;
 
     const handleSubmit = (e) => {
         e.preventDefault();

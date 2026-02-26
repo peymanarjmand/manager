@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlusIcon, CalendarIcon, ChartIcon, FileTextIcon } from '../../../components/Icons';
+import { PlusIcon, CalendarIcon } from '../../../components/Icons';
 
 interface QuickActionsProps {
   onWeightClick?: () => void;
