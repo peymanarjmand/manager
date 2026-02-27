@@ -1,18 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { Header } from './components/Header';
-import { PasswordManager } from './features/password-manager/PasswordManager';
-import { PhoneBook } from './features/phone-book/PhoneBook';
-import { SmartAccountant } from './features/smart-accountant/SmartAccountant';
-import { Assets } from './features/assets/Assets';
-import { DailyTasks } from './features/daily-tasks/DailyTasks';
-import { Darfak } from './features/darfak/Darfak';
-import { HealthDashboard } from './features/health-dashboard/HealthDashboard';
 import { SUPABASE_ENABLED, supabase } from './lib/supabase';
 import { LoginPage } from './features/auth/LoginPage';
 import { SignupPage } from './features/auth/SignupPage';
 import { View } from './types';
-import { MyCar } from './features/my-car/MyCar';
+
+const PasswordManager = React.lazy(() => import('./features/password-manager/PasswordManager').then(m => ({ default: m.PasswordManager })));
+const PhoneBook = React.lazy(() => import('./features/phone-book/PhoneBook').then(m => ({ default: m.PhoneBook })));
+const SmartAccountant = React.lazy(() => import('./features/smart-accountant/SmartAccountant.tsx').then(m => ({ default: m.SmartAccountant })));
+const Assets = React.lazy(() => import('./features/assets/Assets').then(m => ({ default: m.Assets })));
+const DailyTasks = React.lazy(() => import('./features/daily-tasks/DailyTasks').then(m => ({ default: m.DailyTasks })));
+const Darfak = React.lazy(() => import('./features/darfak/Darfak').then(m => ({ default: m.Darfak })));
+const HealthDashboard = React.lazy(() => import('./features/health-dashboard/HealthDashboard').then(m => ({ default: m.HealthDashboard })));
+const MyCar = React.lazy(() => import('./features/my-car/MyCar').then(m => ({ default: m.MyCar })));
 
 function App(): React.ReactNode {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -107,14 +108,18 @@ function App(): React.ReactNode {
       <Header onLogout={handleLogout} sessionInfo={sessionInfo} />
       <main>
         {currentView === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
-        {currentView === 'health-dashboard' && <HealthDashboard onNavigateBack={() => handleNavigate('dashboard')} />}
-        {currentView === 'password-manager' && <PasswordManager onNavigateBack={() => handleNavigate('dashboard')} />}
-        {currentView === 'smart-accountant' && <SmartAccountant onNavigateBack={() => handleNavigate('dashboard')} />}
-        {currentView === 'phone-book' && <PhoneBook onNavigateBack={() => handleNavigate('dashboard')} />}
-        {currentView === 'daily-tasks' && <DailyTasks onNavigateBack={() => handleNavigate('dashboard')} />}
-        {currentView === 'assets' && <Assets onNavigateBack={() => handleNavigate('dashboard')} />}
-        {currentView === 'darfak' && <Darfak onNavigateBack={() => handleNavigate('dashboard')} />}
-        {currentView === 'my-car' && <MyCar onNavigateBack={() => handleNavigate('dashboard')} />}
+        {currentView !== 'dashboard' && (
+          <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>}>
+            {currentView === 'health-dashboard' && <HealthDashboard onNavigateBack={() => handleNavigate('dashboard')} />}
+            {currentView === 'password-manager' && <PasswordManager onNavigateBack={() => handleNavigate('dashboard')} />}
+            {currentView === 'smart-accountant' && <SmartAccountant onNavigateBack={() => handleNavigate('dashboard')} />}
+            {currentView === 'phone-book' && <PhoneBook onNavigateBack={() => handleNavigate('dashboard')} />}
+            {currentView === 'daily-tasks' && <DailyTasks onNavigateBack={() => handleNavigate('dashboard')} />}
+            {currentView === 'assets' && <Assets onNavigateBack={() => handleNavigate('dashboard')} />}
+            {currentView === 'darfak' && <Darfak onNavigateBack={() => handleNavigate('dashboard')} />}
+            {currentView === 'my-car' && <MyCar onNavigateBack={() => handleNavigate('dashboard')} />}
+          </Suspense>
+        )}
       </main>
       <footer className="text-center py-6 text-slate-500 text-sm">
         <p>
