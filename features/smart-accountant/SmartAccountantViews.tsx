@@ -530,15 +530,16 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
             ...e,
             unit: (e as any).unit || 'toman',
         }));
-        const { balance } = ledger.reduce((acc, entry) => {
-            if (!entry.isSettled) {
-                if ((entry as any).unit === 'toman') {
-                    if (entry.type === 'debt') acc.balance += entry.amount;
-                    else acc.balance -= entry.amount;
-                }
-            }
+        const totalsByUnit = ledger.reduce((acc: Record<string, number>, entry) => {
+            if (entry.isSettled) return acc;
+            const unit = (entry as any).unit || 'toman';
+            const sign = entry.type === 'debt' ? 1 : -1;
+            acc[unit] = (acc[unit] || 0) + sign * entry.amount;
             return acc;
-        }, { balance: 0 });
+        }, {});
+        const balance = totalsByUnit['toman'] || 0;
+        const unitEntries = (Object.entries(totalsByUnit) as [string, number][])
+            .filter(([, value]) => Math.abs(value) > 0);
 
         const safeLedger = showOnlyOpen ? ledger.filter(l => !l.isSettled) : ledger;
 
@@ -549,11 +550,33 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                         <ArrowRightIcon />
                         <span>بازگشت به لیست</span>
                     </button>
-                    <div className="text-left">
+                    <div className="text-left flex-1">
                         <h3 className="text-xl font-bold text-white">{currentPerson.name}</h3>
                         <p className={`font-semibold ${balance > 0 ? 'text-emerald-400' : balance < 0 ? 'text-rose-400' : 'text-slate-400'}`}>
-                            {balance > 0 ? `به شما ${formatCurrency(balance)} بدهکار است.` : balance < 0 ? `شما ${formatCurrency(Math.abs(balance))} بدهکارید.` : 'حساب شما تسویه است.'}
+                            {balance > 0 ? `به شما ${formatCurrency(balance)} بدهکار است.` : balance < 0 ? `شما ${formatCurrency(Math.abs(balance))} بدهکارید.` : 'حساب تومان تسویه است.'}
                         </p>
+                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {unitEntries.length === 0 ? (
+                                <div className="text-slate-400 text-sm">هیچ بدهی یا طلبی ثبت نشده است.</div>
+                            ) : (
+                                unitEntries.map(([unit, value]) => {
+                                    const cfg = getLedgerUnitConfig(unit);
+                                    const isReceivable = value > 0;
+                                    const amountStr =
+                                        cfg.maxDecimals > 0
+                                            ? Math.abs(value).toLocaleString('fa-IR', { maximumFractionDigits: cfg.maxDecimals })
+                                            : Math.abs(value).toLocaleString('fa-IR');
+                                    return (
+                                        <div key={unit} className="bg-slate-900/60 rounded-lg p-2.5 ring-1 ring-slate-700/60 flex items-center justify-between">
+                                            <div className="text-xs text-slate-400">{cfg.label}</div>
+                                            <div className={`text-xs font-bold ${isReceivable ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                                {isReceivable ? 'طلب' : 'بدهی'} {amountStr} {cfg.suffix}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
                 </div>
 
