@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import moment from 'jalali-moment';
 import { InstallmentPayment, InstallmentPlan } from './types';
 import { useAccountantStore } from './store';
@@ -64,8 +64,11 @@ const PlanStats = ({ plan }: { plan: InstallmentPlan }) => {
     );
 };
 
+const getPaymentKey = (planId: string, paymentId: string) => `${planId}::${paymentId}`;
+
 export const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallment, onEditPlan, onDeletePlan, onEditPayment, onTogglePaidStatus }) => {
     const [showPaymentsList, setShowPaymentsList] = useState(false);
+    const [selectedPaymentKeys, setSelectedPaymentKeys] = useState<string[]>([]);
 
     const { installmentsSortMode, installmentsCustomOrder } = useAccountantStore();
     const { setInstallmentsSortMode, setInstallmentsCustomOrder } = useAccountantStore.getState();
@@ -106,6 +109,10 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
             .filter(p => isInInstMonth(p.dueDate))
             .reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
     };
+
+    useEffect(() => {
+        setSelectedPaymentKeys([]);
+    }, [instMonthISO]);
 
     const applySorting = (list: InstallmentPlan[]): InstallmentPlan[] => {
         if (installmentsSortMode === 'custom') {
@@ -149,6 +156,96 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
     const sortedInstallments = useMemo(() => applySorting(installments), [installments, installmentsSortMode, installmentsCustomOrder]);
     const activePlans = sortedInstallments.filter(plan => plan.payments.some(p => !p.isPaid));
     const completedPlans = sortedInstallments.filter(plan => plan.payments.length > 0 && plan.payments.every(p => p.isPaid));
+
+    const monthlyRows = useMemo(() => {
+        const jy = instJYear;
+        const jm = instJMonth;
+        return installments
+            .flatMap(plan => plan.payments.map((p, idx) => ({ plan, p, idx })))
+            .filter(r => {
+                const d = moment(r.p.dueDate);
+                return d.jYear() === jy && (d.jMonth() + 1) === jm;
+            })
+            .sort((a, b) => new Date(a.p.dueDate).getTime() - new Date(b.p.dueDate).getTime());
+    }, [installments, instJYear, instJMonth]);
+
+    const monthlyRowMap = useMemo(() => {
+        return new Map(monthlyRows.map(r => [getPaymentKey(r.plan.id, r.p.id), r] as const));
+    }, [monthlyRows]);
+
+    const selectedSummary = useMemo(() => {
+        const rows = selectedPaymentKeys.map(k => monthlyRowMap.get(k)).filter(Boolean) as Array<{ plan: InstallmentPlan; p: InstallmentPayment; idx: number }>;
+        const total = rows.reduce((sum, r) => sum + (r.p.amount || 0) + (r.p.penalty || 0), 0);
+        return { count: rows.length, total };
+    }, [selectedPaymentKeys, monthlyRowMap]);
+
+    const togglePaymentSelection = (key: string) => {
+        setSelectedPaymentKeys(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+    };
+
+    const renderMonthlyPaymentsList = (title: string) => (
+        <div className="bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
+            <div className="px-4 py-3 border-b border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h3 className="text-slate-200 font-bold">{title}</h3>
+                {selectedSummary.count > 0 && (
+                    <div className="hidden sm:flex items-center gap-2 text-xs bg-slate-900/60 ring-1 ring-slate-700 rounded-full px-3 py-1">
+                        <span className="text-slate-300">انتخاب شده:</span>
+                        <span className="text-slate-100 font-bold">{selectedSummary.count}</span>
+                        <span className="text-slate-500">|</span>
+                        <span className="text-slate-300">مجموع:</span>
+                        <span className="text-sky-300 font-extrabold">{formatCurrency(selectedSummary.total)}</span>
+                    </div>
+                )}
+            </div>
+            <div className="divide-y divide-slate-700">
+                {monthlyRows.length === 0 ? (
+                    <div className="p-4 text-slate-500">در این ماه قسطی وجود ندارد.</div>
+                ) : (
+                    monthlyRows.map((r) => {
+                        const key = getPaymentKey(r.plan.id, r.p.id);
+                        const isSelected = selectedPaymentKeys.includes(key);
+                        const amount = (r.p.amount || 0) + (r.p.penalty || 0);
+                        return (
+                            <button
+                                key={key}
+                                type="button"
+                                onClick={() => togglePaymentSelection(key)}
+                                className={`w-full text-right p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 transition ${isSelected ? 'bg-slate-800/70' : 'bg-transparent'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="p-1.5 rounded-full bg-slate-900/60 ring-1 ring-slate-700">
+                                        {isSelected ? <CheckCircleIcon /> : <UncheckedCircleIcon />}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ring-1 ${r.p.isPaid ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30' : 'bg-rose-500/10 text-rose-400 ring-rose-500/30'}`}>
+                                        {r.p.isPaid ? 'پرداخت شده' : 'پرداخت نشده'}
+                                    </span>
+                                    <div className="min-w-0">
+                                        <div className="text-slate-100 font-bold text-sm truncate">{r.plan.title}</div>
+                                        <div className="text-xs text-slate-400">تاریخ سررسید: {formatDate(r.p.dueDate)}</div>
+                                    </div>
+                                </div>
+                                <div className="text-slate-100 font-extrabold">{formatCurrency(amount)}</div>
+                            </button>
+                        );
+                    })
+                )}
+            </div>
+            {selectedSummary.count > 0 && (
+                <div className="sm:hidden fixed bottom-3 left-3 right-3 z-30">
+                    <div className="bg-slate-900/95 backdrop-blur rounded-xl ring-1 ring-slate-700 px-4 py-3 flex items-center justify-between">
+                        <div className="text-xs text-slate-300">
+                            <span>اقساط انتخابی: </span>
+                            <span className="text-slate-100 font-bold">{selectedSummary.count}</span>
+                        </div>
+                        <div className="text-sm text-slate-300">
+                            <span>مجموع: </span>
+                            <span className="text-sky-300 font-extrabold">{formatCurrency(selectedSummary.total)}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 
     if (currentInstallment) {
         const isCompleted = currentInstallment.payments.length > 0 && currentInstallment.payments.every(p => p.isPaid);
@@ -463,34 +560,12 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                                 <p className="text-slate-400 mt-2">تمام اقساط شما پرداخت شده‌اند یا قسطی ثبت نکرده‌اید.</p>
                             </div>
                         )}
+                        <div className="mt-6">
+                            {renderMonthlyPaymentsList(`لیست اقساط ${monthLabel}`)}
+                        </div>
                     </>
                 ) : (
-                    <div className="bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
-                        <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-                            <h3 className="text-slate-200 font-bold">لیست اقساط {monthLabel}</h3>
-                        </div>
-                        <div className="divide-y divide-slate-700">
-                            {(() => {
-                                const jy = instJYear; const jm = instJMonth;
-                                const rows = installments.flatMap(plan => plan.payments.map((p, idx) => ({ plan, p, idx })))
-                                    .filter(r => { const d = moment(r.p.dueDate); return d.jYear() === jy && (d.jMonth() + 1) === jm; })
-                                    .sort((a,b) => new Date(a.p.dueDate).getTime() - new Date(b.p.dueDate).getTime());
-                                if (rows.length === 0) return <div className="p-4 text-slate-500">در این ماه قسطی وجود ندارد.</div>;
-                                return rows.map((r) => (
-                                    <div key={`${r.plan.id}-${r.p.id}`} className="p-3 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] ring-1 ${r.p.isPaid ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30' : 'bg-rose-500/10 text-rose-400 ring-rose-500/30'}`}>{r.p.isPaid ? 'پرداخت شده' : 'پرداخت نشده'}</span>
-                                            <div>
-                                                <div className="text-slate-100 font-bold text-sm">{r.plan.title}</div>
-                                                <div className="text-xs text-slate-400">تاریخ سررسید: {formatDate(r.p.dueDate)}</div>
-                                            </div>
-                                        </div>
-                                        <div className="text-slate-100 font-extrabold">{formatCurrency((r.p.amount || 0) + (r.p.penalty || 0))}</div>
-                                    </div>
-                                ));
-                            })()}
-                        </div>
-                    </div>
+                    renderMonthlyPaymentsList(`لیست اقساط ${monthLabel}`)
                 )}
             </div>
             
