@@ -16,7 +16,7 @@ export const ChecksView = ({ checks, onEdit, onDelete, onStatusChange }: { check
     
     return (
         <div className="space-y-6">
-            <div className="flex justify-center mb-6 border-b border-slate-700">
+            <div className="flex justify-center mb-6 border-b border-white/10">
                 <button 
                     onClick={() => setViewType('issued')} 
                     className={`py-3 px-6 font-medium text-sm transition-colors focus:outline-none ${viewType === 'issued' ? 'border-b-2 border-sky-400 text-sky-400' : 'text-slate-400 hover:text-slate-200'}`}
@@ -38,7 +38,7 @@ export const ChecksView = ({ checks, onEdit, onDelete, onStatusChange }: { check
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-16 px-6 bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
+                <div className="text-center py-16 px-6 bg-white/[0.03] rounded-xl ring-1 ring-white/10">
                     <div className="text-5xl text-slate-600 mb-4"><ChecksIcon /></div>
                     <h3 className="text-xl font-semibold text-slate-200">
                         {viewType === 'issued' ? 'هنوز چک صادره‌ای ثبت نشده' : 'هنوز چک دریافتی ثبت نشده'}
@@ -76,7 +76,7 @@ const CheckCard: React.FC<{ check: any; onEdit: (c: any) => void; onDelete: (id:
     }, [menuRef]);
 
     return (
-        <div className={`bg-slate-800/60 rounded-xl p-4 ring-1 ring-slate-700 transition-shadow hover:shadow-lg hover:shadow-slate-900/50 ${check.status !== 'pending' ? 'opacity-70' : ''}`}>
+        <div className={`bg-white/[0.05] rounded-xl p-4 ring-1 ring-white/10 transition-shadow hover:shadow-lg hover:shadow-slate-900/50 ${check.status !== 'pending' ? 'opacity-70' : ''}`}>
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
                 <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
@@ -114,7 +114,7 @@ const CheckCard: React.FC<{ check: any; onEdit: (c: any) => void; onDelete: (id:
                     </div>
                 </div>
             </div>
-            {check.description && <p className="text-sm text-slate-400 pt-2 mt-2 border-t border-slate-700/50">{check.description}</p>}
+            {check.description && <p className="text-sm text-slate-400 pt-2 mt-2 border-t border-white/10/50">{check.description}</p>}
         </div>
     );
 };

@@ -435,7 +435,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
-        <section className="bg-slate-800/50 rounded-xl p-4 sm:p-5 ring-1 ring-slate-700 space-y-4">
+        <section className="bg-white/[0.04] rounded-xl p-4 sm:p-5 ring-1 ring-white/10 space-y-4">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="text-xl font-semibold">لیست خودروها</h3>
@@ -480,7 +480,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                 className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-lg border ${
                   v.id === selectedVehicleId
                     ? 'border-sky-400 bg-sky-500/10'
-                    : 'border-slate-700 bg-slate-900/40 hover:border-slate-500'
+                    : 'border-white/10 bg-slate-900/40 hover:border-slate-500'
                 } transition cursor-pointer`}
               >
                 <div className="flex flex-col text-sm">
@@ -532,7 +532,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
             )}
           </div>
 
-          <hr className="border-slate-700/60 my-3" />
+          <hr className="border-white/10/60 my-3" />
 
           <div
             className={`transition-all duration-300 origin-top ${
@@ -555,7 +555,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   required
                   value={vehicleForm.name || ''}
                   onChange={(e) => setVehicleForm({ ...vehicleForm, name: e.target.value })}
-                  className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-400"
                   placeholder="مثلاً ۲۰۶ نقره‌ای"
                 />
               </div>
@@ -566,7 +566,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   onChange={(e) =>
                     setVehicleForm({ ...vehicleForm, brand: e.target.value })
                   }
-                  className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
                   placeholder="ایران‌خودرو، سایپا، ..."
                 />
               </div>
@@ -577,7 +577,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   onChange={(e) =>
                     setVehicleForm({ ...vehicleForm, model: e.target.value })
                   }
-                  className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
                   placeholder="تیپ ۲، SLX، ..."
                 />
               </div>
@@ -592,7 +592,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                       year: e.target.value ? Number(e.target.value) : undefined,
                     })
                   }
-                  className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
                   placeholder="مثلاً ۱۳۹۸"
                 />
               </div>
@@ -603,7 +603,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   onChange={(e) =>
                     setVehicleForm({ ...vehicleForm, plateNumber: e.target.value })
                   }
-                  className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
                   placeholder="مثلاً ۱۲الف۳۴-۹۹"
                 />
               </div>
@@ -614,7 +614,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   onChange={(e) =>
                     setVehicleForm({ ...vehicleForm, color: e.target.value })
                   }
-                  className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
                   placeholder="سفید، نقره‌ای، ..."
                 />
               </div>
@@ -625,7 +625,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   onChange={(e) =>
                     setVehicleForm({ ...vehicleForm, engineNumber: e.target.value })
                   }
-                  className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
                 />
               </div>
               <div>
@@ -635,7 +635,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   onChange={(e) =>
                     setVehicleForm({ ...vehicleForm, chassisNumber: e.target.value })
                   }
-                  className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
                 />
               </div>
               <div>
@@ -643,7 +643,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                 <input
                   value={vehicleForm.vin || ''}
                   onChange={(e) => setVehicleForm({ ...vehicleForm, vin: e.target.value })}
-                  className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
                 />
               </div>
               <div>
@@ -677,7 +677,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
         </section>
 
         <section className="lg:col-span-2 space-y-4">
-          <div className="bg-slate-800/50 rounded-xl p-4 sm:p-5 ring-1 ring-slate-700">
+          <div className="bg-white/[0.04] rounded-xl p-4 sm:p-5 ring-1 ring-white/10">
             {selectedVehicle ? (
               <>
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -696,7 +696,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
                   )}
                 </div>
 
-                <div className="border-b border-slate-700 mb-4">
+                <div className="border-b border-white/10 mb-4">
                   <nav className="-mb-px flex space-x-4 space-x-reverse overflow-x-auto text-sm">
                     <button
                       onClick={() => setActiveTab('specs')}
@@ -792,8 +792,8 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
 
       {confirmState?.open && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 px-4">
-          <div className="w-full max-w-sm bg-slate-900 rounded-2xl shadow-xl ring-1 ring-slate-700">
-            <div className="px-5 pt-4 pb-3 border-b border-slate-700/80 flex items-center justify-between">
+          <div className="w-full max-w-sm bg-slate-900 rounded-2xl shadow-xl ring-1 ring-white/10">
+            <div className="px-5 pt-4 pb-3 border-b border-white/10/80 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-100">
                 {confirmState.title}
               </h3>
@@ -823,8 +823,8 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
 
       {detailState?.open && (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/70 px-4">
-          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-slate-900 rounded-2xl shadow-xl ring-1 ring-slate-700">
-            <div className="px-5 pt-4 pb-3 border-b border-slate-700/80 flex items-center justify-between">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-slate-900 rounded-2xl shadow-xl ring-1 ring-white/10">
+            <div className="px-5 pt-4 pb-3 border-b border-white/10/80 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-slate-100">
                   {detailState.kind === 'insurance' && 'جزئیات بیمه‌نامه'}
@@ -987,7 +987,7 @@ const VehicleImagePreview: React.FC<{ imageRef: string }> = ({ imageRef }) => {
   if (!imageRef) return null;
 
   return (
-    <div className="w-32 h-24 rounded-lg overflow-hidden bg-slate-900/60 border border-slate-700 flex items-center justify-center">
+    <div className="w-32 h-24 rounded-lg overflow-hidden bg-slate-900/60 border border-white/10 flex items-center justify-center">
       {url ? (
         <img src={url} alt="تصویر خودرو" className="w-full h-full object-cover" />
       ) : (
@@ -1050,7 +1050,7 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
             onChange={(e) =>
               onChange({ ...form, type: e.target.value as VehicleInsuranceType })
             }
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
           >
             <option value="third_party">شخص ثالث</option>
             <option value="body">بیمه بدنه</option>
@@ -1061,7 +1061,7 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
           <input
             value={form.company || ''}
             onChange={(e) => onChange({ ...form, company: e.target.value })}
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
             placeholder="ایران، آسیا، دی، ..."
           />
         </div>
@@ -1070,12 +1070,12 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
           <input
             value={form.policyNumber || ''}
             onChange={(e) => onChange({ ...form, policyNumber: e.target.value })}
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
           />
         </div>
         <div>
           <label className="block text-xs text-slate-400 mb-1">تاریخ شروع</label>
-          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+          <div className="flex items-center bg-slate-900/60 border border-white/10 rounded-md px-3 py-1.5">
             <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
             <div className="flex-1">
               <JalaliDatePicker
@@ -1093,7 +1093,7 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
         </div>
         <div>
           <label className="block text-xs text-slate-400 mb-1">تاریخ پایان</label>
-          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+          <div className="flex items-center bg-slate-900/60 border border-white/10 rounded-md px-3 py-1.5">
             <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
             <div className="flex-1">
               <JalaliDatePicker
@@ -1120,7 +1120,7 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
                 discountPercent: e.target.value ? Number(e.target.value) : undefined,
               })
             }
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
             placeholder="مثلاً ۷۰"
           />
         </div>
@@ -1135,7 +1135,7 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
                 premiumAmount: e.target.value ? Number(e.target.value) : undefined,
               })
             }
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
           />
         </div>
         <div className="sm:col-span-2">
@@ -1148,7 +1148,7 @@ const InsuranceTab: React.FC<InsuranceTabProps> = ({
             onChange={(e) =>
               onChange({ ...form, coverageDescription: e.target.value })
             }
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
           />
         </div>
         <div>
@@ -1341,7 +1341,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
         <div>
           <label className="block text-xs text-slate-400 mb-1">تاریخ سرویس *</label>
-          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+          <div className="flex items-center bg-slate-900/60 border border-white/10 rounded-md px-3 py-1.5">
             <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
             <div className="flex-1">
               <JalaliDatePicker
@@ -1370,7 +1370,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
             }
             required
             min={0}
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
             placeholder="مثلاً ۱۲۳۰۰۰"
           />
         </div>
@@ -1385,7 +1385,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
                 nextOdometerKm: e.target.value ? Number(e.target.value) : undefined,
               })
             }
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
           />
         </div>
         <div className="sm:col-span-3">
@@ -1443,7 +1443,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
                 }
               }}
               placeholder="افزودن مورد دلخواه (مثلاً تعویض لنت جلو)"
-              className="flex-1 bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+              className="flex-1 bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
             />
             <button
               type="button"
@@ -1476,7 +1476,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
               <span>فعال</span>
             </span>
           </label>
-          <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+          <div className="flex items-center bg-slate-900/60 border border-white/10 rounded-md px-3 py-1.5">
             <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
             <div className="flex-1 opacity-100">
               <JalaliDatePicker
@@ -1505,7 +1505,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
             }
             required
             min={0}
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
           />
         </div>
         <div className="sm:col-span-2">
@@ -1514,7 +1514,7 @@ const MaintenanceTab: React.FC<MaintenanceTabProps> = ({
             rows={2}
             value={form.notes || ''}
             onChange={(e) => onChange({ ...form, notes: e.target.value })}
-            className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
+            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
           />
         </div>
         <div>
@@ -1829,7 +1829,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">از تاریخ</label>
-              <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+              <div className="flex items-center bg-slate-900/60 border border-white/10 rounded-md px-3 py-1.5">
                 <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
                 <div className="flex-1">
                   <JalaliDatePicker
@@ -1845,7 +1845,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
             </div>
             <div>
               <label className="block text-[11px] text-slate-400 mb-1">تا تاریخ</label>
-              <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+              <div className="flex items-center bg-slate-900/60 border border-white/10 rounded-md px-3 py-1.5">
                 <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
                 <div className="flex-1">
                   <JalaliDatePicker
@@ -1916,14 +1916,14 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
                   amount: e.target.value ? Number(e.target.value) : undefined,
                 })
               }
-              className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100"
+              className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
             />
           </div>
           <div>
             <label className="block text-xs text-slate-400 mb-1">
               تاریخ هزینه *
             </label>
-            <div className="flex items-center bg-slate-900/60 border border-slate-700 rounded-md px-3 py-1.5">
+            <div className="flex items-center bg-slate-900/60 border border-white/10 rounded-md px-3 py-1.5">
               <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
               <div className="flex-1">
                 <JalaliDatePicker
@@ -1975,7 +1975,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
                   category: e.target.value,
                 })
               }
-              className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100 mt-1"
+              className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100 mt-1"
             />
           </div>
           <div className="sm:col-span-2">
@@ -1988,7 +1988,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({
               onChange={(e) =>
                 onChange({ description: e.target.value })
               }
-              className="w-full bg-slate-900/60 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
+              className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
             />
           </div>
           <div>

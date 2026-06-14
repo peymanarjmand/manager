@@ -132,7 +132,7 @@ export const NutritionTracker: React.FC<NutritionTrackerProps> = ({ onNavigateBa
         </div>
 
         {/* Date Selector */}
-        <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 mb-6">
+        <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-slate-100">انتخاب تاریخ</h2>
             <ClockIcon />
@@ -146,7 +146,7 @@ export const NutritionTracker: React.FC<NutritionTrackerProps> = ({ onNavigateBa
         </div>
 
         {/* Daily Summary */}
-        <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 mb-6">
+        <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10 mb-6">
           <h2 className="text-xl font-semibold text-slate-100 mb-4">خلاصه روزانه</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-slate-700/50 rounded-lg p-4 text-center">
@@ -170,7 +170,7 @@ export const NutritionTracker: React.FC<NutritionTrackerProps> = ({ onNavigateBa
 
         {/* Add Meal Form */}
         {showAddForm && (
-          <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 mb-6">
+          <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10 mb-6">
             <h2 className="text-xl font-semibold text-slate-100 mb-4">افزودن وعده غذایی</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -288,7 +288,7 @@ export const NutritionTracker: React.FC<NutritionTrackerProps> = ({ onNavigateBa
         )}
 
         {/* Meals List */}
-        <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700">
+        <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-slate-100">وعده‌های غذایی</h2>
             <button

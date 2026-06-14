@@ -100,8 +100,8 @@ const ContactModal = ({ modalState, onClose, onSave, onDelete, setModalState }) 
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-            <div className="bg-slate-800 rounded-xl w-full max-w-2xl shadow-2xl ring-1 ring-slate-700 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                <header className="flex justify-between items-center p-4 border-b border-slate-700 shrink-0">
+            <div className="bg-slate-800 rounded-xl w-full max-w-2xl shadow-2xl ring-1 ring-white/10 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <header className="flex justify-between items-center p-4 border-b border-white/10 shrink-0">
                     <h3 className="text-xl font-bold text-slate-100">{title}</h3>
                     <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition"><CloseIcon /></button>
                 </header>
@@ -146,7 +146,7 @@ const ContactModal = ({ modalState, onClose, onSave, onDelete, setModalState }) 
                             </div>
                         ) : (
                             <dl>
-                                <h3 className="text-2xl font-bold text-white pb-2 border-b border-slate-700">{formData.fn}</h3>
+                                <h3 className="text-2xl font-bold text-white pb-2 border-b border-white/10">{formData.fn}</h3>
                                 {renderTypedField('شماره تلفن', formData.tels)}
                                 {renderTypedField('ایمیل', formData.emails)}
                                 {renderField('شرکت/سازمان', formData.org)}
@@ -159,7 +159,7 @@ const ContactModal = ({ modalState, onClose, onSave, onDelete, setModalState }) 
                   </form>
                 </div>
 
-                <footer className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-between items-center shrink-0">
+                <footer className="px-6 py-4 bg-white/[0.04] border-t border-white/10 flex justify-between items-center shrink-0">
                     {isEditMode ? (
                         <button type="submit" form="contactForm" className="py-2 px-5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition duration-300">ذخیره</button>
                     ) : (
@@ -289,17 +289,17 @@ export const PhoneBook = ({ onNavigateBack }: { onNavigateBack: () => void; }): 
             <div className="mb-6 relative">
                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><SearchIcon /></span>
                 <input type="search" placeholder="جستجوی مخاطب..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-800/60 text-white rounded-md py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
+                    className="w-full bg-white/[0.05] text-white rounded-md py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
             </div>
 
             {filteredContacts.length > 0 ? (
                 <div className="space-y-8">
                     {Object.keys(groupedContacts).sort((a,b) => a.localeCompare(b, 'fa')) .map(letter => (
                         <div key={letter}>
-                            <h3 className="text-2xl font-bold text-sky-400 border-b-2 border-slate-700 pb-2 mb-4">{letter}</h3>
+                            <h3 className="text-2xl font-bold text-sky-400 border-b-2 border-white/10 pb-2 mb-4">{letter}</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                                 {groupedContacts[letter].map(contact => (
-                                    <div key={contact.id} onClick={() => openModal(contact, 'view')} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 flex items-center space-x-4 space-x-reverse cursor-pointer transition-all hover:ring-sky-400 hover:-translate-y-1">
+                                    <div key={contact.id} onClick={() => openModal(contact, 'view')} className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10 flex items-center space-x-4 space-x-reverse cursor-pointer transition-all hover:ring-sky-400 hover:-translate-y-1">
                                         <div className="w-14 h-14 bg-slate-700 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
                                             <AvatarImage photo={contact.photo} alt={contact.fn} fallbackLetter={contact.fn?.[0]?.toUpperCase()} />
                                         </div>
@@ -314,7 +314,7 @@ export const PhoneBook = ({ onNavigateBack }: { onNavigateBack: () => void; }): 
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-16 px-6 bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
+                <div className="text-center py-16 px-6 bg-white/[0.03] rounded-xl ring-1 ring-white/10">
                     <div className="text-5xl text-slate-600 mb-4"><PhoneBookIcon className="h-16 w-16 text-slate-600" /></div>
                     <h3 className="text-xl font-semibold text-slate-200">{searchTerm ? 'مخاطبی یافت نشد' : 'دفتر تلفن شما خالی است'}</h3>
                     <p className="text-slate-400 mt-2">{searchTerm ? 'عبارت جستجو را تغییر دهید.' : 'برای شروع، یک مخاطب اضافه کنید یا از فایل vCard وارد کنید.'}</p>

@@ -119,7 +119,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                                             ? Math.abs(value).toLocaleString('fa-IR', { maximumFractionDigits: cfg.maxDecimals })
                                             : Math.abs(value).toLocaleString('fa-IR');
                                     return (
-                                        <div key={unit} className="bg-slate-900/60 rounded-lg p-2.5 ring-1 ring-slate-700/60 flex items-center justify-between">
+                                        <div key={unit} className="bg-slate-900/60 rounded-lg p-2.5 ring-1 ring-white/10/60 flex items-center justify-between">
                                             <div className="text-xs text-slate-400">{cfg.label}</div>
                                             <div className={`text-xs font-bold ${isReceivable ? 'text-emerald-300' : 'text-rose-300'}`}>
                                                 {isReceivable ? 'طلب' : 'بدهی'} {amountStr} {cfg.suffix}
@@ -132,7 +132,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                     </div>
                 </div>
 
-                <div className="mb-5 p-4 bg-slate-900/50 rounded-lg ring-1 ring-slate-700">
+                <div className="mb-5 p-4 bg-slate-900/50 rounded-lg ring-1 ring-white/10">
                     <div className="flex flex-wrap items-center gap-2 mb-3">
                         <button onClick={() => setQType('debt')} className={`px-3 py-1 rounded-full text-xs border ${qType==='debt' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>بهش دادم</button>
                         <button onClick={() => setQType('credit')} className={`px-3 py-1 rounded-full text-xs border ${qType==='credit' ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>ازش گرفتم</button>
@@ -225,7 +225,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                     {safeLedger.map(entry => (
                         <React.Fragment key={entry.id}>
                             <div
-                                className={`bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition ${entry.isSettled ? 'opacity-50' : ''}`}
+                                className={`bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition ${entry.isSettled ? 'opacity-50' : ''}`}
                                 onClick={() => {
                                     if (onViewLedger) onViewLedger(entry);
                                     else setExpandedLedgerId(prev => prev === entry.id ? null : entry.id);
@@ -287,7 +287,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                                 </div>
                             </div>
                             {expandedLedgerId === entry.id && (
-                                <div className="bg-slate-900/60 rounded-lg p-3 ring-1 ring-slate-700">
+                                <div className="bg-slate-900/60 rounded-lg p-3 ring-1 ring-white/10">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                                         <div className="flex justify-between items-center">
                                             <span className="text-slate-500">نوع</span>
@@ -308,12 +308,12 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                                     </div>
                                     <div className="mt-3">
                                         <span className="text-slate-500 block mb-1">بابت</span>
-                                        <p className="text-slate-200 bg-slate-800/50 p-2 rounded-md border border-slate-700">{entry.description || 'بدون توضیحات'}</p>
+                                        <p className="text-slate-200 bg-white/[0.04] p-2 rounded-md border border-white/10">{entry.description || 'بدون توضیحات'}</p>
                                     </div>
                                     {entry.receiptImage && (
                                         <div className="mt-3">
                                             <span className="text-slate-500 block mb-1">رسید</span>
-                                            <ImageFromRef srcOrRef={entry.receiptImage} className="w-full h-auto object-cover max-h-48 bg-slate-950 rounded-md ring-1 ring-slate-700" />
+                                            <ImageFromRef srcOrRef={entry.receiptImage} className="w-full h-auto object-cover max-h-48 bg-slate-950 rounded-md ring-1 ring-white/10" />
                                         </div>
                                     )}
                                 </div>
@@ -408,7 +408,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                                 setDraggingId(null);
                             }}
                             onDragEnd={() => setDraggingId(null)}
-                            className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 cursor-pointer transition-all hover:ring-sky-400 hover:-translate-y-1"
+                            className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10 cursor-pointer transition-all hover:ring-sky-400 hover:-translate-y-1"
                             onClick={() => setCurrentPerson(person)}
                         >
                             <div className="flex justify-between items-start">
@@ -474,7 +474,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                                 return (
                                     <div
                                         key={entry.id}
-                                        className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition"
+                                        className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition"
                                         onClick={() => onViewLedger && onViewLedger(entry)}
                                     >
                                         <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">

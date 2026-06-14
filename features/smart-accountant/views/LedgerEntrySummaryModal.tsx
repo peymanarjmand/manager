@@ -17,8 +17,8 @@ export const LedgerEntrySummaryModal = ({ entry, person, onClose }: { entry: Led
 
     return (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true">
-            <div className="bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl ring-1 ring-slate-700 overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                <div className="bg-slate-800 p-6 border-b border-slate-700">
+            <div className="bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl ring-1 ring-white/10 overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <div className="bg-slate-800 p-6 border-b border-white/10">
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <h3 className="text-lg font-bold text-slate-100">خلاصه تراکنش</h3>
@@ -48,18 +48,18 @@ export const LedgerEntrySummaryModal = ({ entry, person, onClose }: { entry: Led
                     </div>
                     <div className="py-2">
                         <span className="text-slate-500 text-sm block mb-2">بابت</span>
-                        <p className="text-slate-200 text-base leading-relaxed bg-slate-800/50 p-3 rounded-lg border border-slate-800">{entry.description || 'بدون توضیحات'}</p>
+                        <p className="text-slate-200 text-base leading-relaxed bg-white/[0.04] p-3 rounded-lg border border-slate-800">{entry.description || 'بدون توضیحات'}</p>
                     </div>
                     {entry.receiptImage && (
                         <div>
                             <span className="text-slate-500 text-sm block mb-2">رسید</span>
-                            <div className="rounded-xl overflow-hidden border border-slate-700">
+                            <div className="rounded-xl overflow-hidden border border-white/10">
                                 <ImageFromRef srcOrRef={entry.receiptImage} className="w-full h-auto object-cover max-h-64 bg-slate-950" />
                             </div>
                         </div>
                     )}
                 </div>
-                <div className="p-4 border-t border-slate-800 bg-slate-800/50 text-left">
+                <div className="p-4 border-t border-slate-800 bg-white/[0.04] text-left">
                     <button onClick={onClose} className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition shadow-lg">
                         بستن
                     </button>

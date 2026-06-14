@@ -46,7 +46,7 @@ export default function DarfakView() {
                 <div className="relative md:w-1/2">
                     <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><SearchIcon /></span>
                     <input type="search" placeholder="جستجو هزینه..." value={search} onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-slate-800/60 text-white rounded-md py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
+                        className="w-full bg-white/[0.05] text-white rounded-md py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     {["#مصالح", "#دستمزد", ...allTags.filter(t => t !== '#مصالح' && t !== '#دستمزد')].map(tag => (
@@ -58,14 +58,14 @@ export default function DarfakView() {
                 </div>
             </div>
 
-            <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+            <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10">
                 <h3 className="text-slate-300 text-sm mb-1">مجموع هزینه‌های فیلتر شده</h3>
                 <p className="text-2xl font-extrabold text-sky-400">{total.toLocaleString('fa-IR')} تومان</p>
             </div>
 
             <div className="space-y-3">
                 {filtered.map(e => (
-                    <div key={e.id} className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50">
+                    <div key={e.id} className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50">
                         <div className="min-w-0">
                             <p className="font-bold text-slate-100 truncate">{e.title}</p>
                             <p className="text-sm text-slate-400 truncate">{moment(e.date).locale('fa').format('jD jMMMM jYYYY')} • {(e.tags||[]).join(' ')}</p>
@@ -227,9 +227,9 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-slate-700 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-white/10 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
-                    <div className="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
+                    <div className="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 bg-slate-800 z-10">
                         <h3 className="text-xl font-bold text-slate-100">{expense ? 'ویرایش هزینه درفک' : 'افزودن هزینه درفک'}</h3>
                         <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">بستن</button>
                     </div>
@@ -297,7 +297,7 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
                             <textarea rows={3} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.note || ''} onChange={e => setForm(p => ({...p, note: e.target.value}))} />
                         </div>
                     </div>
-                    <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
+                    <div className="px-6 py-4 bg-white/[0.04] border-t border-white/10 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
                         <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 transition">لغو</button>
                         <button type="submit" disabled={isUploading} className={`py-2 px-4 rounded-md text-sm font-bold transition ${isUploading ? 'bg-slate-600 text-slate-300 cursor-not-allowed' : 'bg-sky-500 hover:bg-sky-600 text-white'}`}>
                             {isUploading ? 'در حال آپلود تصویر…' : 'ذخیره'}
@@ -340,7 +340,7 @@ const ReceiptPreview = ({ refOrUrl, onClose }: { refOrUrl: string | null; onClos
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
-                <div className="bg-slate-900/90 rounded-2xl ring-1 ring-slate-700 shadow-2xl p-5">
+                <div className="bg-slate-900/90 rounded-2xl ring-1 ring-white/10 shadow-2xl p-5">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-slate-100 font-bold text-lg">رسید هزینه</h3>
                         <button onClick={onClose} className="text-slate-400 hover:text-white">بستن</button>

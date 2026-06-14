@@ -74,7 +74,7 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
     return (
         <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
             {/* Header */}
-            <div className="mb-5 md:mb-8 relative overflow-hidden rounded-2xl ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/70 via-slate-800/40 to-slate-900/20">
+            <div className="mb-5 md:mb-8 relative overflow-hidden rounded-2xl ring-1 ring-white/10 bg-gradient-to-br from-slate-800/70 via-slate-800/40 to-slate-900/20">
                 <div className="p-4 md:p-5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button onClick={onNavigateBack} aria-label="بازگشت" className="text-slate-300 hover:text-white" title="بازگشت">
@@ -98,11 +98,11 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
                     <h3 className="text-lg md:text-xl font-bold text-slate-100">مالکین</h3>
                 </div>
                 {(owners?.length || 0) === 0 ? (
-                    <p className="text-slate-400 text-center py-10 md:py-12 bg-slate-800/30 rounded-xl ring-1 ring-slate-700">هنوز مالکی ثبت نشده است.</p>
+                    <p className="text-slate-400 text-center py-10 md:py-12 bg-slate-800/30 rounded-xl ring-1 ring-white/10">هنوز مالکی ثبت نشده است.</p>
                 ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
                         {owners.map(p => (
-                            <button key={p.id} onClick={() => setViewOwnerId(p.id)} className={`text-right rounded-2xl ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/60 to-slate-900/30 hover:ring-sky-500/60 hover:from-slate-800/80 p-2.5 md:p-3 transition flex items-center gap-2 md:gap-3 shadow-sm`}>
+                            <button key={p.id} onClick={() => setViewOwnerId(p.id)} className={`text-right rounded-2xl ring-1 ring-white/10 bg-gradient-to-br from-slate-800/60 to-slate-900/30 hover:ring-sky-500/60 hover:from-slate-800/80 p-2.5 md:p-3 transition flex items-center gap-2 md:gap-3 shadow-sm`}>
                                 <span className="h-9 w-9 md:h-10 md:w-10 rounded-full overflow-hidden bg-slate-700/80 flex items-center justify-center ring-1 ring-slate-600">
                                     <UserCircleIcon />
                                 </span>
@@ -127,11 +127,11 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
             </div>
 
             {((assets?.filter(a => !selectedOwnerId || a.ownerId === selectedOwnerId) || []).length === 0) ? (
-                <p className="text-slate-400 text-center py-16 bg-slate-800/30 rounded-2xl ring-1 ring-slate-700">هنوز دارایی ثبت نشده است.</p>
+                <p className="text-slate-400 text-center py-16 bg-slate-800/30 rounded-2xl ring-1 ring-white/10">هنوز دارایی ثبت نشده است.</p>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
                     {assets.filter(a => !selectedOwnerId || a.ownerId === selectedOwnerId).map(asset => (
-                        <div key={asset.id} className="rounded-2xl p-3 md:p-4 ring-1 ring-slate-700 bg-gradient-to-br from-slate-800/60 to-slate-900/30 flex flex-col space-y-2 md:space-y-3 hover:ring-sky-600/50 transition">
+                        <div key={asset.id} className="rounded-2xl p-3 md:p-4 ring-1 ring-white/10 bg-gradient-to-br from-slate-800/60 to-slate-900/30 flex flex-col space-y-2 md:space-y-3 hover:ring-sky-600/50 transition">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h4 className="font-bold text-slate-100 text-base md:text-lg">{asset.name}</h4>
@@ -143,7 +143,7 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
                                 </div>
                             </div>
                             <p className="text-xl md:text-2xl font-bold text-sky-400">{formatCurrency(asset.currentValue * asset.quantity)}</p>
-                            <p className="text-[11px] md:text-xs text-slate-500 pt-2 border-t border-slate-700/50">تاریخ خرید: <JalaliDate iso={asset.purchaseDate} /></p>
+                            <p className="text-[11px] md:text-xs text-slate-500 pt-2 border-t border-white/10/50">تاریخ خرید: <JalaliDate iso={asset.purchaseDate} /></p>
                             <div className="text-[11px] md:text-xs text-slate-400">{asset.ownerId ? (owners.find(p => p.id === asset.ownerId)?.name || '—') : '— بدون مالک —'}</div>
                             {asset.notes && <p className="text-sm text-slate-300">{asset.notes}</p>}
                         </div>
@@ -156,8 +156,8 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
             {isOwnerModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setIsOwnerModalOpen(false)}>
                     <div className="absolute inset-0 bg-black/70" />
-                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
                             <h3 className="text-slate-100 font-bold text-lg">افزودن مالک</h3>
                             <button onClick={() => setIsOwnerModalOpen(false)} className="text-slate-400 hover:text-white">×</button>
                         </div>
@@ -168,7 +168,7 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
                                 {ownerError && <div className="text-rose-400 text-xs mt-1">{ownerError}</div>}
                             </div>
                         </div>
-                        <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
+                        <div className="px-5 py-4 bg-white/[0.05] border-t border-white/10 flex items-center justify-end gap-2">
                             <button onClick={() => { setIsOwnerModalOpen(false); setOwnerError(null); }} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">لغو</button>
                             <button onClick={async () => { try { const id = Date.now().toString(); await saveOwner({ id, name: (ownerName || '').trim() }); setIsOwnerModalOpen(false); setOwnerName(''); setOwnerError(null); } catch (e: any) { setOwnerError(e?.message || 'خطا در ذخیره مالک'); } }} className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold" disabled={!ownerName.trim()}>ذخیره</button>
                         </div>

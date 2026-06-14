@@ -99,7 +99,7 @@ export const MealEntryModal: React.FC<MealEntryModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md ring-1 ring-slate-700 max-h-[90vh] overflow-y-auto">
+      <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md ring-1 ring-white/10 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-white">افزودن وعده غذایی جدید</h2>
           <button

@@ -79,11 +79,11 @@ export const TransactionVoucherModal: React.FC<TransactionVoucherModalProps> = (
     return (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true">
             <div 
-                className="bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl ring-1 ring-slate-700 overflow-hidden flex flex-col max-h-[90vh]" 
+                className="bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl ring-1 ring-white/10 overflow-hidden flex flex-col max-h-[90vh]" 
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header - Paper-like top */}
-                <div className="relative bg-slate-800 p-6 border-b border-dashed border-slate-700">
+                <div className="relative bg-slate-800 p-6 border-b border-dashed border-white/10">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-slate-700 rounded-b-lg"></div>
                     
                     <div className="flex justify-between items-start mb-4">
@@ -118,7 +118,7 @@ export const TransactionVoucherModal: React.FC<TransactionVoucherModalProps> = (
                     {/* Description */}
                     <div className="py-2">
                         <span className="text-slate-500 text-sm block mb-2">شرح سند</span>
-                        <p className="text-slate-200 text-base leading-relaxed bg-slate-800/50 p-3 rounded-lg border border-slate-800">
+                        <p className="text-slate-200 text-base leading-relaxed bg-white/[0.04] p-3 rounded-lg border border-slate-800">
                             {transaction.description || 'بدون توضیحات'}
                         </p>
                     </div>
@@ -159,7 +159,7 @@ export const TransactionVoucherModal: React.FC<TransactionVoucherModalProps> = (
                     {transaction.receiptImage && (
                         <div>
                             <span className="text-slate-500 text-sm block mb-2">تصویر ضمیمه</span>
-                            <div className="rounded-xl overflow-hidden border border-slate-700">
+                            <div className="rounded-xl overflow-hidden border border-white/10">
                                 <VoucherImage srcOrRef={transaction.receiptImage} />
                             </div>
                         </div>
@@ -167,7 +167,7 @@ export const TransactionVoucherModal: React.FC<TransactionVoucherModalProps> = (
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-slate-800 bg-slate-800/50 flex justify-between items-center">
+                <div className="p-4 border-t border-slate-800 bg-white/[0.04] flex justify-between items-center">
                     <button className="text-slate-400 text-xs flex items-center gap-1 hover:text-slate-200 transition" onClick={() => window.print()}>
                         <PrintIcon />
                         چاپ سند

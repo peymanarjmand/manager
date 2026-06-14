@@ -124,9 +124,9 @@ const ItemFormModal = ({ isOpen, onClose, onSave, entry, category }) => {
     
     return (
       <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-          <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-slate-700 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-white/10 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
               <form onSubmit={handleSubmit}>
-                  <div className="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
+                  <div className="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 bg-slate-800 z-10">
                       <h3 className="text-xl font-bold text-slate-100">{getTitle(entry, category)}</h3>
                       <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">
                           <CloseIcon />
@@ -151,7 +151,7 @@ const ItemFormModal = ({ isOpen, onClose, onSave, entry, category }) => {
                           </div>
                       </div>
                   </div>
-                  <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
+                  <div className="px-6 py-4 bg-white/[0.04] border-t border-white/10 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
                       <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-slate-500 transition">لغو</button>
                       <button type="submit" className="py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-sky-400">ذخیره</button>
                   </div>
@@ -238,7 +238,7 @@ const ItemCard = ({ entry, onEdit, onDelete }) => {
     const hasSecret = entry.password || entry.cardPin || entry.mobileBankPass;
 
     return (
-        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 flex flex-col space-y-3 transition-shadow hover:shadow-lg hover:shadow-slate-900/50">
+        <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10 flex flex-col space-y-3 transition-shadow hover:shadow-lg hover:shadow-slate-900/50">
             <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3 space-x-reverse">
                     <div className="w-12 h-12 bg-slate-700 rounded-lg flex-shrink-0 flex items-center justify-center">
@@ -268,7 +268,7 @@ const ItemCard = ({ entry, onEdit, onDelete }) => {
                     </div>
                 </div>
             )}
-             {entry.description && <p className="text-sm text-slate-400 pt-1 border-t border-slate-700/50">{entry.description}</p>}
+             {entry.description && <p className="text-sm text-slate-400 pt-1 border-t border-white/10/50">{entry.description}</p>}
         </div>
     );
 }
@@ -335,7 +335,7 @@ export const PasswordManager = ({ onNavigateBack }: { onNavigateBack: () => void
             
             {/* Tabs */}
             <div className="mb-6">
-                <div className="border-b border-slate-700">
+                <div className="border-b border-white/10">
                     <nav className="-mb-px flex space-x-4 space-x-reverse overflow-x-auto" aria-label="Tabs">
                         {PASSWORD_CATEGORIES.map(cat => (
                             <button key={cat.id} onClick={() => { setActiveCategory(cat.id); setSearchTerm(''); }}
@@ -356,7 +356,7 @@ export const PasswordManager = ({ onNavigateBack }: { onNavigateBack: () => void
                     <input type="search" placeholder={`جستجو در ${PASSWORD_CATEGORIES.find(c => c.id === activeCategory).title}...`}
                     value={searchTerm}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-800/60 text-white rounded-md py-2.5 px-4 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
+                    className="w-full bg-white/[0.05] text-white rounded-md py-2.5 px-4 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
                  </div>
                 {filteredEntries.length > 0 ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -365,7 +365,7 @@ export const PasswordManager = ({ onNavigateBack }: { onNavigateBack: () => void
                        ))}
                     </div>
                 ) : (
-                    <div className="text-center py-16 px-6 bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
+                    <div className="text-center py-16 px-6 bg-white/[0.03] rounded-xl ring-1 ring-white/10">
                         <div className="text-5xl text-slate-600 mb-4">{PASSWORD_CATEGORIES.find(c => c.id === activeCategory).icon}</div>
                         <h3 className="text-xl font-semibold text-slate-200">هنوز موردی اضافه نشده است</h3>
                         <p className="text-slate-400 mt-2">برای شروع، روی دکمه "افزودن" کلیک کنید.</p>

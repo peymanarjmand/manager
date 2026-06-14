@@ -130,9 +130,9 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-            <div className="bg-slate-800 rounded-xl w-full max-w-xl sm:max-w-2xl shadow-2xl ring-1 ring-slate-700 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-800 rounded-xl w-full max-w-xl sm:max-w-2xl shadow-2xl ring-1 ring-white/10 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <form className="flex flex-col max-h-[90vh]" onSubmit={handleSave}>
-                    <header className="flex justify-between items-center p-4 border-b border-slate-700 shrink-0">
+                    <header className="flex justify-between items-center p-4 border-b border-white/10 shrink-0">
                         <h3 className="text-xl font-bold text-slate-100">تنظیمات</h3>
                         <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">
                             <CloseIcon />
@@ -150,14 +150,14 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             </div>
                         </section>
                         
-                        <div className="border-t border-slate-700"></div>
+                        <div className="border-t border-white/10"></div>
 
                         <section>
                             <h4 className="font-semibold text-slate-200 mb-3">تنظیمات هشدارهای سلامتی</h4>
                             <div className="space-y-4">
                                <FormToggle label="فعال‌سازی هشدار استراحت چشم" id="eyeStrainAlertEnabled" checked={localSettings.eyeStrainAlertEnabled} onChange={() => handleToggle('eyeStrainAlertEnabled')} description="هر ۲۰ دقیقه یکبار یادآوری می‌کند."/>
                                {localSettings.eyeStrainAlertEnabled && (
-                                   <div className="pl-4 border-r-2 border-slate-700 space-y-4">
+                                   <div className="pl-4 border-r-2 border-white/10 space-y-4">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <FormInput label="فاصله زمانی هشدار" id="eyeStrainInterval" value={localSettings.eyeStrainInterval} onChange={handleChange} unit="دقیقه" min={5} step={5} />
                                             <FormToggle label="پخش صدا برای هشدار" id="soundEnabled" checked={localSettings.soundEnabled} onChange={() => handleToggle('soundEnabled')} description="" />
@@ -184,7 +184,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             </div>
                         </section>
 
-                        <div className="border-t border-slate-700"></div>
+                        <div className="border-t border-white/10"></div>
 
                         <section>
                             <h4 className="font-semibold text-slate-200 mb-3">امنیت</h4>
@@ -192,7 +192,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 <div className="space-y-3">
                                     <FormToggle label="پاک‌سازی خودکار کلیپ‌بورد" id="clipboardAutoClearEnabled" checked={localSettings.clipboardAutoClearEnabled} onChange={() => handleToggle('clipboardAutoClearEnabled')} description="پس از کپی رمزها، کلیپ‌بورد به صورت خودکار پاک می‌شود." />
                                     {localSettings.clipboardAutoClearEnabled && (
-                                        <div className="grid grid-cols-2 gap-4 pl-4 border-r-2 border-slate-700">
+                                        <div className="grid grid-cols-2 gap-4 pl-4 border-r-2 border-white/10">
                                             <FormInput label="تاخیر پاک‌سازی" id="clipboardClearSeconds" value={localSettings.clipboardClearSeconds} onChange={handleChange} unit="ثانیه" min={5} />
                                         </div>
                                     )}
@@ -201,7 +201,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             </div>
                         </section>
 
-                        <div className="border-t border-slate-700"></div>
+                        <div className="border-t border-white/10"></div>
 
                         <section>
                             <h4 className="font-semibold text-slate-200 mb-3">پشتیبان‌گیری</h4>
@@ -216,7 +216,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
                     </main>
 
-                    <footer className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end shrink-0">
+                    <footer className="px-6 py-4 bg-white/[0.04] border-t border-white/10 flex justify-end shrink-0">
                         <button type="submit" className="py-2 px-5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-sky-400">ذخیره تغییرات</button>
                     </footer>
                 </form>

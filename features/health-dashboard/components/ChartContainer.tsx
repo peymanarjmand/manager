@@ -229,7 +229,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
   // Check if there's no data
   if (!data || data.length === 0) {
     return (
-      <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700">
+      <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
         </div>
@@ -257,7 +257,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
   }
 
   return (
-    <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700">
+    <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-slate-100">{title}</h3>
         <div className="flex items-center space-x-2">
@@ -297,7 +297,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
       )}
       
       {chartData.labels && chartData.labels.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-slate-700">
+        <div className="mt-4 pt-4 border-t border-white/10">
           <div className="grid grid-cols-2 gap-4 text-xs">
             {type === 'weight' && healthProfile && (
               <div className="text-center">

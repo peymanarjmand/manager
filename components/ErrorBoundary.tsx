@@ -51,7 +51,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     const chunk = isChunkLoadError(this.state.error);
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-6">
-        <div className="max-w-md w-full text-center bg-slate-800/60 ring-1 ring-slate-700 rounded-2xl p-8">
+        <div className="max-w-md w-full text-center bg-white/[0.05] ring-1 ring-white/10 rounded-2xl p-8">
           <h2 className="text-xl font-bold mb-2 text-rose-300">
             {chunk ? 'نسخه‌ی جدیدی در دسترس است' : 'مشکلی پیش آمد'}
           </h2>

@@ -277,9 +277,9 @@ export const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: 
     
     return (
       <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-          <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-slate-700 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-white/10 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
               <form onSubmit={handleSubmit} name="accountantForm">
-                  <div className="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
+                  <div className="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 bg-slate-800 z-10">
                       <h3 className="text-xl font-bold text-slate-100">{getTitle()}</h3>
                       <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">
                           <CloseIcon />
@@ -294,7 +294,7 @@ export const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: 
                       {type === 'installmentPayment' && renderInstallmentPaymentFields()}
                       {type === 'check' && renderCheckFields()}
                   </div>
-                  <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
+                  <div className="px-6 py-4 bg-white/[0.04] border-t border-white/10 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
                       <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 transition">لغو</button>
                       <button type="submit" disabled={isUploading} className={`py-2 px-4 rounded-md text-sm font-bold transition ${isUploading ? 'bg-slate-600 text-slate-300 cursor-not-allowed' : 'bg-sky-500 hover:bg-sky-600 text-white'}`}>ذخیره</button>
                   </div>

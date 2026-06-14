@@ -60,15 +60,15 @@ export const SocialInsuranceView = () => {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10">
                     <h3 className="text-slate-300 text-sm">مجموع پرداختی سال جاری</h3>
                     <p className="text-2xl font-extrabold text-emerald-400">{totalThisYear.toLocaleString('fa-IR')} تومان</p>
                 </div>
-                <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10">
                     <h3 className="text-slate-300 text-sm">کل سابقه محاسبه‌شده</h3>
                     <p className="text-2xl font-extrabold text-sky-400">{yearsMonthsDays.years} سال، {yearsMonthsDays.months} ماه، {yearsMonthsDays.days} روز</p>
                 </div>
-                <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10">
                     <h3 className="text-slate-300 text-sm">مجموع روزهای سال جاری</h3>
                     <p className="text-2xl font-extrabold text-amber-400">{socialInsurance.filter(p => p.year === moment().jYear()).reduce((s, p) => s + (p.daysCovered || 0), 0)} روز</p>
                 </div>
@@ -87,7 +87,7 @@ export const SocialInsuranceView = () => {
                     </div>
                     <div className="flex gap-3 overflow-x-auto pb-1">
                         {filteredYears.map(y => (
-                            <button key={y} onClick={() => setSelectedYear(y)} className="min-w-[96px] bg-slate-800/60 hover:bg-slate-800 rounded-xl p-4 ring-1 ring-slate-700 text-center transition">
+                            <button key={y} onClick={() => setSelectedYear(y)} className="min-w-[96px] bg-white/[0.05] hover:bg-slate-800 rounded-xl p-4 ring-1 ring-white/10 text-center transition">
                                 <div className="text-2xl font-extrabold text-slate-100">{y}</div>
                                 <div className="text-xs text-slate-400 mt-1">مشاهده سوابق</div>
                             </button>
@@ -111,11 +111,11 @@ export const SocialInsuranceView = () => {
                         const yDays = recs.reduce((s, p) => s + (p.daysCovered || 0), 0);
                         return (
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                <div className="bg-slate-800/60 rounded-xl p-3 ring-1 ring-slate-700">
+                                <div className="bg-white/[0.05] rounded-xl p-3 ring-1 ring-white/10">
                                     <div className="text-slate-300 text-xs">مجموع پرداختی سال</div>
                                     <div className="text-emerald-400 font-extrabold">{formatCurrency(yAmount)}</div>
                                 </div>
-                                <div className="bg-slate-800/60 rounded-xl p-3 ring-1 ring-slate-700">
+                                <div className="bg-white/[0.05] rounded-xl p-3 ring-1 ring-white/10">
                                     <div className="text-slate-300 text-xs">مجموع روزهای سال</div>
                                     <div className="text-amber-400 font-extrabold">{yDays} روز</div>
                                 </div>
@@ -128,7 +128,7 @@ export const SocialInsuranceView = () => {
                             const salary = rec?.registeredSalary || 0;
                             const payPercent = salary > 0 ? Math.round((rec.amount / salary) * 100) : 0;
                             return (
-                                <div key={m} className={`rounded-xl p-4 ring-1 ${rec ? 'ring-emerald-700 bg-emerald-900/10' : 'ring-slate-700 bg-slate-800/50'}`}>
+                                <div key={m} className={`rounded-xl p-4 ring-1 ${rec ? 'ring-emerald-700 bg-emerald-900/10' : 'ring-white/10 bg-white/[0.04]'}`}>
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <div className="text-slate-100 font-bold">{monthNames[m-1]}</div>
@@ -141,7 +141,7 @@ export const SocialInsuranceView = () => {
                                                         <div className="text-xs text-slate-400">حقوق ثبت‌شده: {rec.registeredSalary.toLocaleString('fa-IR')} تومان</div>
                                                     )}
                                                     {salary > 0 && (
-                                                        <div className="mt-2 text-[11px] text-slate-300 bg-slate-800/60 rounded p-2 ring-1 ring-slate-700 w-fit">
+                                                        <div className="mt-2 text-[11px] text-slate-300 bg-white/[0.05] rounded p-2 ring-1 ring-white/10 w-fit">
                                                             درصد نسبت به حقوق ثبت‌شده: <span className="font-bold">{payPercent}%</span>
                                                         </div>
                                                     )}
@@ -294,9 +294,9 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-slate-700 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-white/10 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
-                    <div className="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
+                    <div className="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 bg-slate-800 z-10">
                         <h3 className="text-xl font-bold text-slate-100">{payment ? 'ویرایش پرداخت بیمه' : 'ثبت پرداخت بیمه'}</h3>
                         <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">بستن</button>
                     </div>
@@ -379,7 +379,7 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
                             )}
                         </div>
                     </div>
-                    <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
+                    <div className="px-6 py-4 bg-white/[0.04] border-t border-white/10 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
                         <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 transition">لغو</button>
                         <button type="submit" disabled={isUploading} className={`py-2 px-4 rounded-md text-sm font-bold transition ${isUploading ? 'bg-slate-600 text-slate-300 cursor-not-allowed' : 'bg-sky-500 hover:bg-sky-600 text-white'}`}>ذخیره</button>
                     </div>

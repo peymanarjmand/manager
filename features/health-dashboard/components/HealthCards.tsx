@@ -68,7 +68,7 @@ export const HealthCards: React.FC<HealthCardsProps> = ({
   return (
     <>
       {/* Weight Card */}
-      <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 hover:ring-slate-600 transition-all duration-300">
+      <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10 hover:ring-slate-600 transition-all duration-300">
         <div className="flex items-center justify-between mb-4">
           <div className="bg-slate-700/50 p-3 rounded-full">
             <WeightIcon />
@@ -107,7 +107,7 @@ export const HealthCards: React.FC<HealthCardsProps> = ({
       </div>
 
       {/* Blood Pressure Card */}
-      <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 hover:ring-slate-600 transition-all duration-300">
+      <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10 hover:ring-slate-600 transition-all duration-300">
         <div className="flex items-center justify-between mb-4">
           <div className="bg-slate-700/50 p-3 rounded-full">
             <HeartIcon />
@@ -147,7 +147,7 @@ export const HealthCards: React.FC<HealthCardsProps> = ({
       </div>
 
       {/* Nutrition Card */}
-      <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 hover:ring-slate-600 transition-all duration-300">
+      <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10 hover:ring-slate-600 transition-all duration-300">
         <div className="flex items-center justify-between mb-4">
           <div className="bg-slate-700/50 p-3 rounded-full">
             <ChartIcon />
@@ -185,7 +185,7 @@ export const HealthCards: React.FC<HealthCardsProps> = ({
       </div>
 
       {/* Medicines Card */}
-      <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 hover:ring-slate-600 transition-all duration-300">
+      <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10 hover:ring-slate-600 transition-all duration-300">
         <div className="flex items-center justify-between mb-4">
           <div className="bg-slate-700/50 p-3 rounded-full">
             <PillIcon />

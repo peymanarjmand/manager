@@ -129,7 +129,7 @@ export const FocusTimer = ({ onOpenSettings }: { onOpenSettings: () => void; }) 
     };
 
     return (
-        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 flex items-center justify-between h-full">
+        <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10 flex items-center justify-between h-full">
             <div className="relative flex items-center justify-center">
                  <svg className="transform -rotate-90" width="120" height="120" viewBox="0 0 120 120">
                     <circle cx="60" cy="60" r={radius} strokeWidth="8" className="text-slate-700" fill="transparent" />

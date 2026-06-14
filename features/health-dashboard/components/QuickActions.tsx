@@ -106,7 +106,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   };
 
   return (
-    <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 mb-8">
+    <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10 mb-8">
       <h2 className="text-xl font-bold text-slate-100 mb-6">اقدامات سریع</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {actions.map((action) => {
@@ -118,7 +118,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
               className={`p-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg text-right ${colors.bg} group`}
             >
               <div className="flex items-start justify-between mb-3">
-                <div className={`p-2 rounded-full bg-slate-800/50 ${colors.text}`}>
+                <div className={`p-2 rounded-full bg-white/[0.04] ${colors.text}`}>
                   {action.icon}
                 </div>
                 <div className={`w-2 h-2 rounded-full ${colors.border} opacity-0 group-hover:opacity-100 transition-opacity`} />

@@ -23,7 +23,7 @@ export const DateTimeDisplay = (): React.ReactNode => {
     }, []);
 
     return (
-        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 flex items-center justify-center flex-wrap gap-x-6 gap-y-2 h-full">
+        <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10 flex items-center justify-center flex-wrap gap-x-6 gap-y-2 h-full">
             <div className="flex items-center text-slate-200 text-lg font-medium">
                 <CalendarIcon />
                 <span>{dateTime.date}</span>

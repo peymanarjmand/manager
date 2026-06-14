@@ -41,10 +41,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         >
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <div
-                className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+                className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+                <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
                     <h3 className="text-slate-100 font-bold text-lg truncate">{title}</h3>
                     <button
                         type="button"
@@ -58,7 +58,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 <div className="p-5 text-slate-200 leading-7 overflow-y-auto text-sm sm:text-base">
                     {message}
                 </div>
-                <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+                <div className="px-5 py-4 bg-white/[0.05] border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
                     <button
                         type="button"
                         onClick={onClose}

@@ -306,7 +306,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             {view === 'overview' ? (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+                        <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10">
                             <div className="text-slate-300 text-sm">مجموع پرداختی</div>
                             <div className="text-2xl font-extrabold text-emerald-400">{(totals.totalPaid || 0).toLocaleString('fa-IR')} تومان</div>
                         </div>
@@ -321,8 +321,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div className="text-xl font-bold text-slate-100">طلای فیزیکی</div>
                                 <div className="text-slate-400 text-sm mt-1">{s.count} رکورد • مجموع {s.totalPaid.toLocaleString('fa-IR')} تومان</div>
                                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
-                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">کل گرم: <span className="font-bold">{s.totalGrams}</span></div>
-                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">میانگین هر گرم: <span className="font-bold">{s.avgPrice.toLocaleString('fa-IR')}</span></div>
+                                    <div className="bg-white/[0.05] rounded-lg p-2 ring-1 ring-white/10">کل گرم: <span className="font-bold">{s.totalGrams}</span></div>
+                                    <div className="bg-white/[0.05] rounded-lg p-2 ring-1 ring-white/10">میانگین هر گرم: <span className="font-bold">{s.avgPrice.toLocaleString('fa-IR')}</span></div>
                                 </div>
                                 <div className="text-slate-500 text-xs mt-2">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
                             </button>
@@ -335,9 +335,9 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 </div>
                                 <div className="text-xl font-bold text-slate-100">توکن طلا</div>
                                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
-                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">XAUT: <span className="font-bold">{amtXaut}</span> توکن • <span className="font-bold">{gramsXaut.toFixed(3)}</span> گرم</div>
-                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">PAXG: <span className="font-bold">{amtPaxg}</span> توکن • <span className="font-bold">{gramsPaxg.toFixed(3)}</span> گرم</div>
-                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700 col-span-2">جمع: <span className="font-bold">{(amtXaut+amtPaxg)}</span> توکن • <span className="font-bold">{(gramsXaut+gramsPaxg).toFixed(3)}</span> گرم</div>
+                                    <div className="bg-white/[0.05] rounded-lg p-2 ring-1 ring-white/10">XAUT: <span className="font-bold">{amtXaut}</span> توکن • <span className="font-bold">{gramsXaut.toFixed(3)}</span> گرم</div>
+                                    <div className="bg-white/[0.05] rounded-lg p-2 ring-1 ring-white/10">PAXG: <span className="font-bold">{amtPaxg}</span> توکن • <span className="font-bold">{gramsPaxg.toFixed(3)}</span> گرم</div>
+                                    <div className="bg-white/[0.05] rounded-lg p-2 ring-1 ring-white/10 col-span-2">جمع: <span className="font-bold">{(amtXaut+amtPaxg)}</span> توکن • <span className="font-bold">{(gramsXaut+gramsPaxg).toFixed(3)}</span> گرم</div>
                                 </div>
                                 <div className="text-slate-500 text-xs mt-2">آخرین تراکنش: {s.last ? j(s.last) : '—'}</div>
                             </button>
@@ -351,8 +351,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 <div className="text-xl font-bold text-slate-100">طلای دیجی‌کالا</div>
                                 <div className="text-slate-400 text-sm mt-1">{s.count} رکورد • مجموع {s.totalPaid.toLocaleString('fa-IR')} تومان</div>
                                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-300">
-                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">کل میلی‌گرم: <span className="font-bold">{s.totalMg}</span></div>
-                                    <div className="bg-slate-800/60 rounded-lg p-2 ring-1 ring-slate-700">میانگین هر mg: <span className="font-bold">{s.avgPricePerMg.toLocaleString('fa-IR')}</span></div>
+                                    <div className="bg-white/[0.05] rounded-lg p-2 ring-1 ring-white/10">کل میلی‌گرم: <span className="font-bold">{s.totalMg}</span></div>
+                                    <div className="bg-white/[0.05] rounded-lg p-2 ring-1 ring-white/10">میانگین هر mg: <span className="font-bold">{s.avgPricePerMg.toLocaleString('fa-IR')}</span></div>
                                 </div>
                                 <div className="text-slate-500 text-xs mt-2">آخرین خرید: {s.last ? j(s.last) : '—'}</div>
                             </button>
@@ -376,7 +376,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         </div>
                     </div>
                     {/* Filters */}
-                    <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
+                    <div className="bg-white/[0.04] rounded-xl p-3 md:p-4 ring-1 ring-white/10">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                             <JalaliDatePicker id="from" label="از تاریخ" value={filterFrom || new Date(0).toISOString()} onChange={(iso) => setFilterFrom(iso)} />
                             <JalaliDatePicker id="to" label="تا تاریخ" value={filterTo || new Date().toISOString()} onChange={(iso) => setFilterTo(iso)} />
@@ -404,17 +404,17 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                     {/* Token assets summary (replaces payment trend chart for token view) or charts for others */}
                     {view === 'token' ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
+                            <div className="bg-white/[0.04] rounded-xl p-3 md:p-4 ring-1 ring-white/10">
                                 <div className="text-slate-300 text-sm">XAUT</div>
                                 <div className="text-2xl font-extrabold text-emerald-400">{Number(tokenSums.amtXaut).toFixed(6)}</div>
                                 <div className="text-xs text-slate-400 mt-1">گرم معادل: {tokenSums.gramsXaut.toFixed(3)}</div>
                             </div>
-                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
+                            <div className="bg-white/[0.04] rounded-xl p-3 md:p-4 ring-1 ring-white/10">
                                 <div className="text-slate-300 text-sm">PAXG</div>
                                 <div className="text-2xl font-extrabold text-emerald-400">{Number(tokenSums.amtPaxg).toFixed(6)}</div>
                                 <div className="text-xs text-slate-400 mt-1">گرم معادل: {tokenSums.gramsPaxg.toFixed(3)}</div>
                             </div>
-                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
+                            <div className="bg-white/[0.04] rounded-xl p-3 md:p-4 ring-1 ring-white/10">
                                 <div className="text-slate-300 text-sm">جمع دارایی</div>
                                 <div className="text-2xl font-extrabold text-sky-400">{Number(tokenSums.totalAmt).toFixed(6)} توکن</div>
                                 <div className="text-xs text-slate-400 mt-1">جمع گرم معادل: {tokenSums.gramsTotal.toFixed(3)}</div>
@@ -426,11 +426,11 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
+                            <div className="bg-white/[0.04] rounded-xl p-3 md:p-4 ring-1 ring-white/10">
                                 <div className="text-slate-300 text-sm mb-2">روند پرداختی</div>
                                 <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: (it as any).totalPaidToman || 0 }))} />
                             </div>
-                            <div className="bg-slate-800/50 rounded-xl p-3 md:p-4 ring-1 ring-slate-700">
+                            <div className="bg-white/[0.04] rounded-xl p-3 md:p-4 ring-1 ring-white/10">
                                 <div className="text-slate-300 text-sm mb-2">روند مقدار</div>
                                 <MiniChart data={filteredItems.map((it, i) => ({ x: i, y: view === 'physical' ? ((it as any).grams || 0) : ((it as any).amountMg || 0) }))} stroke="#22c55e" fill="rgba(34,197,94,0.15)" />
                             </div>
@@ -439,7 +439,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                     {/* filtered list */}
                     <div className={view === 'token' ? "space-y-2" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4"}>
                         {filteredItems.map(it => (
-                    <div key={it.id} className={it.subtype === 'token' ? "bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700 space-y-2 hover:ring-sky-600 transition" : "bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 space-y-3 hover:ring-sky-600 transition"}>
+                    <div key={it.id} className={it.subtype === 'token' ? "bg-white/[0.04] rounded-xl p-3 ring-1 ring-white/10 space-y-2 hover:ring-sky-600 transition" : "bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10 space-y-3 hover:ring-sky-600 transition"}>
                         {it.subtype !== 'token' && (
                         <div className="flex items-start justify-between">
                             <div>
@@ -462,7 +462,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                     <LinkFromRef refId={(it as any).invoiceRef2} label="فاکتور 2" onOpen={openImage} />
                                 </div>
                                 {(it as any).lastTransfer && (
-                                    <div className="mt-2 p-2 rounded-lg bg-slate-800/60 ring-1 ring-slate-700 text-xs">
+                                    <div className="mt-2 p-2 rounded-lg bg-white/[0.05] ring-1 ring-white/10 text-xs">
                                         انتقال: از {(it as any).lastTransfer.fromOwnerName || '—'} به {(it as any).lastTransfer.toOwnerName || '—'} • { (it as any).lastTransfer.reason === 'gift' ? 'هدیه' : 'بدهی' } • {j((it as any).lastTransfer.date)}
                                     </div>
                                 )}
@@ -478,7 +478,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                     <button className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs" onClick={(e) => { e.stopPropagation(); openDetails(it); }}>جزئیات</button>
                                 </div>
                                 {(it as any).soldAt && (
-                                    <div className="mt-2 p-2 rounded-lg bg-slate-800/60 ring-1 ring-slate-700 text-xs text-slate-300 space-y-1">
+                                    <div className="mt-2 p-2 rounded-lg bg-white/[0.05] ring-1 ring-white/10 text-xs text-slate-300 space-y-1">
                                         <div>تاریخ فروش: {j((it as any).soldAt)}</div>
                                         <div>مبلغ فروش: {(((it as any).saleTotalToman || 0)).toLocaleString('fa-IR')} تومان</div>
                                         <div>سود/زیان: {((((it as any).saleTotalToman || 0) - ((it as any).totalPaidToman || 0))).toLocaleString('fa-IR')} تومان</div>
@@ -534,8 +534,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setModalOpen(false)}>
                     <div className="absolute inset-0 bg-black/70" />
-                    <div className="relative w-full max-w-2xl bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+                    <div className="relative w-full max-w-2xl bg-slate-800 rounded-2xl ring-1 ring-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
                             <h3 className="text-slate-100 font-bold text-lg">{subtype === 'physical' ? 'افزودن طلای فیزیکی' : subtype === 'token' ? `ثبت تراکنش توکن طلا (${(form.txType||txType)==='sell' ? 'فروش' : 'خرید'})` : 'افزودن طلای دیجی‌کالا'}</h3>
                             <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white">×</button>
                         </div>
@@ -568,7 +568,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <div className="flex items-center gap-3">
                                             <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-invoice-1')?.click()}>انتخاب تصویر</button>
                                             {form.invoiceRef1 && <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-300 text-sm" onClick={() => { setForm((f:any)=>({...f, invoiceRef1: undefined})); setPreview1(null); }}>حذف تصویر</button>}
-                                            {preview1 && <img src={preview1} alt="invoice1" className="h-16 rounded ring-1 ring-slate-700" />}
+                                            {preview1 && <img src={preview1} alt="invoice1" className="h-16 rounded ring-1 ring-white/10" />}
                                         </div>
                                         <input id="gold-invoice-1" type="file" accept="image/*" onChange={e => handleChooseImage(1, e)} className="hidden" />
                                     </div>
@@ -577,7 +577,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <div className="flex items-center gap-3">
                                             <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-invoice-2')?.click()}>انتخاب تصویر</button>
                                             {form.invoiceRef2 && <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-300 text-sm" onClick={() => { setForm((f:any)=>({...f, invoiceRef2: undefined})); setPreview2(null); }}>حذف تصویر</button>}
-                                            {preview2 && <img src={preview2} alt="invoice2" className="h-16 rounded ring-1 ring-slate-700" />}
+                                            {preview2 && <img src={preview2} alt="invoice2" className="h-16 rounded ring-1 ring-white/10" />}
                                         </div>
                                         <input id="gold-invoice-2" type="file" accept="image/*" onChange={e => handleChooseImage(2, e)} className="hidden" />
                                     </div>
@@ -643,7 +643,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                         <div className="flex items-center gap-3">
                                             <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm" onClick={() => document.getElementById('gold-dg-invoice')?.click()}>انتخاب تصویر</button>
                                             {form.invoiceRef && <button className="px-3 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-rose-300 text-sm" onClick={() => setForm((f:any)=> ({...f, invoiceRef: undefined, dgInvoicePreview: undefined}))}>حذف تصویر</button>}
-                                            {form.dgInvoicePreview && <img src={form.dgInvoicePreview} className="h-16 rounded ring-1 ring-slate-700" />}
+                                            {form.dgInvoicePreview && <img src={form.dgInvoicePreview} className="h-16 rounded ring-1 ring-white/10" />}
                                         </div>
                                         <input id="gold-dg-invoice" type="file" accept="image/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = async () => { const ref = await saveImageDataURL(String(reader.result || '')); const url = await getObjectURLByRef(ref); setForm((f: any) => ({ ...f, invoiceRef: ref, dgInvoicePreview: url })); }; reader.readAsDataURL(file); }} className="hidden" />
                                     </div>
@@ -651,7 +651,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             )}
                             {error && <div className="text-rose-400 text-sm">{error}</div>}
                         </div>
-                        <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
+                        <div className="px-5 py-4 bg-white/[0.05] border-t border-white/10 flex items-center justify-end gap-2">
                             <button onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">لغو</button>
                             <button onClick={onSave} className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold">ذخیره</button>
                         </div>
@@ -661,14 +661,14 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             {deleteTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setDeleteTarget(null)}>
                     <div className="absolute inset-0 bg-black/70" />
-                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="px-5 py-4 border-b border-slate-700">
+                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-4 border-b border-white/10">
                             <h3 className="text-slate-100 font-bold text-lg">حذف رکورد</h3>
                         </div>
                         <div className="p-5 space-y-4 text-slate-200">
                             آیا از حذف این رکورد مطمئن هستید؟ این کار قابل بازگشت نیست.
                         </div>
-                        <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
+                        <div className="px-5 py-4 bg-white/[0.05] border-t border-white/10 flex items-center justify-end gap-2">
                             <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">انصراف</button>
                             <button onClick={confirmDelete} className="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold">حذف</button>
                         </div>
@@ -678,8 +678,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             {imageModal.open && imageModal.url && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setImageModal({ open: false, url: null })}>
                     <div className="absolute inset-0 bg-black/80" />
-                    <div className="relative w-full max-w-3xl bg-slate-900 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="px-5 py-3 border-b border-slate-700 flex items-center justify-between">
+                    <div className="relative w-full max-w-3xl bg-slate-900 rounded-2xl ring-1 ring-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
                             <div className="text-slate-200 font-bold">پیش‌نمایش تصویر</div>
                             <div className="flex items-center gap-2">
                                 <a href={imageModal.url} download={imageModal.fileName || 'invoice.jpg'} className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm">دانلود</a>
@@ -695,7 +695,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             {detailTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setDetailTarget(null)}>
                     <div className="absolute inset-0 bg-black/80" />
-                    <div className="relative w-full max-w-4xl bg-slate-900 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                    <div className="relative w-full max-w-4xl bg-slate-900 rounded-2xl ring-1 ring-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
                         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
                             <div className="text-xl font-bold text-slate-100">{detailTarget.subtype === 'physical' ? 'جزئیات طلای فیزیکی' : detailTarget.subtype === 'token' ? `جزئیات ${String(detailTarget.tokenSymbol || '').toUpperCase()}` : 'جزئیات طلای دیجی‌کالا'}</div>
                             <button onClick={() => setDetailTarget(null)} className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm">بستن</button>
@@ -720,13 +720,13 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                             <div className="text-slate-300 text-sm">عنوان</div>
                                             <div className="text-lg font-bold">{detailTarget.title || '—'}</div>
                                             <div className="grid grid-cols-2 gap-3 text-sm text-slate-300 mt-2">
-                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">وزن: <span className="font-bold">{grams} گرم</span></div>
-                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">سوت: <span className="font-bold">{soot}</span></div>
-                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">جمع گرم: <span className="font-bold">{totalGrams.toFixed(3)}</span></div>
-                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت هر گرم (خرید): <span className="font-bold">{pricePerGram.toLocaleString('fa-IR')}</span></div>
-                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">اجرت: <span className="font-bold">{wage.toLocaleString('fa-IR')}</span> <span className="text-xs">({wagePercent}% از کل)</span></div>
-                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">تاریخ خرید: <span className="font-bold">{j(detailTarget.purchaseDate)}</span></div>
-                                                <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">مجموع پرداختی: <span className="font-bold">{totalPaid.toLocaleString('fa-IR')}</span> تومان</div>
+                                                <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">وزن: <span className="font-bold">{grams} گرم</span></div>
+                                                <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">سوت: <span className="font-bold">{soot}</span></div>
+                                                <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">جمع گرم: <span className="font-bold">{totalGrams.toFixed(3)}</span></div>
+                                                <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">قیمت هر گرم (خرید): <span className="font-bold">{pricePerGram.toLocaleString('fa-IR')}</span></div>
+                                                <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">اجرت: <span className="font-bold">{wage.toLocaleString('fa-IR')}</span> <span className="text-xs">({wagePercent}% از کل)</span></div>
+                                                <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">تاریخ خرید: <span className="font-bold">{j(detailTarget.purchaseDate)}</span></div>
+                                                <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">مجموع پرداختی: <span className="font-bold">{totalPaid.toLocaleString('fa-IR')}</span> تومان</div>
                                             </div>
                                         </div>
                                         <div className="space-y-3">
@@ -739,10 +739,10 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                                 <div className="mt-4 space-y-2">
                                                     <div className="text-slate-300 text-sm">اطلاعات فروش</div>
                                                     <div className="grid grid-cols-2 gap-3 text-sm text-slate-300">
-                                                        <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">تاریخ فروش: <span className="font-bold">{j(detailTarget.soldAt)}</span></div>
-                                                        <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">مبلغ فروش: <span className="font-bold">{saleAmount.toLocaleString('fa-IR')}</span></div>
-                                                        <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت هر گرم در فروش: <span className="font-bold">{(salePerGram || 0).toLocaleString('fa-IR')}</span></div>
-                                                        <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">سود/زیان: <span className="font-bold">{(profit || 0).toLocaleString('fa-IR')}</span> <span className="text-xs">{profitPercent != null ? `(${profitPercent}%)` : ''}</span></div>
+                                                        <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">تاریخ فروش: <span className="font-bold">{j(detailTarget.soldAt)}</span></div>
+                                                        <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">مبلغ فروش: <span className="font-bold">{saleAmount.toLocaleString('fa-IR')}</span></div>
+                                                        <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">قیمت هر گرم در فروش: <span className="font-bold">{(salePerGram || 0).toLocaleString('fa-IR')}</span></div>
+                                                        <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">سود/زیان: <span className="font-bold">{(profit || 0).toLocaleString('fa-IR')}</span> <span className="text-xs">{profitPercent != null ? `(${profitPercent}%)` : ''}</span></div>
                                                     </div>
                                                 </div>
                                             )}
@@ -752,7 +752,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                             {detailTransfers.length ? (
                                                 <div className="space-y-2 text-xs text-slate-300">
                                                     {detailTransfers.map((t:any) => (
-                                                        <div key={t.id} className="flex items-center justify-between bg-slate-800/50 p-2 rounded-lg ring-1 ring-slate-700">
+                                                        <div key={t.id} className="flex items-center justify-between bg-white/[0.04] p-2 rounded-lg ring-1 ring-white/10">
                                                             <div>از {t.fromOwnerName || '—'} به {t.toOwnerName || '—'} • {t.reason==='gift'?'هدیه':'بدهی'}</div>
                                                             <div className="text-slate-500">{j(t.date)}</div>
                                                         </div>
@@ -800,14 +800,14 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-300">
-                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">مقدار: <span className="font-bold">{amount}</span> توکن</div>
-                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">گرم معادل: <span className="font-bold">{grams.toFixed(4)}</span></div>
-                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت هر توکن: <span className="font-bold">{pricePerToken != null ? pricePerToken.toLocaleString('fa-IR') : '—'}</span> <span className="text-xs">تومان</span></div>
-                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">مجموع پرداختی: <span className="font-bold">{totalPaid.toLocaleString('fa-IR')}</span> <span className="text-xs">تومان</span></div>
-                                            <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">کارمزد: <span className="font-bold">{fee.toLocaleString('fa-IR')}</span> <span className="text-xs">تومان</span> <span className="text-xs text-slate-400">({feePercent}%)</span></div>
-                                            {usdPrice != null && <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت دلار هنگام معامله: <span className="font-bold">{usdPrice}</span></div>}
-                                            {usdRate != null && <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">نرخ دلار (تومان): <span className="font-bold">{usdRate.toLocaleString('fa-IR')}</span></div>}
-                                            {pricePerGramToday != null && <div className="bg-slate-800/60 p-3 rounded-lg ring-1 ring-slate-700">قیمت هر گرم امروز (تومان): <span className="font-bold">{pricePerGramToday.toLocaleString('fa-IR')}</span></div>}
+                                            <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">مقدار: <span className="font-bold">{amount}</span> توکن</div>
+                                            <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">گرم معادل: <span className="font-bold">{grams.toFixed(4)}</span></div>
+                                            <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">قیمت هر توکن: <span className="font-bold">{pricePerToken != null ? pricePerToken.toLocaleString('fa-IR') : '—'}</span> <span className="text-xs">تومان</span></div>
+                                            <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">مجموع پرداختی: <span className="font-bold">{totalPaid.toLocaleString('fa-IR')}</span> <span className="text-xs">تومان</span></div>
+                                            <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">کارمزد: <span className="font-bold">{fee.toLocaleString('fa-IR')}</span> <span className="text-xs">تومان</span> <span className="text-xs text-slate-400">({feePercent}%)</span></div>
+                                            {usdPrice != null && <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">قیمت دلار هنگام معامله: <span className="font-bold">{usdPrice}</span></div>}
+                                            {usdRate != null && <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">نرخ دلار (تومان): <span className="font-bold">{usdRate.toLocaleString('fa-IR')}</span></div>}
+                                            {pricePerGramToday != null && <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">قیمت هر گرم امروز (تومان): <span className="font-bold">{pricePerGramToday.toLocaleString('fa-IR')}</span></div>}
                                         </div>
                                         {detailTarget.invoiceRef && (
                                             <div className="space-y-2">
@@ -825,8 +825,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             {saleTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setSaleTarget(null)}>
                     <div className="absolute inset-0 bg-black/70" />
-                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="px-5 py-4 border-b border-slate-700">
+                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-4 border-b border-white/10">
                             <h3 className="text-slate-100 font-bold text-lg">ثبت فروش طلای فیزیکی</h3>
                         </div>
                         <div className="p-5 space-y-4">
@@ -836,7 +836,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             </div>
                             <div className="text-xs text-slate-400">خرید: {((saleTarget as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان • تاریخ خرید: {j((saleTarget as any).purchaseDate)}</div>
                         </div>
-                        <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
+                        <div className="px-5 py-4 bg-white/[0.05] border-t border-white/10 flex items-center justify-end gap-2">
                             <button onClick={() => setSaleTarget(null)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">انصراف</button>
                             <button onClick={confirmSale} className="px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold">ثبت فروش</button>
                         </div>
@@ -846,8 +846,8 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
             {transferTarget && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" onClick={() => setTransferTarget(null)}>
                     <div className="absolute inset-0 bg-black/70" />
-                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-slate-700 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-                        <div className="px-5 py-4 border-b border-slate-700">
+                    <div className="relative w-full max-w-md bg-slate-800 rounded-2xl ring-1 ring-white/10 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+                        <div className="px-5 py-4 border-b border-white/10">
                             <h3 className="text-slate-100 font-bold text-lg">انتقال طلای فیزیکی</h3>
                         </div>
                         <div className="p-5 space-y-4">
@@ -879,7 +879,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                 </div>
                             )}
                         </div>
-                        <div className="px-5 py-4 bg-slate-800/60 border-t border-slate-700 flex items-center justify-end gap-2">
+                        <div className="px-5 py-4 bg-white/[0.05] border-t border-white/10 flex items-center justify-end gap-2">
                             <button onClick={() => setTransferTarget(null)} className="px-4 py-2 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 text-sm">انصراف</button>
                             <button onClick={async ()=>{ if(!transferTo){ setError('لطفاً گیرنده را انتخاب کنید'); return;} try{ await transferGold({ goldId: transferTarget.id, fromOwnerId: ownerId, toOwnerId: transferTo, reason: transferReason }); setTransferTarget(null); } catch(e:any){ setError(e?.message||'انتقال انجام نشد'); } }} className="px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold">ثبت انتقال</button>
                         </div>

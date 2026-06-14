@@ -187,11 +187,11 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
     };
 
     const renderMonthlyPaymentsList = (title: string) => (
-        <div className="bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
-            <div className="px-4 py-3 border-b border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="bg-white/[0.03] rounded-xl ring-1 ring-white/10">
+            <div className="px-4 py-3 border-b border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <h3 className="text-slate-200 font-bold">{title}</h3>
                 {selectedSummary.count > 0 && (
-                    <div className="hidden sm:flex items-center gap-2 text-xs bg-slate-900/60 ring-1 ring-slate-700 rounded-full px-3 py-1">
+                    <div className="hidden sm:flex items-center gap-2 text-xs bg-slate-900/60 ring-1 ring-white/10 rounded-full px-3 py-1">
                         <span className="text-slate-300">انتخاب شده:</span>
                         <span className="text-slate-100 font-bold">{selectedSummary.count}</span>
                         <span className="text-slate-500">|</span>
@@ -216,7 +216,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                                 className={`w-full text-right p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 transition ${isSelected ? 'bg-slate-800/70' : 'bg-transparent'}`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <span className="p-1.5 rounded-full bg-slate-900/60 ring-1 ring-slate-700">
+                                    <span className="p-1.5 rounded-full bg-slate-900/60 ring-1 ring-white/10">
                                         {isSelected ? <CheckCircleIcon /> : <UncheckedCircleIcon />}
                                     </span>
                                     <span className={`px-2 py-0.5 rounded-full text-[10px] ring-1 ${r.p.isPaid ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30' : 'bg-rose-500/10 text-rose-400 ring-rose-500/30'}`}>
@@ -235,7 +235,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
             </div>
             {selectedSummary.count > 0 && (
                 <div className="sm:hidden fixed bottom-3 left-3 right-3 z-30">
-                    <div className="bg-slate-900/95 backdrop-blur rounded-xl ring-1 ring-slate-700 px-4 py-3 flex items-center justify-between">
+                    <div className="bg-slate-900/95 backdrop-blur rounded-xl ring-1 ring-white/10 px-4 py-3 flex items-center justify-between">
                         <div className="text-xs text-slate-300">
                             <span>اقساط انتخابی: </span>
                             <span className="text-slate-100 font-bold">{selectedSummary.count}</span>
@@ -345,7 +345,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                         </div>
                     </div>
 
-                    <div className="p-6 bg-slate-900/50 rounded-lg ring-1 ring-slate-700">
+                    <div className="p-6 bg-slate-900/50 rounded-lg ring-1 ring-white/10">
                         <h4 className="text-lg font-semibold mb-4 text-slate-200">خلاصه طرح</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                             <div className="flex justify-between border-b border-slate-800 py-2"><span className="text-slate-400">مبلغ کل وام:</span><span className="text-slate-100 font-medium">{formatCurrency(stats.loanAmount)}</span></div>
@@ -367,7 +367,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                     {showPaymentsList && (
                         <div className="space-y-3 animate-fade-in">
                             {currentInstallment.payments.map((payment, index) => (
-                                 <div key={payment.id} className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 opacity-80">
+                                 <div key={payment.id} className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50 opacity-80">
                                     <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
                                         <CheckCircleIcon />
                                         <div className="min-w-0">
@@ -457,7 +457,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                                 </div>
                             );
                         })()}
-                        <div className="mt-auto pt-3 border-t border-slate-700/50 text-xs text-slate-400">
+                        <div className="mt-auto pt-3 border-t border-white/10/50 text-xs text-slate-400">
                            <div className="flex justify-between items-center mb-1">
                                <span>پیشرفت</span>
                                <span>{paidCount} / {totalCount}</span>
@@ -554,7 +554,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-10 px-6 bg-slate-800/40 rounded-xl ring-1 ring-slate-700">
+                            <div className="text-center py-10 px-6 bg-white/[0.03] rounded-xl ring-1 ring-white/10">
                                 <CheckCircleIcon className="h-14 w-14 text-emerald-400 mx-auto mb-4" />
                                 <h3 className="text-xl font-semibold text-slate-200">شما هیچ قسط فعالی ندارید!</h3>
                                 <p className="text-slate-400 mt-2">تمام اقساط شما پرداخت شده‌اند یا قسطی ثبت نکرده‌اید.</p>
@@ -573,7 +573,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                  <div>
                     <div className="relative my-8">
                         <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                            <div className="w-full border-t border-slate-700" />
+                            <div className="w-full border-t border-white/10" />
                         </div>
                         <div className="relative flex justify-center">
                             <span className="bg-slate-900 px-3 text-lg font-medium text-slate-400">

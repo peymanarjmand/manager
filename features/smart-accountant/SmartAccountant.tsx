@@ -267,7 +267,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
 
             {/* Tabs (draggable) */}
             <div className="mb-6">
-                <div className="border-b border-slate-700">
+                <div className="border-b border-white/10">
                     <nav className="-mb-px flex space-x-4 space-x-reverse overflow-x-auto" aria-label="Tabs">
                         {(() => {
                             const store = useAccountantStore.getState();

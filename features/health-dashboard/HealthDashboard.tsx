@@ -118,7 +118,7 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = ({ onNavigateBack
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex space-x-1 mb-6 bg-slate-800/50 p-1 rounded-lg ring-1 ring-slate-700">
+        <div className="flex space-x-1 mb-6 bg-white/[0.04] p-1 rounded-lg ring-1 ring-white/10">
           <button
             onClick={() => setActiveTab('dashboard')}
             className={`flex-1 flex items-center justify-center px-4 py-2 rounded-md transition-colors ${
@@ -189,7 +189,7 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = ({ onNavigateBack
             />
 
             {/* Today's Summary */}
-            <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700">
+            <div className="bg-white/[0.04] rounded-xl p-6 ring-1 ring-white/10">
               <h2 className="text-xl font-bold text-slate-100 mb-4 flex items-center">
                 <ClockIcon className="ml-2" />
                 خلاصه امروز

@@ -353,7 +353,7 @@ const JalaliCalendar = ({ viewDate, onMonthChange, selectedDate, onDateSelect, t
     }
 
     return (
-        <div className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700">
+        <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10">
             <div className="flex justify-between items-center mb-4">
                 <button onClick={() => onMonthChange(viewDate.clone().subtract(1, 'jMonth'))} className="p-2 rounded-full hover:bg-slate-700"><ArrowRightIcon /></button>
                 <h3 className="text-lg font-bold text-slate-100">{viewDate.locale('fa').format('jMMMM jYYYY')}</h3>
@@ -413,7 +413,7 @@ const TaskList = ({ filter, onSelectTask, projects, tasks, calendarDate }) => {
     const tasksToRender = filter.type === 'completed' ? completedTasks : activeTasks;
 
     return (
-        <div className="bg-slate-800/50 rounded-xl p-4 md:p-6 ring-1 ring-slate-700 h-full flex flex-col">
+        <div className="bg-white/[0.04] rounded-xl p-4 md:p-6 ring-1 ring-white/10 h-full flex flex-col">
             <header className="mb-4">
                 <h2 className="text-2xl font-bold text-slate-100 mb-4">{getFilterTitle()}</h2>
                  <div className="relative">
@@ -525,8 +525,8 @@ const TaskDetails = ({ task, onClose, projects }) => {
     };
     
     return (
-         <div className="bg-slate-800/50 rounded-xl ring-1 ring-slate-700 h-full flex flex-col">
-            <header className="p-4 flex justify-between items-center border-b border-slate-700">
+         <div className="bg-white/[0.04] rounded-xl ring-1 ring-white/10 h-full flex flex-col">
+            <header className="p-4 flex justify-between items-center border-b border-white/10">
                 <div className="text-sm text-slate-400">ایجاد شده در {moment(task.createdAt).locale('fa').format('jD jMMMM jYYYY')}</div>
                 <button onClick={onClose} className="text-slate-400 hover:text-white transition"><CloseIcon /></button>
             </header>
@@ -612,7 +612,7 @@ const TaskDetails = ({ task, onClose, projects }) => {
                 </div>
 
             </div>
-            <footer className="p-4 border-t border-slate-700">
+            <footer className="p-4 border-t border-white/10">
                 <button onClick={() => { deleteTask(task.id); onClose(); }} className="text-rose-400 hover:text-rose-300 text-sm flex items-center gap-2">
                     <DeleteIcon/>
                     <span>حذف کار</span>
@@ -650,9 +650,9 @@ const ProjectModal = ({ isOpen, onClose, project }) => {
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-slate-800 rounded-xl w-full max-w-sm shadow-2xl ring-1 ring-slate-700" onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-800 rounded-xl w-full max-w-sm shadow-2xl ring-1 ring-white/10" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
-                    <header className="p-4 border-b border-slate-700">
+                    <header className="p-4 border-b border-white/10">
                          <h3 className="text-xl font-bold text-slate-100">{project ? 'ویرایش پروژه' : 'پروژه جدید'}</h3>
                     </header>
                     <div className="p-6 space-y-4">
@@ -673,7 +673,7 @@ const ProjectModal = ({ isOpen, onClose, project }) => {
                             </div>
                         </div>
                     </div>
-                     <footer className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-between items-center">
+                     <footer className="px-6 py-4 bg-white/[0.04] border-t border-white/10 flex justify-between items-center">
                          <div>
                             {project && <button type="button" onClick={handleDelete} className="text-rose-400 text-sm">حذف</button>}
                          </div>

@@ -54,11 +54,11 @@ export const Darfak = ({ onNavigateBack }: { onNavigateBack: () => void; }): Rea
             </header>
 
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                <div className="bg-slate-800/60 rounded-xl p-4 ring-1 ring-slate-700">
+                <div className="bg-white/[0.05] rounded-xl p-4 ring-1 ring-white/10">
                     <h3 className="text-slate-300 font-semibold mb-2">مجموع هزینه تا امروز</h3>
                     <p className="text-3xl font-extrabold text-sky-400">{totals.total.toLocaleString('fa-IR')} تومان</p>
                 </div>
-                <div className="lg:col-span-2 bg-slate-800/60 rounded-xl p-4 ring-1 ring-slate-700">
+                <div className="lg:col-span-2 bg-white/[0.05] rounded-xl p-4 ring-1 ring-white/10">
                     <h3 className="text-slate-300 font-semibold mb-2">جمع بر اساس تگ</h3>
                     <div className="flex flex-wrap gap-2">
                         {Object.entries(totals.byTag).length === 0 && <p className="text-slate-500">هنوز تگی ثبت نشده.</p>}
@@ -76,7 +76,7 @@ export const Darfak = ({ onNavigateBack }: { onNavigateBack: () => void; }): Rea
                 <div className="relative">
                     <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><SearchIcon /></span>
                     <input type="search" placeholder="جستجو هزینه..." value={search} onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-slate-800/60 text-white rounded-md py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
+                        className="w-full bg-white/[0.05] text-white rounded-md py-2.5 pl-4 pr-10 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
                 </div>
                 <div className="md:col-span-2 flex flex-wrap gap-2 items-center">
                     <TagIcon />
@@ -90,7 +90,7 @@ export const Darfak = ({ onNavigateBack }: { onNavigateBack: () => void; }): Rea
 
             <div className="space-y-3">
                 {filtered.map(e => (
-                    <div key={e.id} className="bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50">
+                    <div key={e.id} className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50">
                         <div className="min-w-0">
                             <p className="font-bold text-slate-100 truncate">{e.title}</p>
                             <p className="text-sm text-slate-400 truncate">{moment(e.date).locale('fa').format('jD jMMMM jYYYY')} • {(e.tags||[]).join(' ')}</p>
@@ -138,9 +138,9 @@ const ExpenseModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; o
 
     return (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-slate-700 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-white/10 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                 <form onSubmit={handleSubmit}>
-                    <div className="flex justify-between items-center p-4 border-b border-slate-700 sticky top-0 bg-slate-800 z-10">
+                    <div className="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 bg-slate-800 z-10">
                         <h3 className="text-xl font-bold text-slate-100">{expense ? 'ویرایش هزینه' : 'افزودن هزینه'}</h3>
                         <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">بستن</button>
                     </div>
@@ -171,7 +171,7 @@ const ExpenseModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; o
                             <textarea rows={3} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.note || ''} onChange={e => setForm(p => ({...p, note: e.target.value}))} />
                         </div>
                     </div>
-                    <div className="px-6 py-4 bg-slate-800/50 border-t border-slate-700 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
+                    <div className="px-6 py-4 bg-white/[0.04] border-t border-white/10 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
                         <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 transition">لغو</button>
                         <button type="submit" className="py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition">ذخیره</button>
                     </div>

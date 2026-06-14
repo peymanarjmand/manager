@@ -215,10 +215,10 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 gap-2.5 text-sm">
-                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700">ابتدای ماه: <span className="font-bold text-slate-100">{formatCurrency(openingAmount)}</span></div>
-                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700">ورودی‌ها: <span className="font-bold text-emerald-400">{formatCurrency(inflowTotal)}</span></div>
-                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700">خروجی‌ها: <span className="font-bold text-rose-400">{formatCurrency(outflowTotal)}</span></div>
-                        <div className="bg-slate-900/60 rounded-lg p-3 ring-1 ring-slate-700">مانده ماه: <span className="font-extrabold text-sky-400">{formatCurrency(monthEndBalance)}</span></div>
+                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-white/10">ابتدای ماه: <span className="font-bold text-slate-100">{formatCurrency(openingAmount)}</span></div>
+                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-white/10">ورودی‌ها: <span className="font-bold text-emerald-400">{formatCurrency(inflowTotal)}</span></div>
+                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-white/10">خروجی‌ها: <span className="font-bold text-rose-400">{formatCurrency(outflowTotal)}</span></div>
+                        <div className="bg-slate-900/60 rounded-lg p-3 ring-1 ring-white/10">مانده ماه: <span className="font-extrabold text-sky-400">{formatCurrency(monthEndBalance)}</span></div>
                     </div>
                 )}
             </div>

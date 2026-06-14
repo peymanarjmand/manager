@@ -23,7 +23,7 @@ export const ReceiptPreview = ({ refOrUrl, onClose, title, downloadLabel = 'دا
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
-                <div className="bg-slate-900/90 rounded-2xl ring-1 ring-slate-700 shadow-2xl p-5">
+                <div className="bg-slate-900/90 rounded-2xl ring-1 ring-white/10 shadow-2xl p-5">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-slate-100 font-bold text-lg">{title || 'پیش‌نمایش تصویر'}</h3>
                         <button onClick={onClose} className="text-slate-400 hover:text-white">بستن</button>

@@ -10,7 +10,7 @@ export const AssetsView = ({ assets, onEdit, onDelete }: { assets: Asset[]; onEd
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {assets.map(asset => (
-                <div key={asset.id} className="bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 flex flex-col space-y-3">
+                <div key={asset.id} className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10 flex flex-col space-y-3">
                     <div className="flex justify-between items-start">
                         <div>
                             <h4 className="font-bold text-slate-100 text-lg">{asset.name}</h4>
@@ -22,7 +22,7 @@ export const AssetsView = ({ assets, onEdit, onDelete }: { assets: Asset[]; onEd
                         </div>
                     </div>
                     <p className="text-2xl font-bold text-sky-400">{formatCurrency(asset.currentValue * asset.quantity)}</p>
-                    <p className="text-xs text-slate-500 pt-2 border-t border-slate-700/50">تاریخ خرید: {formatDate(asset.purchaseDate)}</p>
+                    <p className="text-xs text-slate-500 pt-2 border-t border-white/10/50">تاریخ خرید: {formatDate(asset.purchaseDate)}</p>
                     {asset.notes && <p className="text-sm text-slate-300">{asset.notes}</p>}
                 </div>
             ))}

@@ -20,7 +20,7 @@ export const SyncIndicator = (): React.ReactNode => {
         className={`flex items-center gap-3 rounded-full px-4 py-2 text-sm shadow-lg ring-1 ${
           hasFailed
             ? 'bg-rose-900/80 ring-rose-700 text-rose-100'
-            : 'bg-slate-800/90 ring-slate-700 text-slate-200'
+            : 'bg-slate-800/90 ring-white/10 text-slate-200'
         }`}
       >
         {status.syncing ? (

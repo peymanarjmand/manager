@@ -64,7 +64,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSignupSuccess, onNavig
                     <p className="text-slate-400 mt-2">ایجاد حساب کاربری جدید</p>
                 </div>
 
-                <div className="bg-slate-800/50 p-8 rounded-xl ring-1 ring-slate-700 shadow-lg">
+                <div className="bg-white/[0.04] p-8 rounded-xl ring-1 ring-white/10 shadow-lg">
                     <form onSubmit={handleSubmit} noValidate>
                         <div className="mb-4 relative">
                             <label htmlFor="email" className="sr-only">ایمیل</label>
