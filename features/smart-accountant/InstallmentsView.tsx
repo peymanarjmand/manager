@@ -4,6 +4,9 @@ import { InstallmentPayment, InstallmentPlan } from './types';
 import { useAccountantStore } from './store';
 import { CheckCircleIcon, UncheckedCircleIcon, ArrowRightIcon, EditIcon, DeleteIcon } from '../../components/Icons';
 import { formatCurrency, formatDate } from './SmartAccountantShared';
+import { ProgressRing } from '../../components/ui/ProgressRing';
+
+const fa = (n: number) => (Number.isFinite(n) ? n : 0).toLocaleString('fa-IR');
 
 const calculateAPR = (loanAmount: number, payments: InstallmentPayment[]): number | null => {
     if (!loanAmount || loanAmount <= 0 || payments.length === 0) {
@@ -387,7 +390,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
 
         return (
             <div
-                className={`bg-slate-800/50 rounded-xl p-4 ring-1 ring-slate-700 transition-all flex flex-col cursor-pointer ${isCompleted ? 'hover:ring-emerald-800' : 'hover:ring-sky-400 hover:-translate-y-1'}`}
+                className={`bg-white/[0.04] rounded-2xl p-4 ring-1 ring-white/[0.06] transition-all flex flex-col cursor-pointer ${isCompleted ? 'hover:ring-emerald-700' : 'hover:ring-brand-500/60 hover:-translate-y-0.5'}`}
                 onClick={() => setCurrentInstallment(plan)}
             >
                 <div className="flex justify-between items-start mb-3">
@@ -485,33 +488,20 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                     const monthRemaining = Math.max(0, monthAll - monthPaid);
                     const progress = monthAll > 0 ? (monthPaid / monthAll) * 100 : 0;
                     return (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-                            <div className="bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-300 text-sm">کل اقساط این ماه</span>
-                                    <span className="text-slate-100 font-extrabold">{formatCurrency(monthAll)}</span>
+                        <div className="bg-white/[0.04] rounded-2xl p-4 ring-1 ring-white/[0.06] mb-5">
+                            <div className="flex items-center gap-4">
+                                <ProgressRing value={progress} size={84} stroke={8} progressClassName="stroke-brand-500" trackClassName="stroke-white/10">
+                                    <div className="text-base font-medium text-brand-300 nums-tabular">{fa(Math.round(progress))}٪</div>
+                                    <div className="text-[10px] text-slate-400">پرداخت‌شده</div>
+                                </ProgressRing>
+                                <div className="flex-1 space-y-2 text-sm">
+                                    <div className="flex items-center justify-between"><span className="text-slate-400">کل این ماه</span><span className="font-medium text-slate-100 nums-tabular">{formatCurrency(monthAll)}</span></div>
+                                    <div className="flex items-center justify-between"><span className="text-slate-400">پرداخت‌شده</span><span className="font-medium text-emerald-400 nums-tabular">{formatCurrency(monthPaid)}</span></div>
+                                    <div className="flex items-center justify-between"><span className="text-slate-400">مانده</span><span className="font-medium text-rose-400 nums-tabular">{formatCurrency(monthRemaining)}</span></div>
                                 </div>
                             </div>
-                            <div className="bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-300 text-sm">کل پرداختی این ماه</span>
-                                    <span className="text-emerald-400 font-extrabold">{formatCurrency(monthPaid)}</span>
-                                </div>
-                            </div>
-                            <div className="bg-slate-800/50 rounded-xl p-3 ring-1 ring-slate-700">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-300 text-sm">مانده پرداخت این ماه</span>
-                                    <span className="text-rose-400 font-extrabold">{formatCurrency(monthRemaining)}</span>
-                                </div>
-                            </div>
-                            <div className="md:col-span-3">
-                                <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
-                                    <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
-                                </div>
-                                <div className="mt-1 text-xs text-slate-400 text-center">
-                                    <span>پیشرفت پرداخت ماه منتخب: </span>
-                                    <span className="text-slate-200 font-semibold">{progress.toFixed(0)}%</span>
-                                </div>
+                            <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden mt-3">
+                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: 'linear-gradient(90deg,#6d5ef6,#a855f7)' }}></div>
                             </div>
                         </div>
                     );
@@ -520,7 +510,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                     <>
                         <h3 className="text-2xl font-bold mb-4 text-slate-200">اقساط فعال</h3>
                         {activePlans.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {activePlans.map((plan, idx) => (
                                     <div key={plan.id}
                                          draggable={installmentsSortMode==='custom'}
