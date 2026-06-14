@@ -91,73 +91,10 @@ export interface PasswordCategoryInfo {
     icon: ReactNode;
 }
 
-// Types for Smart Accountant
-
-// A single financial transaction (expense or income)
-export interface Transaction {
-    id: string;
-    type: 'income' | 'expense';
-    amount: number;
-    description: string;
-    category: string; // e.g., 'Food', 'Salary'
-    date: string; // ISO string, to be parsed by moment
-    receiptImage?: string; // base64
-}
-
-// A personal asset
-export interface Asset {
-    id: string;
-    name: string;
-    currentValue: number;
-    quantity: number;
-    purchaseDate: string; // ISO string
-    notes?: string;
-}
-
-// A person for tracking debts and credits
-export interface Person {
-    id: string;
-    name: string;
-    avatar?: string; // base64
-}
-
-// A single entry in a ledger with a person
-export interface LedgerEntry {
-    id:string;
-    personId: string;
-    type: 'debt' | 'credit'; // debt: they owe me, credit: I owe them
-    amount: number;
-    description: string;
-    date: string; // ISO string
-    isSettled: boolean;
-    receiptImage?: string; // base64
-}
-
-// New Types for Installments
-export interface InstallmentPayment {
-    id: string; // e.g., planId-0, planId-1
-    dueDate: string; // ISO string
-    amount: number;
-    isPaid: boolean;
-    paidDate?: string; // ISO string, set when marked as paid
-}
-
-export interface InstallmentPlan {
-    id: string;
-    title: string;
-    loanAmount?: number; // The initial amount of the loan/purchase
-    payments: InstallmentPayment[];
-}
-
-
-// The whole state for the accountant module
-export interface AccountantData {
-    transactions: Transaction[];
-    assets: Asset[];
-    people: Person[];
-    ledger: Record<string, LedgerEntry[]>; // key is personId
-    installments: InstallmentPlan[];
-}
+// NOTE: Smart Accountant domain types (Transaction, Asset, Person, LedgerEntry,
+// InstallmentPayment, InstallmentPlan, AccountantData) are defined canonically in
+// features/smart-accountant/types.ts. Stale duplicate copies that used to live here
+// were removed to keep a single source of truth and avoid divergence.
 
 // New Types for Phone Book
 export interface TypedEntry {
