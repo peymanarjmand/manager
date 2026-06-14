@@ -74,11 +74,18 @@ export async function getBlobByRef(ref: string): Promise<Blob | null> {
   return data as Blob;
 }
 
+// Signed URL TTL for viewing images. Long enough to outlast a normal session so
+// on-screen images don't expire mid-use, while still being time-limited (works on
+// a PRIVATE bucket, unlike getPublicUrl, so the lm-images bucket can be locked
+// down — see the authenticated-only storage policies).
+const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24; // 24h
+
 export async function getObjectURLByRef(ref: string): Promise<string | null> {
   if (!isImageRef(ref)) return null;
   const path = ref.slice(IMAGE_REF_PREFIX.length);
-  const { data } = supabase.storage.from('lm-images').getPublicUrl(path);
-  return data.publicUrl || null;
+  const { data, error } = await supabase.storage.from('lm-images').createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+  if (error || !data) return null;
+  return data.signedUrl || null;
 }
 
 export async function deleteImageByRef(ref: string): Promise<void> {
