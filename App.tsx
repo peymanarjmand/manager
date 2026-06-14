@@ -21,6 +21,9 @@ const MyCar = React.lazy(() => import('./features/my-car/MyCar').then(m => ({ de
 
 function App(): React.ReactNode {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  // Becomes true once the user has pushed into a module, so navigating "home"
+  // pops that history entry (rather than pushing another one).
+  const navigatedRef = React.useRef(false);
   const [sessionInfo, setSessionInfo] = useState<string | undefined>(undefined);
   const [session, setSession] = useState<any>(null);
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
@@ -75,13 +78,47 @@ function App(): React.ReactNode {
     }
   }, [session]);
 
+  // Sync with browser history so the hardware/browser Back button returns to the
+  // dashboard instead of leaving the app. The app is one level deep: the
+  // dashboard is the root and a module lives on a single pushed history entry.
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const v = e.state && (e.state as { view?: View }).view;
+      navigatedRef.current = !!v && v !== 'dashboard';
+      setCurrentView(v && v !== 'dashboard' ? v : 'dashboard');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setSession(null);
-    // window.location.reload(); 
+    // window.location.reload();
   };
 
   const handleNavigate = (view: View) => {
+    if (view === currentView) return;
+    if (view === 'dashboard') {
+      // Pop the module entry we pushed, so Back history stays clean (and a real
+      // Back press lands here too). Fall back to a direct switch if we never
+      // pushed (e.g. a deep link straight into a module).
+      if (navigatedRef.current) {
+        navigatedRef.current = false;
+        window.history.back();
+      } else {
+        setCurrentView('dashboard');
+      }
+      return;
+    }
+    if (currentView === 'dashboard') {
+      navigatedRef.current = true;
+      window.history.pushState({ view }, '');
+    } else {
+      // Switching directly between modules (e.g. via the bottom nav) stays one
+      // level deep, so Back from any module still returns to the dashboard.
+      window.history.replaceState({ view }, '');
+    }
     setCurrentView(view);
   };
 
