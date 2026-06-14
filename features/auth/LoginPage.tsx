@@ -46,10 +46,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, onNavigate
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
+        <div className="min-h-screen flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-sky-400">مدیر زندگی</h1>
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 shadow-lg shadow-brand-900/40">م</div>
+                    <h1 className="text-3xl font-bold text-slate-100">مدیر زندگی</h1>
                     <p className="text-slate-400 mt-2">ورود به حساب کاربری</p>
                 </div>
 
