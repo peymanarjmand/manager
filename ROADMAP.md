@@ -85,10 +85,11 @@
 - [ ] (از ۳b) بازساخت store‌های assets و my-car به الگوی خوش‌بینانه + وصل‌کردن نوشتن‌هایشان به صف `lib/outbox.ts` (دوام آفلاین کامل).
 - [ ] یک‌سان‌سازی تایپ‌ها + اصلاح `View` + مسیریابی Back/deep-link.
 
-### فاز ۷ — سرعت ⏳
-- [ ] اشتراک انتخابی Zustand + `React.memo`.
-- [ ] حذف وابستگی‌های بلااستفاده (jspdf/html2canvas/date-fns) + جایگزینی jalali-moment.
-- [ ] اصلاح chunkبندی + بهبود LCP.
+### فاز ۷ — سرعت 🔄
+- [x] حذف وابستگی‌های بلااستفاده (jspdf، html2canvas، date-fns).
+- [x] اصلاح باگ chunkبندی: `charts` از چانک eager react جدا شد؛ دیگر چانک pdf/canvas نیست؛ react ~۸KB سبک‌تر.
+- [ ] اشتراک انتخابی Zustand + `React.memo` (کاهش ری‌رندر کل درخت حسابدار) — بهتر است همراه یک تست رفتاری/دیپلوی انجام شود.
+- [ ] جایگزینی `jalali-moment` با گزینه‌ی سبک (۳۰+ نقطه‌ی استفاده؛ نیاز به تطبیق دقیق خروجی تاریخ) + بهبود LCP (اسکلتون در `index.html`).
 
 ### فاز ۸ — PWA حرفه‌ای ⏳
 - [ ] vite-plugin-pwa/Workbox: precache asset‌های هش‌دار.
@@ -113,3 +114,4 @@
 - 2026-06-14: فاز ۳ (هسته) — صف پایدار `lib/outbox.ts` + ۴ تست؛ وصل‌کردن ~۲۵ اکشن نوشتن حسابدار؛ initOutbox + SyncIndicator. هشدار promise: ۸۷→۶۵. typecheck/test(۱۸)/build سبز.
 - 2026-06-14: فاز ۴ — `lib/id.ts` (`newId()` با crypto.randomUUID)؛ جایگزینی شناسه‌سازی Date.now در حسابدار/کارها/دفترتلفن/رمزها. typecheck/test/build سبز.
 - 2026-06-14: فاز ۵ — راستی‌آزمایی بلوب↔جدول (۰ گمشده)؛ `partialize`+`merge` روی state_accountant (پایان منبع دوگانه). typecheck/test/build سبز.
+- 2026-06-14: فاز ۷a — حذف jspdf/html2canvas/date-fns؛ اصلاح manualChunks (charts جدا از react). build سبز.

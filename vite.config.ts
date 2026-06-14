@@ -18,10 +18,9 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: (id) => {
               if (!id.includes('node_modules')) return;
-              if (id.includes('react') || id.includes('react-dom')) return 'react';
+              // Charts first, so react-chartjs-2 is NOT swept into the eager react chunk.
               if (id.includes('chart.js') || id.includes('react-chartjs-2')) return 'charts';
-              if (id.includes('jspdf')) return 'pdf';
-              if (id.includes('html2canvas')) return 'canvas';
+              if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'react';
               if (id.includes('@supabase')) return 'supabase';
               return 'vendor';
             }
