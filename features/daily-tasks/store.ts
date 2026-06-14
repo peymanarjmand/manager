@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { DailyTasksData, Task, Project, Subtask } from './types';
 import { createSupabaseTableStateStorage } from '../../lib/supabaseStorage';
+import { newId } from '../../lib/id';
 
 const STORAGE_KEY = 'lifeManagerDailyTasks';
 
@@ -33,7 +34,7 @@ export const useDailyTasksStore = create<DailyTasksState>()(
             addTask: (taskData) => {
                 const newTask: Task = {
                     ...taskData,
-                    id: Date.now().toString(),
+                    id: newId(),
                     createdAt: new Date().toISOString(),
                     isCompleted: false,
                     subtasks: [],
@@ -64,7 +65,7 @@ export const useDailyTasksStore = create<DailyTasksState>()(
             
             // Project actions
             addProject: (projectData) => {
-                const newProject: Project = { ...projectData, id: Date.now().toString() };
+                const newProject: Project = { ...projectData, id: newId() };
                 set((state) => ({ projects: [...state.projects, newProject] }));
             },
             updateProject: (projectId, updates) => set((state) => ({
@@ -79,7 +80,7 @@ export const useDailyTasksStore = create<DailyTasksState>()(
 
             // Subtask actions
             addSubtask: (taskId, subtaskData) => set(state => {
-                const newSubtask: Subtask = { ...subtaskData, id: Date.now().toString(), isCompleted: false };
+                const newSubtask: Subtask = { ...subtaskData, id: newId(), isCompleted: false };
                 return {
                     tasks: state.tasks.map(task => 
                         task.id === taskId ? { ...task, subtasks: [...task.subtasks, newSubtask] } : task

@@ -4,6 +4,7 @@ import { parseVCF, generateVCF } from './vcf';
 import { BackIcon, PlusIcon, EditIcon, DeleteIcon, CloseIcon, UserCircleIcon, SearchIcon, ImportIcon, ExportIcon, PhoneBookIcon } from '../../components/Icons';
 import { usePhoneBookStore } from './store';
 import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
+import { newId } from '../../lib/id';
 
 type ModalState = { isOpen: boolean; contact?: Contact | null; mode?: 'view' | 'edit' };
 
@@ -195,7 +196,7 @@ export const PhoneBook = ({ onNavigateBack }: { onNavigateBack: () => void; }): 
     const handleSave = (formData: Partial<Contact>) => {
         const contactToSave: Contact = {
             ...formData,
-            id: formData.id || `${Date.now()}`,
+            id: formData.id || newId(),
             fn: formData.fn || "بدون نام",
             tels: (formData.tels || []).filter(t => t.value),
             emails: (formData.emails || []).filter(e => e.value),

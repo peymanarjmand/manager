@@ -11,6 +11,7 @@ import { SummaryView, TransactionsView, PeopleView, ChecksView, LedgerEntrySumma
 import { AccountantFormModal } from './AccountantFormModal';
 import { InstallmentsView } from './InstallmentsView';
 import { SocialInsuranceView } from './SocialInsuranceView';
+import { newId } from '../../lib/id';
 
 // CONFIG
 type AccountantTab = 'summary' | 'transactions' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
@@ -66,7 +67,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     const closeModal = () => setModal({ isOpen: false });
 
     const handleSave = (itemType: string, itemData: any) => {
-        const id = itemData.id || Date.now().toString();
+        const id = itemData.id || newId();
     
         switch (itemType) {
             case 'transaction':
@@ -92,7 +93,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                 if (planId) { 
                     actions.updateInstallmentPlan({ id: planId, title, loanAmount: parseFloat(loanAmount) || 0 });
                 } else { 
-                    const newPlanId = Date.now().toString();
+                    const newPlanId = newId();
                     const payments: InstallmentPayment[] = Array.from({ length: parseInt(installmentsCount, 10) || 0 }, (_, i) => ({
                         id: `${newPlanId}-${i}`,
                         dueDate: moment(firstPaymentDate).add(i, 'jMonth').toISOString(),

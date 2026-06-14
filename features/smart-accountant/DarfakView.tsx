@@ -5,6 +5,7 @@ import { DarfakExpense } from './types';
 import { PlusIcon, SearchIcon, EyeIcon } from '../../components/Icons';
 import { ConfirmDialog } from './ConfirmDialog';
 import { saveImageDataURL, getObjectURLByRef, isImageRef } from '../../lib/idb-images';
+import { newId } from '../../lib/id';
 
 export default function DarfakView() {
     const { darfak } = useAccountantStore();
@@ -192,14 +193,14 @@ const JalaliDatePicker = ({ value, onChange, id, label }) => {
 };
 
 const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; onClose: () => void; onSave: (e: DarfakExpense) => void; expense: DarfakExpense | null; }) => {
-    const [form, setForm] = useState<DarfakExpense>(() => expense || ({ id: Date.now().toString(), title: '', amount: 0, date: new Date().toISOString(), tags: ['#مصالح'] } as DarfakExpense));
+    const [form, setForm] = useState<DarfakExpense>(() => expense || ({ id: newId(), title: '', amount: 0, date: new Date().toISOString(), tags: ['#مصالح'] } as DarfakExpense));
     const [attachmentURL, setAttachmentURL] = useState<string | null>(null);
     const [uploadPct, setUploadPct] = useState<number>(0);
     const [isUploading, setIsUploading] = useState<boolean>(false);
 
     React.useEffect(() => {
         if (expense) setForm(expense);
-        else setForm({ id: Date.now().toString(), title: '', amount: 0, date: new Date().toISOString(), tags: ['#مصالح'] } as DarfakExpense);
+        else setForm({ id: newId(), title: '', amount: 0, date: new Date().toISOString(), tags: ['#مصالح'] } as DarfakExpense);
         (async () => {
             const ref = (expense && expense.attachment) || null;
             if (ref && isImageRef(ref)) {

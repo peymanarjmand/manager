@@ -6,6 +6,7 @@ import { useAccountantStore } from '../store';
 import { FormInput, FormSelect, JalaliDatePicker, LEDGER_UNITS, getLedgerUnitConfig, formatCurrency, formatDate, formatLedgerAmount, ImageFromRef, ReceiptPreview } from '../SmartAccountantShared';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { isImageRef, saveImageDataURL, getObjectURLByRef, deleteImageByRef } from '../../../lib/idb-images';
+import { newId } from '../../../lib/id';
 
 export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, onDeleteLedger, onSettle, currentPerson, setCurrentPerson, onViewLedger }: { data: AccountantData; onEditPerson: (person: Person) => void; onDeletePerson: (id: string) => void; onEditLedger: (entry: LedgerEntry) => void; onDeleteLedger: (personId: string, ledgerId: string) => void; onSettle: (personId: string, ledgerId: string) => void; currentPerson: Person | null; setCurrentPerson: (person: Person | null) => void; onViewLedger?: (entry: LedgerEntry) => void }) => {
     const { saveLedgerEntry } = useAccountantStore.getState();
@@ -56,7 +57,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
         const cfg = getLedgerUnitConfig(qUnit);
         const safeAmount = Number(amountNum.toFixed(cfg.maxDecimals));
         const newEntry = {
-            id: Date.now().toString(),
+            id: newId(),
             personId: currentPerson.id,
             type: qType,
             amount: safeAmount,

@@ -5,6 +5,7 @@ import { useAccountantStore } from './store';
 import { ConfirmDialog } from './ConfirmDialog';
 import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
 import { formatCurrency, JalaliDatePicker, ReceiptPreview } from './SmartAccountantShared';
+import { newId } from '../../lib/id';
 
 export const SocialInsuranceView = () => {
     const { socialInsurance } = useAccountantStore();
@@ -51,7 +52,7 @@ export const SocialInsuranceView = () => {
     const monthNames = useMemo(() => Array.from({ length: 12 }, (_, i) => moment().jMonth(i).locale('fa').format('jMMMM')), []);
 
     const openNewFor = (year: number, month: number) => {
-        const defaultObj = { id: Date.now().toString(), year, month, daysCovered: 0, amount: 0, payDate: new Date().toISOString() };
+        const defaultObj = { id: newId(), year, month, daysCovered: 0, amount: 0, payDate: new Date().toISOString() };
         setEditing(defaultObj);
         setModalOpen(true);
     };
@@ -239,7 +240,7 @@ export const SocialInsuranceView = () => {
 };
 
 const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: boolean; onClose: () => void; onSave: (p: any) => void; payment: any | null; }) => {
-    const [form, setForm] = useState<any>(() => payment || ({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: moment.jDaysInMonth(moment().jYear(), moment().jMonth()), amount: 0, payDate: new Date().toISOString() }));
+    const [form, setForm] = useState<any>(() => payment || ({ id: newId(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: moment.jDaysInMonth(moment().jYear(), moment().jMonth()), amount: 0, payDate: new Date().toISOString() }));
     const [receiptURL, setReceiptURL] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
 
@@ -256,7 +257,7 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
         if (payment) {
             setForm(payment);
         } else {
-            setForm({ id: Date.now().toString(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: moment.jDaysInMonth(moment().jYear(), moment().jMonth()), amount: 0, payDate: new Date().toISOString() });
+            setForm({ id: newId(), year: moment().jYear(), month: moment().jMonth() + 1, daysCovered: moment.jDaysInMonth(moment().jYear(), moment().jMonth()), amount: 0, payDate: new Date().toISOString() });
         }
         (async () => {
             if (payment?.receiptRef && isImageRef(payment.receiptRef)) {

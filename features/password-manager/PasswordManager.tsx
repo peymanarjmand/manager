@@ -5,6 +5,7 @@ import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon, EyeOffIcon, CloseIco
 import { usePasswordStore } from './store';
 import { saveImageDataURL, isImageRef, getObjectURLByRef } from '../../lib/idb-images';
 import { useSettingsStore } from '../settings/store';
+import { newId } from '../../lib/id';
 
 type ModalState = {
     isOpen: boolean;
@@ -284,7 +285,7 @@ export const PasswordManager = ({ onNavigateBack }: { onNavigateBack: () => void
     const handleSave = (formDataFromModal: Omit<AnyPasswordEntry, 'id' | 'category'> & { id?: string }) => {
         const entryToSave: AnyPasswordEntry = {
             ...formDataFromModal,
-            id: formDataFromModal.id || Date.now().toString(),
+            id: formDataFromModal.id || newId(),
             category: activeCategory,
         } as AnyPasswordEntry;
         saveEntry(activeCategory, entryToSave);
