@@ -41,8 +41,8 @@ const PlanStats = ({ plan }: { plan: InstallmentPlan }) => {
     const totalPenalty = plan.payments.reduce((sum, p) => sum + (p.penalty || 0), 0);
 
     return (
-        <div className="mt-6 mb-4 p-4 bg-slate-900/50 rounded-lg ring-1 ring-slate-700">
-            <h4 className="text-lg font-semibold mb-3 text-slate-200">آمار وام</h4>
+        <div className="mt-2 mb-4 p-4 bg-white/[0.04] rounded-2xl ring-1 ring-white/[0.06]">
+            <h4 className="text-base font-medium mb-3 text-slate-200">آمار وام</h4>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <p className="text-slate-400">مبلغ کل وام:</p>
                 <p className="text-slate-100 font-medium text-left">{formatCurrency(plan.loanAmount)}</p>
@@ -260,47 +260,57 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
             
             return (
                 <div>
-                    <div className="flex justify-between items-center mb-6 p-4 bg-slate-800 rounded-lg">
-                        <button onClick={() => setCurrentInstallment(null)} className="flex items-center gap-2 text-slate-300 hover:text-sky-400 transition-colors">
-                            <ArrowRightIcon />
-                            <span>بازگشت به لیست اقساط</span>
-                        </button>
-                        <div className="text-left">
-                            <h3 className="text-xl font-bold text-white">{currentInstallment.title}</h3>
-                            <p className="text-slate-400">پرداخت شده: {paidCount} از {totalCount} - مانده: {formatCurrency(remainingAmount)}</p>
+                    <button onClick={() => setCurrentInstallment(null)} className="flex items-center gap-1.5 text-slate-300 hover:text-brand-300 transition-colors text-sm mb-4">
+                        <ArrowRightIcon />
+                        <span>بازگشت به لیست اقساط</span>
+                    </button>
+                    <div className="bg-white/[0.04] rounded-2xl p-4 ring-1 ring-white/[0.06] mb-4 flex items-center gap-4">
+                        <ProgressRing value={totalCount > 0 ? (paidCount / totalCount) * 100 : 0} size={88} stroke={8} progressClassName="stroke-brand-500" trackClassName="stroke-white/10">
+                            <div className="text-base font-medium text-brand-300 nums-tabular">{fa(Math.round(totalCount > 0 ? (paidCount / totalCount) * 100 : 0))}٪</div>
+                            <div className="text-[10px] text-slate-400">پرداخت‌شده</div>
+                        </ProgressRing>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-bold text-slate-100 truncate">{currentInstallment.title}</h3>
+                            <p className="text-sm text-slate-400 mt-1">پرداخت‌شده {fa(paidCount)} از {fa(totalCount)}</p>
+                            <p className="text-sm text-slate-400 mt-0.5">مانده: <span className="text-rose-400 font-medium nums-tabular">{formatCurrency(remainingAmount)}</span></p>
                         </div>
                     </div>
                     <PlanStats plan={currentInstallment} />
-                    {currentInstallment.payments.length === 0 ? <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">پرداختی برای این قسط وجود ندارد.</p> :
-                    <div className="space-y-3">
-                        {currentInstallment.payments.map((payment, index) => (
-                            <div key={payment.id} className={`bg-slate-800/50 rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-slate-700/50 ${payment.isPaid ? 'opacity-60' : ''}`}>
-                                <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
-                                    <button onClick={() => onTogglePaidStatus(currentInstallment.id, payment.id)} className="p-1.5 hover:bg-slate-700 rounded-full" title={payment.isPaid ? 'علامت به عنوان پرداخت نشده' : 'علامت به عنوان پرداخت شده'}>
-                                       {payment.isPaid ? <CheckCircleIcon /> : <UncheckedCircleIcon />}
-                                    </button>
-                                    <div className="min-w-0">
-                                        <p className="font-bold text-slate-100 truncate">قسط شماره {index + 1}</p>
-                                        <p className="text-sm text-slate-400 truncate">{formatDate(payment.dueDate)}</p>
+                    {currentInstallment.payments.length === 0 ? <p className="text-slate-500 text-center py-16 bg-white/[0.03] rounded-2xl">پرداختی برای این قسط وجود ندارد.</p> :
+                    <div className="relative mt-4 pr-1">
+                        <div className="absolute top-3 bottom-3 right-[7px] w-px bg-white/10" aria-hidden="true" />
+                        <div className="space-y-3">
+                        {currentInstallment.payments.map((payment, index) => {
+                            const isNext = !payment.isPaid && currentInstallment.payments.findIndex(p => !p.isPaid) === index;
+                            return (
+                            <div key={payment.id} className="relative flex items-stretch gap-3">
+                                <span className={`mt-4 z-10 w-3.5 h-3.5 rounded-full ring-4 ring-[#0a0c16] shrink-0 ${payment.isPaid ? 'bg-emerald-500' : isNext ? 'bg-brand-500' : 'bg-slate-600'}`} style={isNext ? { boxShadow: '0 0 10px rgba(109,94,246,0.85)' } : undefined} />
+                                <div className={`flex-1 bg-white/[0.04] rounded-xl p-3 flex items-center justify-between ring-1 ${isNext ? 'ring-brand-500/40' : 'ring-white/[0.06]'} ${payment.isPaid ? 'opacity-70' : ''}`}>
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                        <button onClick={() => onTogglePaidStatus(currentInstallment.id, payment.id)} className="p-1 hover:bg-white/10 rounded-full" title={payment.isPaid ? 'علامت به عنوان پرداخت نشده' : 'علامت به عنوان پرداخت شده'}>
+                                           {payment.isPaid ? <CheckCircleIcon /> : <UncheckedCircleIcon />}
+                                        </button>
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-slate-100 text-sm truncate">قسط شماره {fa(index + 1)}{isNext && <span className="mr-2 text-[10px] text-brand-300">بعدی</span>}</p>
+                                            <p className="text-xs text-slate-400 truncate">{formatDate(payment.dueDate)}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
-                                    <div className="text-left">
-                                        <p className={`font-bold text-sm sm:text-base ${payment.isPaid ? 'text-slate-500 line-through' : 'text-sky-300'}`}>{formatCurrency(payment.amount)}</p>
-                                        {payment.penalty > 0 && (
-                                            <p className={`text-xs ${payment.isPaid ? 'text-slate-600 line-through' : 'text-rose-400'}`}>
-                                                + {formatCurrency(payment.penalty)} جریمه
-                                            </p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-left">
+                                            <p className={`font-medium text-sm nums-tabular ${payment.isPaid ? 'text-slate-500 line-through' : 'text-brand-300'}`}>{formatCurrency(payment.amount)}</p>
+                                            {payment.penalty > 0 && (
+                                                <p className={`text-xs nums-tabular ${payment.isPaid ? 'text-slate-600 line-through' : 'text-rose-400'}`}>+ {formatCurrency(payment.penalty)} جریمه</p>
+                                            )}
+                                        </div>
+                                        {!payment.isPaid && (
+                                            <button onClick={() => onEditPayment({...payment, planId: currentInstallment.id})} className="p-1.5 hover:bg-white/10 rounded-full hover:text-brand-300 transition text-slate-400"><EditIcon/></button>
                                         )}
                                     </div>
-                                    {!payment.isPaid && (
-                                         <div className="flex items-center space-x-1 space-x-reverse text-slate-400">
-                                           <button onClick={() => onEditPayment({...payment, planId: currentInstallment.id})} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition"><EditIcon/></button>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
+                        </div>
                     </div>
                     }
                 </div>
