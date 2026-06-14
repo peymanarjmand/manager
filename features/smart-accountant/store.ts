@@ -4,6 +4,7 @@ import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPla
 import { createSupabaseTableStateStorage } from '../../lib/supabaseStorage';
 import { encryptedStateStorage } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
+import { enqueue } from '../../lib/outbox';
 import moment from 'jalali-moment';
 
 // Keep in sync with AccountantTab in SmartAccountant.tsx (assets moved to its own module)
@@ -123,26 +124,17 @@ export const useAccountantStore = create<AccountantState>()(
                     const next = [...rest, fund].sort((a,b) => (a.year === b.year ? a.month - b.month : a.year - b.year));
                     return { funds: next } as any;
                 });
-                (async () => {
-                    try {
-                        // Optional: persist to dedicated table if exists
-                        await supabase.from('monthly_funds').upsert({
-                            id: fund.id,
-                            year: fund.year,
-                            month: fund.month,
-                            opening_amount: Number(fund.openingAmount) || 0,
-                            note: fund.note || null,
-                        });
-                    } catch (e) {
-                        // ignore if table doesn't exist
-                    }
-                })();
+                void enqueue({ kind: 'upsert', table: 'monthly_funds', values: {
+                    id: fund.id,
+                    year: fund.year,
+                    month: fund.month,
+                    opening_amount: Number(fund.openingAmount) || 0,
+                    note: fund.note || null,
+                } });
             },
             deleteMonthlyFund: (id) => {
                 set((state) => ({ funds: (state.funds || []).filter(f => f.id !== id) }));
-                (async () => {
-                    try { await supabase.from('monthly_funds').delete().eq('id', id); } catch {}
-                })();
+                void enqueue({ kind: 'delete', table: 'monthly_funds', match: { id } });
             },
             loadDarfak: async () => {
                 const { data, error } = await supabase
@@ -614,86 +606,57 @@ export const useAccountantStore = create<AccountantState>()(
                     const rest = state.darfak.filter(e => e.id !== exp.id);
                     return { darfak: [...rest, exp].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
                 });
-                (async () => {
-                    const { error } = await supabase
-                        .from('darfak_expenses')
-                        .upsert({
-                            id: exp.id,
-                            title: exp.title,
-                            amount: exp.amount,
-                            date: exp.date,
-                            tags: exp.tags,
-                            note: exp.note || null,
-                            attachment_ref: exp.attachment || null,
-                        });
-                    if (error) console.error('Darfak upsert error', error);
-                })();
+                void enqueue({ kind: 'upsert', table: 'darfak_expenses', values: {
+                    id: exp.id,
+                    title: exp.title,
+                    amount: exp.amount,
+                    date: exp.date,
+                    tags: exp.tags,
+                    note: exp.note || null,
+                    attachment_ref: exp.attachment || null,
+                } });
             },
             deleteDarfak: (id) => {
                 set(state => ({ darfak: state.darfak.filter(e => e.id !== id) }));
-                (async () => {
-                    const { error } = await supabase
-                        .from('darfak_expenses')
-                        .delete()
-                        .eq('id', id);
-                    if (error) console.error('Darfak delete error', error);
-                })();
+                void enqueue({ kind: 'delete', table: 'darfak_expenses', match: { id } });
             },
             saveTransaction: (transaction) => {
                 set((state) => {
                     const items = state.transactions.filter(t => t.id !== transaction.id);
                     return { transactions: [...items, transaction].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
                 });
-                (async () => {
-                    const t = transaction;
-                    const { error } = await supabase
-                        .from('transactions')
-                        .upsert({
-                            id: t.id,
-                            type: t.type,
-                            amount: Number(t.amount) || 0,
-                            description: t.description,
-                            category: t.category,
-                            date: t.date,
-                            receipt_ref: t.receiptImage || null,
-                        });
-                    if (error) console.error('Transaction upsert error', error);
-                })();
+                void enqueue({ kind: 'upsert', table: 'transactions', values: {
+                    id: transaction.id,
+                    type: transaction.type,
+                    amount: Number(transaction.amount) || 0,
+                    description: transaction.description,
+                    category: transaction.category,
+                    date: transaction.date,
+                    receipt_ref: transaction.receiptImage || null,
+                } });
             },
             deleteTransaction: (id) => {
                 set(state => ({ transactions: state.transactions.filter(t => t.id !== id) }));
-                (async () => {
-                    const { error } = await supabase.from('transactions').delete().eq('id', id);
-                    if (error) console.error('Transaction delete error', error);
-                })();
+                void enqueue({ kind: 'delete', table: 'transactions', match: { id } });
             },
             saveAsset: (asset) => {
                 set(state => {
                     const items = state.assets.filter(a => a.id !== asset.id);
                     return { assets: [...items, asset] };
                 });
-                (async () => {
-                    const a = asset;
-                    const { error } = await supabase
-                        .from('assets')
-                        .upsert({
-                            id: a.id,
-                            name: a.name,
-                            current_value: Number(a.currentValue) || 0,
-                            quantity: Number(a.quantity) || 0,
-                            purchase_date: a.purchaseDate,
-                            notes: a.notes || null,
-                            owner_id: a.ownerId || null,
-                        });
-                    if (error) console.error('Asset upsert error', error);
-                })();
+                void enqueue({ kind: 'upsert', table: 'assets', values: {
+                    id: asset.id,
+                    name: asset.name,
+                    current_value: Number(asset.currentValue) || 0,
+                    quantity: Number(asset.quantity) || 0,
+                    purchase_date: asset.purchaseDate,
+                    notes: asset.notes || null,
+                    owner_id: asset.ownerId || null,
+                } });
             },
             deleteAsset: (id) => {
                 set(state => ({ assets: state.assets.filter(a => a.id !== id) }));
-                (async () => {
-                    const { error } = await supabase.from('assets').delete().eq('id', id);
-                    if (error) console.error('Asset delete error', error);
-                })();
+                void enqueue({ kind: 'delete', table: 'assets', match: { id } });
             },
             savePerson: (person) => {
                 set(state => {
@@ -707,13 +670,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const newLedger = state.ledger[person.id] ? {} : { [person.id]: [] };
                     return { people: newPeople, ledger: { ...state.ledger, ...newLedger }, peopleOrder: newOrder } as any;
                 });
-                (async () => {
-                    const p = person;
-                    const { error } = await supabase
-                        .from('people')
-                        .upsert({ id: p.id, name: p.name, avatar_ref: p.avatar || null });
-                    if (error) console.error('Person upsert error', error);
-                })();
+                void enqueue({ kind: 'upsert', table: 'people', values: { id: person.id, name: person.name, avatar_ref: person.avatar || null } });
             },
             deletePerson: (id) => {
                 set(state => {
@@ -737,23 +694,17 @@ export const useAccountantStore = create<AccountantState>()(
                     const newLedgerForPerson = [...personLedger, entry].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                     return { ledger: {...state.ledger, [personId]: newLedgerForPerson } };
                 });
-                (async () => {
-                    const e = entry;
-                    const { error } = await supabase
-                        .from('ledger_entries')
-                        .upsert({
-                            id: e.id,
-                            person_id: e.personId,
-                            type: e.type,
-                            amount: Number(e.amount) || 0,
-                            description: e.description,
-                            date: e.date,
-                            is_settled: !!e.isSettled,
-                            receipt_ref: e.receiptImage || null,
-                            unit: (e as any).unit || 'toman',
-                        });
-                    if (error) console.error('Ledger entry upsert error', error);
-                })();
+                void enqueue({ kind: 'upsert', table: 'ledger_entries', values: {
+                    id: entry.id,
+                    person_id: entry.personId,
+                    type: entry.type,
+                    amount: Number(entry.amount) || 0,
+                    description: entry.description,
+                    date: entry.date,
+                    is_settled: !!entry.isSettled,
+                    receipt_ref: entry.receiptImage || null,
+                    unit: (entry as any).unit || 'toman',
+                } });
             },
             deleteLedgerEntry: (personId, entryId) => {
                 set(state => {
@@ -761,10 +712,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const personLedger = state.ledger[personId].filter(l => l.id !== entryId);
                     return { ledger: {...state.ledger, [personId]: personLedger } };
                 });
-                (async () => {
-                    const { error } = await supabase.from('ledger_entries').delete().eq('id', entryId);
-                    if (error) console.error('Ledger entry delete error', error);
-                })();
+                void enqueue({ kind: 'delete', table: 'ledger_entries', match: { id: entryId } });
             },
             toggleSettle: (personId, entryId) => set(state => {
                 const personLedger = [...state.ledger[personId]];
@@ -772,13 +720,7 @@ export const useAccountantStore = create<AccountantState>()(
                 if(entryIndex > -1) {
                     const isNowSettled = !personLedger[entryIndex].isSettled;
                     personLedger[entryIndex] = { ...personLedger[entryIndex], isSettled: isNowSettled };
-                    (async () => {
-                        const { error } = await supabase
-                            .from('ledger_entries')
-                            .update({ is_settled: isNowSettled })
-                            .eq('id', entryId);
-                        if (error) console.error('Ledger entry settle toggle error', error);
-                    })();
+                    void enqueue({ kind: 'update', table: 'ledger_entries', values: { is_settled: isNowSettled }, match: { id: entryId } });
                 }
                 return { ledger: {...state.ledger, [personId]: personLedger } };
             }),
@@ -790,25 +732,19 @@ export const useAccountantStore = create<AccountantState>()(
                         : [...state.installmentsCustomOrder, plan.id];
                     return { installments: nextList, installmentsCustomOrder: nextOrder };
                 });
-                (async () => {
-                    const { error: planErr } = await supabase
-                        .from('installment_plans')
-                        .upsert({ id: plan.id, title: plan.title, loan_amount: plan.loanAmount || 0 });
-                    if (planErr) console.error('Installment plan upsert error', planErr);
-                    const paymentRows = (plan.payments || []).map(pay => ({
-                        id: pay.id,
-                        plan_id: plan.id,
-                        amount: Number(pay.amount) || 0,
-                        due_date: pay.dueDate,
-                        is_paid: !!pay.isPaid,
-                        paid_date: pay.paidDate || null,
-                        penalty: Number(pay.penalty || 0) || 0,
-                    }));
-                    if (paymentRows.length > 0) {
-                        const { error: paysErr } = await supabase.from('installment_payments').upsert(paymentRows);
-                        if (paysErr) console.error('Installment payments upsert error', paysErr);
-                    }
-                })();
+                void enqueue({ kind: 'upsert', table: 'installment_plans', values: { id: plan.id, title: plan.title, loan_amount: plan.loanAmount || 0 } });
+                const planPaymentRows = (plan.payments || []).map(pay => ({
+                    id: pay.id,
+                    plan_id: plan.id,
+                    amount: Number(pay.amount) || 0,
+                    due_date: pay.dueDate,
+                    is_paid: !!pay.isPaid,
+                    paid_date: pay.paidDate || null,
+                    penalty: Number(pay.penalty || 0) || 0,
+                }));
+                if (planPaymentRows.length > 0) {
+                    void enqueue({ kind: 'upsert', table: 'installment_payments', values: planPaymentRows });
+                }
             },
             updateInstallmentPlan: (planData) => set(state => {
                 const newInstallments = [...state.installments];
@@ -820,13 +756,7 @@ export const useAccountantStore = create<AccountantState>()(
                         loanAmount: planData.loanAmount || newInstallments[planIndex].loanAmount || 0,
                     };
                 }
-                (async () => {
-                    const { error } = await supabase
-                        .from('installment_plans')
-                        .update({ title: planData.title, loan_amount: planData.loanAmount || 0 })
-                        .eq('id', planData.id);
-                    if (error) console.error('Installment plan update error', error);
-                })();
+                void enqueue({ kind: 'update', table: 'installment_plans', values: { title: planData.title, loan_amount: planData.loanAmount || 0 }, match: { id: planData.id } });
                 return { installments: newInstallments };
             }),
             deleteInstallmentPlan: (id) => {
@@ -834,18 +764,8 @@ export const useAccountantStore = create<AccountantState>()(
                     installments: state.installments.filter(p => p.id !== id),
                     installmentsCustomOrder: state.installmentsCustomOrder.filter(pid => pid !== id)
                 }));
-                (async () => {
-                    const { error: delPaysErr } = await supabase
-                        .from('installment_payments')
-                        .delete()
-                        .eq('plan_id', id);
-                    if (delPaysErr) console.error('Installment payments delete error', delPaysErr);
-                    const { error: delPlanErr } = await supabase
-                        .from('installment_plans')
-                        .delete()
-                        .eq('id', id);
-                    if (delPlanErr) console.error('Installment plan delete error', delPlanErr);
-                })();
+                void enqueue({ kind: 'delete', table: 'installment_payments', match: { plan_id: id } });
+                void enqueue({ kind: 'delete', table: 'installment_plans', match: { id } });
             },
             updateInstallmentPayment: (planId, paymentData) => set(state => {
                  const newInstallments = [...state.installments];
@@ -863,17 +783,11 @@ export const useAccountantStore = create<AccountantState>()(
                          newInstallments[planIndex] = {...newInstallments[planIndex], payments: newPayments };
                      }
                  }
-                (async () => {
-                    const { error } = await supabase
-                        .from('installment_payments')
-                        .update({
-                            amount: Number(paymentData.amount) || 0,
-                            due_date: paymentData.dueDate,
-                            penalty: Number(paymentData.penalty || 0) || 0,
-                        })
-                        .eq('id', paymentData.id);
-                    if (error) console.error('Installment payment update error', error);
-                })();
+                void enqueue({ kind: 'update', table: 'installment_payments', values: {
+                    amount: Number(paymentData.amount) || 0,
+                    due_date: paymentData.dueDate,
+                    penalty: Number(paymentData.penalty || 0) || 0,
+                }, match: { id: paymentData.id } });
                 return { installments: newInstallments };
             }),
             togglePaidStatus: (planId, paymentId) => set(state => {
@@ -888,16 +802,10 @@ export const useAccountantStore = create<AccountantState>()(
                         // Use the scheduled due date as the payment date (not the current click time)
                         newPayments[paymentIndex].paidDate = isNowPaid ? newPayments[paymentIndex].dueDate : undefined;
                         newInstallments[planIndex] = { ...newInstallments[planIndex], payments: newPayments };
-                        (async () => {
-                            const { error } = await supabase
-                                .from('installment_payments')
-                                .update({
-                                    is_paid: isNowPaid,
-                                    paid_date: isNowPaid ? newPayments[paymentIndex].dueDate : null,
-                                })
-                                .eq('id', paymentId);
-                            if (error) console.error('Installment payment toggle error', error);
-                        })();
+                        void enqueue({ kind: 'update', table: 'installment_payments', values: {
+                            is_paid: isNowPaid,
+                            paid_date: isNowPaid ? newPayments[paymentIndex].dueDate : null,
+                        }, match: { id: paymentId } });
                     }
                 }
                 return { installments: newInstallments };
@@ -907,34 +815,25 @@ export const useAccountantStore = create<AccountantState>()(
                     const items = state.checks.filter(c => c.id !== check.id);
                     return { checks: [...items, check] };
                 });
-                (async () => {
-                    const c = check;
-                    const { error } = await supabase
-                        .from('checks')
-                        .upsert({
-                            id: c.id,
-                            type: c.type,
-                            amount: Number(c.amount) || 0,
-                            due_date: c.dueDate,
-                            status: c.status || 'pending',
-                            subject: c.subject,
-                            sayyad_id: c.sayyadId,
-                            payee_name: c.payeeName || null,
-                            payee_national_id: c.payeeNationalId || null,
-                            drawer_name: c.drawerName || null,
-                            drawer_national_id: c.drawerNationalId || null,
-                            description: c.description || null,
-                            cashed_date: c.cashedDate || null,
-                        });
-                    if (error) console.error('Check upsert error', error);
-                })();
+                void enqueue({ kind: 'upsert', table: 'checks', values: {
+                    id: check.id,
+                    type: check.type,
+                    amount: Number(check.amount) || 0,
+                    due_date: check.dueDate,
+                    status: check.status || 'pending',
+                    subject: check.subject,
+                    sayyad_id: check.sayyadId,
+                    payee_name: check.payeeName || null,
+                    payee_national_id: check.payeeNationalId || null,
+                    drawer_name: check.drawerName || null,
+                    drawer_national_id: check.drawerNationalId || null,
+                    description: check.description || null,
+                    cashed_date: check.cashedDate || null,
+                } });
             },
             deleteCheck: (id) => {
                 set(state => ({ checks: state.checks.filter(c => c.id !== id) }));
-                (async () => {
-                    const { error } = await supabase.from('checks').delete().eq('id', id);
-                    if (error) console.error('Check delete error', error);
-                })();
+                void enqueue({ kind: 'delete', table: 'checks', match: { id } });
             },
             updateCheckStatus: (id, status) => {
                 set(state => {
@@ -946,43 +845,33 @@ export const useAccountantStore = create<AccountantState>()(
                     });
                     return { checks: newChecks };
                 });
-                (async () => {
+                {
                     const cashedDate = (status === 'cashed' || status === 'bounced') ? new Date().toISOString() : null;
-                    const { error } = await supabase
-                        .from('checks')
-                        .update({ status, cashed_date: cashedDate })
-                        .eq('id', id);
-                    if (error) console.error('Check status update error', error);
-                })();
+                    void enqueue({ kind: 'update', table: 'checks', values: { status, cashed_date: cashedDate }, match: { id } });
+                }
             },
             saveSocialInsurance: (p) => {
                 set(state => {
                     const rest = state.socialInsurance.filter(x => x.id !== p.id);
                     return { socialInsurance: [p, ...rest].sort((a,b) => new Date(b.payDate).getTime() - new Date(a.payDate).getTime()) };
                 });
-                (async () => {
-                    const { error } = await supabase
-                        .from('social_insurance')
-                        .upsert({
-                            id: p.id,
-                            year: p.year,
-                            month: p.month,
-                            days_covered: p.daysCovered,
-                            amount: p.amount,
-                            registered_salary: p.registeredSalary ?? null,
-                            pay_date: p.payDate,
-                            receipt_ref: p.receiptRef || null,
-                            note: p.note || null,
-                            is_settled: !!p.isSettled,
-                        });
-                    if (error) console.error('Social insurance upsert error', error);
-                })();
+                void enqueue({ kind: 'upsert', table: 'social_insurance', values: {
+                    id: p.id,
+                    year: p.year,
+                    month: p.month,
+                    days_covered: p.daysCovered,
+                    amount: p.amount,
+                    registered_salary: p.registeredSalary ?? null,
+                    pay_date: p.payDate,
+                    receipt_ref: p.receiptRef || null,
+                    note: p.note || null,
+                    is_settled: !!p.isSettled,
+                } });
             },
             settleSocialInsurance: async (id: string) => {
                 // Irreversible: mark as settled in DB and local state
                 set(state => ({ socialInsurance: state.socialInsurance.map(x => x.id === id ? { ...x, isSettled: true } : x) }));
-                const { error } = await supabase.from('social_insurance').update({ is_settled: true }).eq('id', id);
-                if (error) console.error('Social insurance settle error', error);
+                await enqueue({ kind: 'update', table: 'social_insurance', values: { is_settled: true }, match: { id } });
             },
             settleSocialInsuranceMonth: async (year: number, month: number) => {
                 // For months without a record, insert a locked/settled stub to prevent future edits
@@ -1003,7 +892,7 @@ export const useAccountantStore = create<AccountantState>()(
                     }
                     return { socialInsurance: [stub, ...state.socialInsurance] };
                 });
-                const { error } = await supabase.from('social_insurance').upsert({
+                await enqueue({ kind: 'upsert', table: 'social_insurance', values: {
                     id,
                     year,
                     month,
@@ -1014,15 +903,11 @@ export const useAccountantStore = create<AccountantState>()(
                     receipt_ref: null,
                     note: 'settled_stub',
                     is_settled: true,
-                });
-                if (error) console.error('Social insurance settle (no record) error', error);
+                } });
             },
             deleteSocialInsurance: (id) => {
                 set(state => ({ socialInsurance: state.socialInsurance.filter(x => x.id !== id) }));
-                (async () => {
-                    const { error } = await supabase.from('social_insurance').delete().eq('id', id);
-                    if (error) console.error('Social insurance delete error', error);
-                })();
+                void enqueue({ kind: 'delete', table: 'social_insurance', match: { id } });
             },
         }),
         {
