@@ -143,7 +143,7 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
                                 </div>
                             </div>
                             <p className="text-xl md:text-2xl font-bold text-sky-400">{formatCurrency(asset.currentValue * asset.quantity)}</p>
-                            <p className="text-[11px] md:text-xs text-slate-500 pt-2 border-t border-white/10/50">تاریخ خرید: <JalaliDate iso={asset.purchaseDate} /></p>
+                            <p className="text-[11px] md:text-xs text-slate-500 pt-2 border-t border-white/10">تاریخ خرید: <JalaliDate iso={asset.purchaseDate} /></p>
                             <div className="text-[11px] md:text-xs text-slate-400">{asset.ownerId ? (owners.find(p => p.id === asset.ownerId)?.name || '—') : '— بدون مالک —'}</div>
                             {asset.notes && <p className="text-sm text-slate-300">{asset.notes}</p>}
                         </div>

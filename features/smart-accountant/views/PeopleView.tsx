@@ -119,7 +119,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                                             ? Math.abs(value).toLocaleString('fa-IR', { maximumFractionDigits: cfg.maxDecimals })
                                             : Math.abs(value).toLocaleString('fa-IR');
                                     return (
-                                        <div key={unit} className="bg-slate-900/60 rounded-lg p-2.5 ring-1 ring-white/10/60 flex items-center justify-between">
+                                        <div key={unit} className="bg-slate-900/60 rounded-lg p-2.5 ring-1 ring-white/10 flex items-center justify-between">
                                             <div className="text-xs text-slate-400">{cfg.label}</div>
                                             <div className={`text-xs font-bold ${isReceivable ? 'text-emerald-300' : 'text-rose-300'}`}>
                                                 {isReceivable ? 'طلب' : 'بدهی'} {amountStr} {cfg.suffix}
@@ -225,7 +225,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                     {safeLedger.map(entry => (
                         <React.Fragment key={entry.id}>
                             <div
-                                className={`bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition ${entry.isSettled ? 'opacity-50' : ''}`}
+                                className={`bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition ${entry.isSettled ? 'opacity-50' : ''}`}
                                 onClick={() => {
                                     if (onViewLedger) onViewLedger(entry);
                                     else setExpandedLedgerId(prev => prev === entry.id ? null : entry.id);
@@ -474,7 +474,7 @@ export const PeopleView = ({ data, onEditPerson, onDeletePerson, onEditLedger, o
                                 return (
                                     <div
                                         key={entry.id}
-                                        className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition"
+                                        className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition"
                                         onClick={() => onViewLedger && onViewLedger(entry)}
                                     >
                                         <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">

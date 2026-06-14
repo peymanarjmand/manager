@@ -90,7 +90,7 @@ export const Darfak = ({ onNavigateBack }: { onNavigateBack: () => void; }): Rea
 
             <div className="space-y-3">
                 {filtered.map(e => (
-                    <div key={e.id} className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50">
+                    <div key={e.id} className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10">
                         <div className="min-w-0">
                             <p className="font-bold text-slate-100 truncate">{e.title}</p>
                             <p className="text-sm text-slate-400 truncate">{moment(e.date).locale('fa').format('jD jMMMM jYYYY')} • {(e.tags||[]).join(' ')}</p>

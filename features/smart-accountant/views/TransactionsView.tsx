@@ -36,7 +36,7 @@ export const TransactionsView = ({ transactions, onEdit, onDelete, onView }: { t
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/[0.03] p-3 rounded-xl ring-1 ring-white/10/50">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/[0.03] p-3 rounded-xl ring-1 ring-white/10">
                 <div className="flex items-center bg-slate-800 rounded-lg p-1 ring-1 ring-white/10 shadow-sm">
                     <button onClick={() => changeMonth(-1)} className="p-2 hover:bg-slate-700 rounded-md text-slate-400 hover:text-white transition" title="ماه قبل">
                         <ChevronRight />
@@ -89,7 +89,7 @@ const TransactionList = ({ transactions, onEdit, onDelete, onView }: { transacti
         {transactions.map(t => (
             <div 
                 key={t.id} 
-                className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition group"
+                className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10 cursor-pointer hover:bg-slate-800 hover:ring-slate-600 transition group"
                 onClick={() => onView && onView(t)}
             >
                 <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">

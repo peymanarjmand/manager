@@ -22,7 +22,7 @@ export const AssetsView = ({ assets, onEdit, onDelete }: { assets: Asset[]; onEd
                         </div>
                     </div>
                     <p className="text-2xl font-bold text-sky-400">{formatCurrency(asset.currentValue * asset.quantity)}</p>
-                    <p className="text-xs text-slate-500 pt-2 border-t border-white/10/50">تاریخ خرید: {formatDate(asset.purchaseDate)}</p>
+                    <p className="text-xs text-slate-500 pt-2 border-t border-white/10">تاریخ خرید: {formatDate(asset.purchaseDate)}</p>
                     {asset.notes && <p className="text-sm text-slate-300">{asset.notes}</p>}
                 </div>
             ))}

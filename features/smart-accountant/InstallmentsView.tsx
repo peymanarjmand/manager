@@ -367,7 +367,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                     {showPaymentsList && (
                         <div className="space-y-3 animate-fade-in">
                             {currentInstallment.payments.map((payment, index) => (
-                                 <div key={payment.id} className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10/50 opacity-80">
+                                 <div key={payment.id} className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10 opacity-80">
                                     <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
                                         <CheckCircleIcon />
                                         <div className="min-w-0">
@@ -457,7 +457,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                                 </div>
                             );
                         })()}
-                        <div className="mt-auto pt-3 border-t border-white/10/50 text-xs text-slate-400">
+                        <div className="mt-auto pt-3 border-t border-white/10 text-xs text-slate-400">
                            <div className="flex justify-between items-center mb-1">
                                <span>پیشرفت</span>
                                <span>{paidCount} / {totalCount}</span>

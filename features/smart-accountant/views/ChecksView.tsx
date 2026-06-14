@@ -114,7 +114,7 @@ const CheckCard: React.FC<{ check: any; onEdit: (c: any) => void; onDelete: (id:
                     </div>
                 </div>
             </div>
-            {check.description && <p className="text-sm text-slate-400 pt-2 mt-2 border-t border-white/10/50">{check.description}</p>}
+            {check.description && <p className="text-sm text-slate-400 pt-2 mt-2 border-t border-white/10">{check.description}</p>}
         </div>
     );
 };

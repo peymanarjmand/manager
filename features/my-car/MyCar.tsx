@@ -532,7 +532,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
             )}
           </div>
 
-          <hr className="border-white/10/60 my-3" />
+          <hr className="border-white/10 my-3" />
 
           <div
             className={`transition-all duration-300 origin-top ${
@@ -793,7 +793,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
       {confirmState?.open && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 px-4">
           <div className="w-full max-w-sm bg-slate-900 rounded-2xl shadow-xl ring-1 ring-white/10">
-            <div className="px-5 pt-4 pb-3 border-b border-white/10/80 flex items-center justify-between">
+            <div className="px-5 pt-4 pb-3 border-b border-white/10 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-100">
                 {confirmState.title}
               </h3>
@@ -824,7 +824,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
       {detailState?.open && (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/70 px-4">
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-slate-900 rounded-2xl shadow-xl ring-1 ring-white/10">
-            <div className="px-5 pt-4 pb-3 border-b border-white/10/80 flex items-center justify-between">
+            <div className="px-5 pt-4 pb-3 border-b border-white/10 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-slate-100">
                   {detailState.kind === 'insurance' && 'جزئیات بیمه‌نامه'}

@@ -268,7 +268,7 @@ const ItemCard = ({ entry, onEdit, onDelete }) => {
                     </div>
                 </div>
             )}
-             {entry.description && <p className="text-sm text-slate-400 pt-1 border-t border-white/10/50">{entry.description}</p>}
+             {entry.description && <p className="text-sm text-slate-400 pt-1 border-t border-white/10">{entry.description}</p>}
         </div>
     );
 }
