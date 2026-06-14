@@ -7,6 +7,12 @@ import { ProgressRing } from '../../../components/ui/ProgressRing';
 import { Sparkline } from '../../../components/ui/Sparkline';
 
 const fa = (n: number) => (Number.isFinite(n) ? n : 0).toLocaleString('fa-IR');
+const shortFa = (n: number): string => {
+    const v = n || 0;
+    if (Math.abs(v) >= 1e6) return `${(v / 1e6).toLocaleString('fa-IR', { maximumFractionDigits: 1 })}م`;
+    if (Math.abs(v) >= 1e3) return `${(v / 1e3).toLocaleString('fa-IR', { maximumFractionDigits: 0 })}هزار`;
+    return v.toLocaleString('fa-IR');
+};
 
 export const SummaryView = ({ data }: { data: AccountantData }) => {
     const [selectedMonthISO, setSelectedMonthISO] = useState<string>(() => moment().startOf('jMonth').toISOString());
@@ -163,26 +169,26 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between bg-slate-900/40 p-3 md:p-4 rounded-lg ring-1 ring-slate-800">
+            <div className="flex items-center justify-between bg-white/[0.04] p-2 rounded-2xl ring-1 ring-white/[0.06]">
                 <div className="flex items-center gap-2">
                     <button
-                        className="px-3 py-1.5 rounded-md bg-slate-700 text-slate-100 hover:bg-slate-600"
+                        className="px-3 py-1.5 rounded-xl bg-white/[0.05] text-slate-200 hover:bg-white/10 text-xs transition"
                         onClick={() => setSelectedMonthISO(startOfSelected.clone().subtract(1, 'jMonth').toISOString())}
                     >ماه قبل</button>
                     <button
-                        className="px-3 py-1.5 rounded-md border border-slate-600 text-slate-200 hover:bg-slate-700"
+                        className="px-3 py-1.5 rounded-xl border border-white/10 text-slate-300 hover:bg-white/10 text-xs transition"
                         onClick={() => setSelectedMonthISO(moment().startOf('jMonth').toISOString())}
                     >ماه جاری</button>
                 </div>
-                <div className="text-slate-200 font-bold">{selectedMonthLabel}</div>
+                <div className="text-slate-100 font-bold text-sm">{selectedMonthLabel}</div>
                 <button
-                    className={`px-3 py-1.5 rounded-md ${canGoNextMonth ? 'bg-slate-700 text-slate-100 hover:bg-slate-600' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+                    className={`px-3 py-1.5 rounded-xl text-xs transition ${canGoNextMonth ? 'bg-white/[0.05] text-slate-200 hover:bg-white/10' : 'bg-white/[0.02] text-slate-600 cursor-not-allowed'}`}
                     onClick={() => canGoNextMonth && setSelectedMonthISO(startOfSelected.clone().add(1, 'jMonth').toISOString())}
                     disabled={!canGoNextMonth}
                 >ماه بعد</button>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                 {monthsHistory.map(m => {
                     const isActive = m.isSame(startOfSelected, 'jMonth');
                     const iso = m.toISOString();
@@ -190,7 +196,8 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                         <button
                             key={iso}
                             onClick={() => setSelectedMonthISO(iso)}
-                            className={`px-3 py-1 rounded-full text-xs border ${isActive ? 'bg-sky-600 text-white border-sky-500' : 'bg-slate-700/50 text-slate-200 border-slate-600 hover:bg-slate-700'}`}
+                            className={`shrink-0 px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition ${isActive ? 'text-white shadow-lg shadow-brand-900/30' : 'bg-white/[0.05] text-slate-300 hover:bg-white/10'}`}
+                            style={isActive ? { background: 'linear-gradient(135deg,#6d5ef6,#8b7cff)' } : undefined}
                             title={m.locale('fa').format('jMMMM jYYYY')}
                         >{m.locale('fa').format('jMMM jYY')}</button>
                     );
@@ -245,15 +252,27 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                     <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${monthlyInstallments.progress}%`, background: 'linear-gradient(90deg,#6d5ef6,#a855f7)' }}></div>
                     </div>
-                    <div className="flex flex-wrap gap-2 items-center">
-                        <span className="text-slate-400 text-xs">ماه قبل:</span>
-                        <button className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-slate-200 text-xs nums-tabular" onClick={() => setSelectedMonthISO(prevInstallments.iso)} title="مشاهده ماه قبل">{prevInstallments.label} • {formatCurrency(prevInstallments.total)}</button>
-                    </div>
-                    <div className="flex flex-wrap gap-2 items-center">
-                        <span className="text-slate-400 text-xs">ماه‌های آینده:</span>
-                        {nextInstallments.map((m) => (
-                            <button key={m.iso} className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-slate-200 text-xs nums-tabular" onClick={() => setSelectedMonthISO(m.iso)} title={`اقساط ${m.label}`}>{m.label} • {formatCurrency(m.total)}</button>
-                        ))}
+                    <div className="pt-1">
+                        <div className="text-slate-400 text-xs mb-2">روند اقساط (ماه قبل و ۶ ماه آینده)</div>
+                        {(() => {
+                            const months = [prevInstallments, ...nextInstallments];
+                            const max = Math.max(...months.map(x => x.total), 1);
+                            return (
+                                <div className="flex items-end justify-between gap-1.5">
+                                    {months.map((m, i) => {
+                                        const isPrev = i === 0;
+                                        const h = m.total > 0 ? Math.max(8, Math.round((m.total / max) * 60)) : 4;
+                                        return (
+                                            <button key={m.iso} onClick={() => setSelectedMonthISO(m.iso)} className="flex flex-col items-center gap-1 flex-1 min-w-0 group" title={`${m.label} • ${formatCurrency(m.total)}`}>
+                                                <span className="text-[9px] text-slate-400 nums-tabular">{shortFa(m.total)}</span>
+                                                <div className="w-full max-w-[24px] rounded-md transition-all duration-500 group-hover:opacity-80" style={{ height: h, background: isPrev ? 'rgba(148,163,184,0.35)' : 'linear-gradient(180deg,#8b7cff,#6d5ef6)' }} />
+                                                <span className={`text-[10px] whitespace-nowrap ${isPrev ? 'text-slate-500' : 'text-slate-300'}`}>{m.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
