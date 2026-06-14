@@ -105,3 +105,28 @@ export function computeSimpleAPR(
   if (loanTermInYears <= 0) return null;
   return (totalInterest / (loanAmount * loanTermInYears)) * 100;
 }
+
+export interface NextInstallment {
+  planId: string;
+  planTitle: string;
+  amount: number;
+  penalty: number;
+  dueDate: string;
+}
+
+/** The earliest unpaid installment payment across all plans (by due date), or null. */
+export function getNextUnpaidInstallment(plans: InstallmentPlan[] | undefined): NextInstallment | null {
+  const all = (plans || []).flatMap((p) =>
+    (p.payments || [])
+      .filter((pay) => !pay.isPaid)
+      .map((pay) => ({
+        planId: p.id,
+        planTitle: p.title,
+        amount: pay.amount,
+        penalty: pay.penalty || 0,
+        dueDate: pay.dueDate,
+      })),
+  );
+  all.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  return all[0] || null;
+}

@@ -10,12 +10,13 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onLogout, onOpenSettings, sessionInfo, onLock }) => {
   return (
-    <header className="w-full bg-slate-900/60 backdrop-blur sticky top-0 z-40 border-b border-slate-800">
-      <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3 text-slate-300">
-          <div className="font-bold text-slate-100">MyApp</div>
+    <header className="w-full bg-slate-900/80 backdrop-blur sticky top-0 z-40 border-b border-slate-800 pt-safe-top">
+      <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5 text-slate-300">
+          <div className="w-7 h-7 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-sm">م</div>
+          <div className="font-bold text-slate-100">مدیر زندگی</div>
           {sessionInfo && (
-            <span className="text-xs bg-slate-800 text-slate-300 rounded px-2 py-1 border border-slate-700">{sessionInfo}</span>
+            <span className="text-[11px] bg-slate-800 text-slate-400 rounded-full px-2 py-0.5 border border-slate-700">{sessionInfo}</span>
           )}
         </div>
         <div className="flex items-center gap-2">

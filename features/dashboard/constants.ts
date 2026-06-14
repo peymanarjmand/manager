@@ -40,6 +40,12 @@ export const DASHBOARD_ITEMS: DashboardItem[] = [
     description: 'لیست کارهای خود را مدیریت کنید و بهره‌ور بمانید.',
   },
   {
+    id: 'phone-book',
+    icon: React.createElement(PhoneBookIcon),
+    title: 'دفترتلفن',
+    description: 'مخاطبین و شماره‌ها را مدیریت کنید.',
+  },
+  {
     id: 'settings',
     icon: React.createElement(SettingsIcon),
     title: 'تنظیمات',

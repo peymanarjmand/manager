@@ -1,10 +1,32 @@
-/* Tailwind entrypoint for offline build */
+/* Tailwind entrypoint */
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/Vazirmatn-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/Vazirmatn-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Optional: base layer customizations */
 @layer base {
   html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-  body { @apply bg-slate-900 text-slate-100; }
+  body {
+    @apply bg-slate-900 text-slate-100;
+    font-family: 'Vazirmatn', 'Tahoma', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Tabular figures for aligned, non-jumping money/number columns. */
+  .nums-tabular { font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; }
 }

@@ -8,6 +8,7 @@ import { View } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SyncIndicator } from './components/SyncIndicator';
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
+import { BottomNav } from './components/BottomNav';
 
 const PasswordManager = React.lazy(() => import('./features/password-manager/PasswordManager').then(m => ({ default: m.PasswordManager })));
 const PhoneBook = React.lazy(() => import('./features/phone-book/PhoneBook').then(m => ({ default: m.PhoneBook })));
@@ -97,7 +98,7 @@ function App(): React.ReactNode {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans">
+    <div className="min-h-screen bg-slate-900 text-white font-sans pb-24">
       {!SUPABASE_ENABLED && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950">
           <div className="max-w-lg mx-auto p-6 rounded-xl ring-1 ring-slate-800 bg-slate-900 text-center">
@@ -133,6 +134,7 @@ function App(): React.ReactNode {
           ساخته شده با ❤️ برای سازماندهی زندگی شما
         </p>
       </footer>
+      <BottomNav currentView={currentView} onNavigate={handleNavigate} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   computeNetWorth,
   computeMonthInstallmentTotals,
   computeSimpleAPR,
+  getNextUnpaidInstallment,
 } from '../calculations';
 
 const jISO = (jy: number, jm: number, jd: number): string =>
@@ -87,5 +88,28 @@ describe('computeMonthInstallmentTotals', () => {
   it('reports no installments for a month with none', () => {
     const r = computeMonthInstallmentTotals([], 1405, 1);
     expect(r).toEqual({ totalAmount: 0, paidAmount: 0, unpaidAmount: 0, progress: 0, hasInstallments: false });
+  });
+});
+
+describe('getNextUnpaidInstallment', () => {
+  it('returns the earliest unpaid payment across plans', () => {
+    const plans = [
+      { id: 'a', title: 'وام الف', loanAmount: 0, payments: [
+        { id: 'a1', dueDate: jISO(1405, 5, 1), amount: 100, isPaid: true },
+        { id: 'a2', dueDate: jISO(1405, 6, 1), amount: 200, isPaid: false },
+      ] },
+      { id: 'b', title: 'وام ب', loanAmount: 0, payments: [
+        { id: 'b1', dueDate: jISO(1405, 4, 15), amount: 300, penalty: 20, isPaid: false },
+      ] },
+    ] as never;
+    const r = getNextUnpaidInstallment(plans);
+    expect(r?.planTitle).toBe('وام ب');
+    expect(r?.amount).toBe(300);
+    expect(r?.penalty).toBe(20);
+  });
+
+  it('returns null when everything is paid or empty', () => {
+    expect(getNextUnpaidInstallment([])).toBeNull();
+    expect(getNextUnpaidInstallment([{ id: 'x', title: 't', loanAmount: 0, payments: [{ id: 'x1', dueDate: jISO(1405, 1, 1), amount: 1, isPaid: true }] }] as never)).toBeNull();
   });
 });
