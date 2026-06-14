@@ -81,7 +81,7 @@
 ### فاز ۶ — معماری ماژولار 🔄
 - [x] **لایه‌ی data per-entity (حسابدار):** ماژول‌های خالصِ `features/smart-accountant/data/*` (ستون‌ها + مپر سطر↔دامنه + سازنده‌ی سطر) برای هر ۸ موجودیت؛ store به آن‌ها واگذار شد، مپینگ‌های تکراری حذف، store از ۹۲۰ به ۷۸۲ خط. API عمومی دست‌نخورده. ۱۲ تست round-trip اضافه شد. **کد مهاجرت قدیمی عمداً دست‌نخورده ماند** (مسیر نجات دیتای دستگاه — ریسک حذفش پذیرفته نشد).
 - [x] **شکستن MyCar:** از ۲۰۹۸ به ۹۲۴ خط؛ زیرکامپوننت‌ها به `features/my-car/components/*` و کمک‌تابع‌ها به `shared.ts` منتقل شدند (انتقال verbatim؛ چانک خروجی byte-identical ۵۶.۶KB).
-- [ ] شکستن باقی فایل‌های غول‌پیکر: `OwnerGoldDashboard` (۸۶۷) و در صورت نیاز ادامه‌ی store.
+- [~] شکستن `OwnerGoldDashboard` (۸۹۳→۷۸۳): توابع خلاصه‌ی طلا (+۶ تست)، `LinkFromRef` و کارت‌های نمای کلی استخراج شدند. مودال‌های فرم/جزئیات/فروش/انتقال (وابسته به state فرم) عمداً ماندند — استخراج امنشان نیاز به تست روی دستگاه دارد.
 - [ ] قالب واحد ماژول (ui/model/data/types/index) + لایه‌ی data برای سایر ماژول‌ها.
 - [x] **(۳b) دوام آفلاینِ نوشتن assets و my-car:** اکشن‌های ساخت/ویرایش/حذف هر دو store به الگوی خوش‌بینانه + صف `lib/outbox.ts` منتقل شدند (my-car قبلاً set محلی داشت؛ assets از reload به آپدیت خوش‌بینانه رفت). اعتبارسنجی کلاینتیِ saveOwner حفظ شد. transferGold عمداً awaited+reload ماند (اکشن نادر، حساس به lastTransfer). بدون تغییر اسکیما/دیتا. typecheck/test(۳۲)/build سبز.
 - [ ] یک‌سان‌سازی تایپ‌ها + اصلاح `View` + مسیریابی Back/deep-link.
@@ -139,3 +139,4 @@
 - 2026-06-14: فاز ۶ (گام ۱) — **لایه‌ی data حسابدار:** استخراج `features/smart-accountant/data/*` (مپر/ستون/سازنده‌ی سطر خالص و قابل‌تست برای هر ۸ موجودیت)؛ واگذاری مسیرهای اصلی load/save؛ حذف مپینگ تکراری؛ store ۹۲۰→۷۸۲ خط؛ API عمومی (۳۴ اکشن) دست‌نخورده؛ کد مهاجرت قدیمی حفظ شد. +۱۲ تست round-trip. typecheck/test(۳۲)/build سبز.
 - 2026-06-14: فاز ۶ (گام ۲) — **شکستن MyCar:** ۲۰۹۸→۹۲۴ خط؛ انتقال verbatim زیرکامپوننت‌ها به `my-car/components/*` و کمک‌تابع‌ها به `shared.ts`؛ تنها افزوده‌ها importها؛ چانک byte-identical (۵۶.۶KB). typecheck/test(۳۲)/build سبز.
 - 2026-06-14: فاز ۶ (گام ۳، آیتم ۳b) — **دوام آفلاینِ نوشتن assets و my-car:** نوشتن‌ها از fire-and-forget/await→reload به الگوی خوش‌بینانه + صف `lib/outbox.ts` (پایدار در IndexedDB، retry روی reconnect). اعتبارسنجی کلاینتیِ saveOwner حفظ؛ transferGold عمداً awaited ماند. ~۱۱۰ خط boilerplate حذف شد. typecheck/test(۳۲)/build سبز.
+- 2026-06-14: فاز ۶ (گام ۴) — **شروع تجزیه‌ی OwnerGold:** `goldSummary.ts` (توابع خالص خلاصه + ثابت + ۶ تست)، `components/LinkFromRef.tsx` و `components/OwnerGoldOverview.tsx` (نمای کلی) استخراج شدند؛ OwnerGoldDashboard ۸۹۳→۷۸۳ خط (انتقال خالص). مودال‌های وابسته به فرم باقی ماندند. typecheck/test(۳۸)/build سبز.
