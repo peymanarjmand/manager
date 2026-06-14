@@ -97,9 +97,9 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
     const netWorth = totalAssets + totalDebt - totalCredit;
     
     const StatCard = ({ title, value, colorClass }) => (
-        <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700">
-            <h3 className="text-slate-400 text-md">{title}</h3>
-            <p className={`text-3xl font-bold mt-2 ${colorClass}`}>{formatCurrency(value)}</p>
+        <div className="bg-white/[0.04] rounded-2xl p-3 ring-1 ring-white/[0.06]">
+            <h3 className="text-slate-400 text-[11px] leading-tight">{title}</h3>
+            <p className={`text-[15px] font-medium mt-1.5 nums-tabular ${colorClass}`}>{formatCurrency(value)}</p>
         </div>
     );
 
@@ -205,7 +205,7 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                    <div className="grid grid-cols-2 gap-2.5 text-sm">
                         <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700">ابتدای ماه: <span className="font-bold text-slate-100">{formatCurrency(openingAmount)}</span></div>
                         <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700">ورودی‌ها: <span className="font-bold text-emerald-400">{formatCurrency(inflowTotal)}</span></div>
                         <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700">خروجی‌ها: <span className="font-bold text-rose-400">{formatCurrency(outflowTotal)}</span></div>
@@ -213,7 +213,7 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                     </div>
                 )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-2.5">
                 <StatCard title="ارزش خالص دارایی‌ها" value={netWorth} colorClass="text-sky-400" />
                 <StatCard title={`درآمد ${selectedMonthLabel}`} value={incomeOfMonth} colorClass="text-emerald-400" />
                 <StatCard title={`هزینه ${selectedMonthLabel}`} value={expensesOfMonth} colorClass="text-rose-400" />
@@ -243,7 +243,7 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                     </div>
                 </div>
             )}
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div className="grid grid-cols-3 gap-2.5">
                  <StatCard title="مجموع طلب شما از دیگران" value={totalDebt} colorClass="text-emerald-400" />
                  <StatCard title="مجموع بدهی شما به دیگران" value={totalCredit} colorClass="text-rose-400" />
                  <StatCard title={`چک‌های صادره ${selectedMonthLabel}`} value={monthlyIssuedChecks} colorClass="text-amber-400" />

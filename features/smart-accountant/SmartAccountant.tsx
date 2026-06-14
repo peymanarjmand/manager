@@ -230,7 +230,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     const isAddButtonDisabled = (activeTab === 'installments' && !!currentInstallment);
 
     return (
-        <div className="container mx-auto px-4 py-8 sm:py-12">
+        <div className="max-w-md mx-auto px-4 pt-3 pb-4">
             <AccountantFormModal isOpen={modal.isOpen} onClose={closeModal} onSave={handleSave} type={modal.type} payload={modal.payload} />
             <TransactionVoucherModal transaction={viewTransaction} onClose={() => setViewTransaction(null)} />
             <LedgerEntrySummaryModal entry={viewLedgerEntry} person={viewLedgerPerson} onClose={() => setViewLedgerEntry(null)} />
@@ -252,19 +252,17 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                 />
             )}
             
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-                <div className="flex items-center gap-4">
-                    <button onClick={onNavigateBack} className="flex items-center space-x-2 space-x-reverse bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 px-4 rounded-lg transition" title="بازگشت به داشبورد">
+            <div className="flex items-center justify-between mb-5 gap-3">
+                <h2 className="text-2xl font-bold tracking-tight text-slate-100">حسابدار هوشمند</h2>
+                <div className="flex items-center gap-2">
+                    <button onClick={handleAddButtonClick} disabled={isAddButtonDisabled} className="flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium py-2 px-3.5 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed">
+                        <PlusIcon />
+                        <span>{currentPerson ? "افزودن حساب" : (activeTab === 'installments' && !currentInstallment) ? "افزودن قسط" : "افزودن"}</span>
+                    </button>
+                    <button onClick={onNavigateBack} className="w-10 h-10 flex items-center justify-center bg-slate-800/70 hover:bg-slate-700 text-slate-300 rounded-xl transition" title="بازگشت به داشبورد">
                         <BackIcon />
                     </button>
-                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">حسابدار هوشمند</h2>
                 </div>
-                 <button onClick={handleAddButtonClick} className="w-full sm:w-auto flex items-center justify-center space-x-2 space-x-reverse bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={isAddButtonDisabled}
-                  >
-                    <PlusIcon />
-                    <span>{currentPerson ? "افزودن حساب جدید" : (activeTab === 'installments' && !currentInstallment) ? "افزودن قسط جدید" : "افزودن"}</span>
-                </button>
             </div>
 
             {/* Tabs (draggable) */}
