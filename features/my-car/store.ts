@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../../lib/supabase';
+import { enqueue } from '../../lib/outbox';
 import { MyCarState } from './types';
 import type { Vehicle, VehicleInsurance, VehicleMaintenanceRecord, VehicleExpense } from './types';
 
@@ -202,7 +203,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       createdAt: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('vehicles').upsert({
+    void enqueue({ kind: 'upsert', table: 'vehicles', values: {
       id: vehicleToSave.id,
       name: vehicleToSave.name,
       brand: vehicleToSave.brand || null,
@@ -215,13 +216,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       vin: vehicleToSave.vin || null,
       image_ref: vehicleToSave.imageRef || null,
       created_at: vehicleToSave.createdAt,
-    });
-
-    if (error) {
-      console.error('Save vehicle error', error);
-      set({ error: 'خطا در ذخیره خودرو' });
-      return;
-    }
+    } });
 
     set((state) => {
       const others = state.vehicles.filter((v) => v.id !== id);
@@ -235,12 +230,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
   },
 
   async deleteVehicle(id) {
-    const { error } = await supabase.from('vehicles').delete().eq('id', id);
-    if (error) {
-      console.error('Delete vehicle error', error);
-      set({ error: 'خطا در حذف خودرو' });
-      return;
-    }
+    void enqueue({ kind: 'delete', table: 'vehicles', match: { id } });
 
     set((state) => {
       const vehicles = state.vehicles.filter((v) => v.id !== id);
@@ -277,7 +267,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       createdAt: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('vehicle_insurances').upsert({
+    void enqueue({ kind: 'upsert', table: 'vehicle_insurances', values: {
       id: insurance.id,
       vehicle_id: insurance.vehicleId,
       type: insurance.type,
@@ -290,13 +280,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       coverage_description: insurance.coverageDescription || null,
       document_ref: insurance.documentRef || null,
       created_at: insurance.createdAt,
-    });
-
-    if (error) {
-      console.error('Save insurance error', error);
-      set({ error: 'خطا در ذخیره بیمه' });
-      return;
-    }
+    } });
 
     set((state) => {
       const others = state.insurances.filter((i) => i.id !== id);
@@ -309,12 +293,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
   },
 
   async deleteInsurance(id) {
-    const { error } = await supabase.from('vehicle_insurances').delete().eq('id', id);
-    if (error) {
-      console.error('Delete insurance error', error);
-      set({ error: 'خطا در حذف بیمه' });
-      return;
-    }
+    void enqueue({ kind: 'delete', table: 'vehicle_insurances', match: { id } });
 
     set((state) => ({
       insurances: state.insurances.filter((i) => i.id !== id),
@@ -329,7 +308,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       createdAt: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('vehicle_maintenances').upsert({
+    void enqueue({ kind: 'upsert', table: 'vehicle_maintenances', values: {
       id: record.id,
       vehicle_id: record.vehicleId,
       service_date: record.serviceDate,
@@ -342,13 +321,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       notes: record.notes || null,
       invoice_ref: record.invoiceRef || null,
       created_at: record.createdAt,
-    });
-
-    if (error) {
-      console.error('Save maintenance error', error);
-      set({ error: 'خطا در ذخیره سرویس فنی' });
-      return;
-    }
+    } });
 
     set((state) => {
       const others = state.maintenances.filter((m) => m.id !== id);
@@ -373,7 +346,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
         createdAt: record.createdAt,
       };
 
-      const { error: expErr } = await supabase.from('vehicle_expenses').upsert({
+      void enqueue({ kind: 'upsert', table: 'vehicle_expenses', values: {
         id: expense.id,
         vehicle_id: expense.vehicleId,
         date: expense.date,
@@ -383,33 +356,21 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
         attachment_ref: expense.attachmentRef || null,
         maintenance_id: expense.maintenanceId || null,
         created_at: expense.createdAt,
-      });
+      } });
 
-      if (expErr) {
-        console.error('Save maintenance-linked expense error', expErr);
-      } else {
-        set((state) => {
-          const others = state.expenses.filter((e) => e.id !== expense.id);
-          return {
-            expenses: [expense, ...others].sort((a, b) =>
-              b.date.localeCompare(a.date)
-            ),
-          };
-        });
-      }
+      set((state) => {
+        const others = state.expenses.filter((e) => e.id !== expense.id);
+        return {
+          expenses: [expense, ...others].sort((a, b) =>
+            b.date.localeCompare(a.date)
+          ),
+        };
+      });
     }
   },
 
   async deleteMaintenance(id) {
-    const { error } = await supabase
-      .from('vehicle_maintenances')
-      .delete()
-      .eq('id', id);
-    if (error) {
-      console.error('Delete maintenance error', error);
-      set({ error: 'خطا در حذف سرویس فنی' });
-      return;
-    }
+    void enqueue({ kind: 'delete', table: 'vehicle_maintenances', match: { id } });
 
     set((state) => ({
       maintenances: state.maintenances.filter((m) => m.id !== id),
@@ -424,7 +385,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       createdAt: new Date().toISOString(),
     };
 
-    const { error } = await supabase.from('vehicle_expenses').upsert({
+    void enqueue({ kind: 'upsert', table: 'vehicle_expenses', values: {
       id: expense.id,
       vehicle_id: expense.vehicleId,
       date: expense.date,
@@ -434,13 +395,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
       attachment_ref: expense.attachmentRef || null,
       maintenance_id: expense.maintenanceId || null,
       created_at: expense.createdAt,
-    });
-
-    if (error) {
-      console.error('Save vehicle expense error', error);
-      set({ error: 'خطا در ذخیره مخارج خودرو' });
-      return;
-    }
+    } });
 
     set((state) => {
       const others = state.expenses.filter((e) => e.id !== id);
@@ -453,15 +408,7 @@ export const useMyCarStore = create<MyCarState>((set, get) => ({
   },
 
   async deleteExpense(id) {
-    const { error } = await supabase
-      .from('vehicle_expenses')
-      .delete()
-      .eq('id', id);
-    if (error) {
-      console.error('Delete vehicle expense error', error);
-      set({ error: 'خطا در حذف مخارج خودرو' });
-      return;
-    }
+    void enqueue({ kind: 'delete', table: 'vehicle_expenses', match: { id } });
 
     set((state) => ({
       expenses: state.expenses.filter((e) => e.id !== id),

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../../lib/supabase';
+import { enqueue } from '../../lib/outbox';
 import { GoldAsset, GoldTransfer } from './types';
 
 export interface AssetOwner {
@@ -43,27 +44,15 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
         const exists = (get().owners || []).some(o => o.name.trim().toLowerCase() === name.toLowerCase() && o.id !== owner.id);
         if (exists) throw new Error('مالک تکراری است');
 
-        const row = { id: owner.id, name, avatar_ref: owner.avatar || null };
-        const { error } = await supabase.from('asset_people').upsert(row);
-        if (error) {
-            // Unique violation from DB
-            if ((error as any).code === '23505') {
-                throw new Error('مالک با این نام از قبل وجود دارد');
-            }
-            // eslint-disable-next-line no-console
-            console.error('Asset owner upsert error', error);
-            throw error;
-        }
-        await get().loadOwners();
+        // Optimistic local update; the write is enqueued durably (retried offline).
+        set((state) => ({
+            owners: [...(state.owners || []).filter((o) => o.id !== owner.id), { id: owner.id, name, avatar: owner.avatar }],
+        }));
+        void enqueue({ kind: 'upsert', table: 'asset_people', values: { id: owner.id, name, avatar_ref: owner.avatar || null } });
     },
     deleteOwner: async (id: string) => {
-        const { error } = await supabase.from('asset_people').delete().eq('id', id);
-        if (error) {
-            // eslint-disable-next-line no-console
-            console.error('Asset owner delete error', error);
-            return;
-        }
-        await get().loadOwners();
+        set((state) => ({ owners: (state.owners || []).filter((o) => o.id !== id) }));
+        void enqueue({ kind: 'delete', table: 'asset_people', match: { id } });
     },
     loadGoldByOwner: async (ownerId: string) => {
         const { data, error } = await supabase
@@ -182,22 +171,17 @@ export const useAssetsStore = create<AssetsModuleState>()((set, get) => ({
             row.invoice_ref = a.invoiceRef ?? null;
             row.tx_type = a.txType ?? null;
         }
-        const { error } = await supabase.from('asset_gold').upsert(row);
-        if (error) {
-            // eslint-disable-next-line no-console
-            console.error('Gold asset upsert error', error);
-            throw error;
-        }
-        await get().loadGoldByOwner(asset.ownerId);
+        // Optimistic local update (same purchase_date-desc order as loadGoldByOwner);
+        // the write is enqueued durably so it survives an offline/flaky connection.
+        set((state) => ({
+            gold: [...(state.gold || []).filter((g) => g.id !== asset.id), asset]
+                .sort((a, b) => String(b.purchaseDate || '').localeCompare(String(a.purchaseDate || ''))),
+        }));
+        void enqueue({ kind: 'upsert', table: 'asset_gold', values: row });
     },
-    deleteGold: async (id: string, ownerId: string) => {
-        const { error } = await supabase.from('asset_gold').delete().eq('id', id);
-        if (error) {
-            // eslint-disable-next-line no-console
-            console.error('Gold asset delete error', error);
-            throw error;
-        }
-        await get().loadGoldByOwner(ownerId);
+    deleteGold: async (id: string, _ownerId: string) => {
+        set((state) => ({ gold: (state.gold || []).filter((g) => g.id !== id) }));
+        void enqueue({ kind: 'delete', table: 'asset_gold', match: { id } });
     },
     transferGold: async ({ goldId, fromOwnerId, toOwnerId, reason, date }: { goldId: string; fromOwnerId: string; toOwnerId: string; reason: 'gift' | 'debt'; date?: string; }) => {
         const when = date || new Date().toISOString();
