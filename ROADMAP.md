@@ -84,7 +84,7 @@
 - [~] شکستن `OwnerGoldDashboard` (۸۹۳→۷۸۳): توابع خلاصه‌ی طلا (+۶ تست)، `LinkFromRef` و کارت‌های نمای کلی استخراج شدند. مودال‌های فرم/جزئیات/فروش/انتقال (وابسته به state فرم) عمداً ماندند — استخراج امنشان نیاز به تست روی دستگاه دارد.
 - [ ] قالب واحد ماژول (ui/model/data/types/index) + لایه‌ی data برای سایر ماژول‌ها.
 - [x] **(۳b) دوام آفلاینِ نوشتن assets و my-car:** اکشن‌های ساخت/ویرایش/حذف هر دو store به الگوی خوش‌بینانه + صف `lib/outbox.ts` منتقل شدند (my-car قبلاً set محلی داشت؛ assets از reload به آپدیت خوش‌بینانه رفت). اعتبارسنجی کلاینتیِ saveOwner حفظ شد. transferGold عمداً awaited+reload ماند (اکشن نادر، حساس به lastTransfer). بدون تغییر اسکیما/دیتا. typecheck/test(۳۲)/build سبز.
-- [ ] یک‌سان‌سازی تایپ‌ها + اصلاح `View` + مسیریابی Back/deep-link.
+- [~] یکسان‌سازی تایپ‌ها + مسیریابی Back: تایپ‌های تکراریِ حسابدار از `types.ts` ریشه حذف شد (منبع واحد = `features/smart-accountant/types.ts`). دکمه‌ی Back سخت‌افزاری/مرورگر حالا با History API به داشبورد برمی‌گردد (نه خروج از اپ). باقی: deep-link مبتنی‌بر URL (عمداً موکول شد) + تأیید رفتار Back روی گوشی.
 
 ### فاز ۷ — سرعت 🔄
 - [x] حذف وابستگی‌های بلااستفاده (jspdf، html2canvas، date-fns).
@@ -140,3 +140,4 @@
 - 2026-06-14: فاز ۶ (گام ۲) — **شکستن MyCar:** ۲۰۹۸→۹۲۴ خط؛ انتقال verbatim زیرکامپوننت‌ها به `my-car/components/*` و کمک‌تابع‌ها به `shared.ts`؛ تنها افزوده‌ها importها؛ چانک byte-identical (۵۶.۶KB). typecheck/test(۳۲)/build سبز.
 - 2026-06-14: فاز ۶ (گام ۳، آیتم ۳b) — **دوام آفلاینِ نوشتن assets و my-car:** نوشتن‌ها از fire-and-forget/await→reload به الگوی خوش‌بینانه + صف `lib/outbox.ts` (پایدار در IndexedDB، retry روی reconnect). اعتبارسنجی کلاینتیِ saveOwner حفظ؛ transferGold عمداً awaited ماند. ~۱۱۰ خط boilerplate حذف شد. typecheck/test(۳۲)/build سبز.
 - 2026-06-14: فاز ۶ (گام ۴) — **شروع تجزیه‌ی OwnerGold:** `goldSummary.ts` (توابع خالص خلاصه + ثابت + ۶ تست)، `components/LinkFromRef.tsx` و `components/OwnerGoldOverview.tsx` (نمای کلی) استخراج شدند؛ OwnerGoldDashboard ۸۹۳→۷۸۳ خط (انتقال خالص). مودال‌های وابسته به فرم باقی ماندند. typecheck/test(۳۸)/build سبز.
+- 2026-06-14: فاز ۶ (گام ۵) — **یکسان‌سازی تایپ + مسیریابی Back:** حذف ۷ تایپ تکراریِ حسابدار از `types.ts` ریشه (همه importها از فیچر بودند → کد مرده). افزودن مسیریابی History API در `App.tsx`: مدل یک‌سطحی (داشبورد ریشه، ماژول روی یک ورودیِ push)؛ Back سخت‌افزاری/مرورگر به داشبورد برمی‌گردد به‌جای خروج از PWA. typecheck/test(۳۸)/build سبز.
