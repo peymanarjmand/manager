@@ -91,10 +91,11 @@
 - [ ] اشتراک انتخابی Zustand + `React.memo` (کاهش ری‌رندر کل درخت حسابدار) — بهتر است همراه یک تست رفتاری/دیپلوی انجام شود.
 - [ ] جایگزینی `jalali-moment` با گزینه‌ی سبک (۳۰+ نقطه‌ی استفاده؛ نیاز به تطبیق دقیق خروجی تاریخ) + بهبود LCP (اسکلتون در `index.html`).
 
-### فاز ۸ — PWA حرفه‌ای ⏳
-- [ ] vite-plugin-pwa/Workbox: precache asset‌های هش‌دار.
-- [ ] آپدیت کنترل‌شده (به‌جای skipWaiting فوری) + گارد خطای chunk.
-- [ ] آیکون PNG/maskable + apple-touch + شورتکات + اسپلش.
+### فاز ۸ — PWA حرفه‌ای 🔄
+- [x] جایگزینی SW دستی با `vite-plugin-pwa`/Workbox: precache همه‌ی ۲۲ asset هش‌دار (رفع خرابی آفلاین بعد از دیپلوی) + navigateFallback به index.html.
+- [x] آپدیت کنترل‌شده (`registerType: 'prompt'`) + بنر `components/PwaUpdatePrompt.tsx`؛ بدون swap ناگهانی چانک. (گارد خطای chunk قبلاً در ErrorBoundary اضافه شده بود.)
+- [x] Supabase همچنان NetworkOnly (دیتای مالی کش نمی‌شود) · manifest از کانفیگ تولید و در HTML تزریق می‌شود · `vite-env.d.ts` برای تایپ‌ها.
+- [ ] آیکون‌های PNG/maskable + apple-touch PNG + شورتکات‌ها — نیاز به تولید فایل PNG (پولیش باقی‌مانده).
 
 ### فاز ۹ — ردیزاین کامل اپ 🎨 ⏳
 - [ ] دیزاین‌سیستم (توکن‌ها، وزیرمتن، روشن/تیره، کامپوننت‌های پایه).
@@ -115,3 +116,4 @@
 - 2026-06-14: فاز ۴ — `lib/id.ts` (`newId()` با crypto.randomUUID)؛ جایگزینی شناسه‌سازی Date.now در حسابدار/کارها/دفترتلفن/رمزها. typecheck/test/build سبز.
 - 2026-06-14: فاز ۵ — راستی‌آزمایی بلوب↔جدول (۰ گمشده)؛ `partialize`+`merge` روی state_accountant (پایان منبع دوگانه). typecheck/test/build سبز.
 - 2026-06-14: فاز ۷a — حذف jspdf/html2canvas/date-fns؛ اصلاح manualChunks (charts جدا از react). build سبز.
+- 2026-06-14: فاز ۸ (هسته) — vite-plugin-pwa جایگزین SW دستی؛ precache ۲۲ asset؛ بنر آپدیت کنترل‌شده؛ Supabase NetworkOnly. typecheck/test/build سبز.

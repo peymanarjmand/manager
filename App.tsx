@@ -7,6 +7,7 @@ import { SignupPage } from './features/auth/SignupPage';
 import { View } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SyncIndicator } from './components/SyncIndicator';
+import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
 
 const PasswordManager = React.lazy(() => import('./features/password-manager/PasswordManager').then(m => ({ default: m.PasswordManager })));
 const PhoneBook = React.lazy(() => import('./features/phone-book/PhoneBook').then(m => ({ default: m.PhoneBook })));
@@ -126,6 +127,7 @@ function App(): React.ReactNode {
         </ErrorBoundary>
       </main>
       <SyncIndicator />
+      <PwaUpdatePrompt />
       <footer className="text-center py-6 text-slate-500 text-sm">
         <p>
           ساخته شده با ❤️ برای سازماندهی زندگی شما

@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { initOutbox } from './lib/outbox';
+import { registerSW } from 'virtual:pwa-register';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -18,8 +19,11 @@ root.render(
 // Start the durable write-outbox: replays any queued writes on reconnect/focus.
 initOutbox();
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js');
-  });
-}
+// Register the service worker (vite-plugin-pwa) with a controlled update prompt:
+// a new version is fetched in the background and applied only when the user taps.
+const updateSW = registerSW({
+  onNeedRefresh() {
+    window.dispatchEvent(new CustomEvent('pwa-need-refresh'));
+  },
+});
+(window as Window & { __pwaUpdate?: (reload?: boolean) => void }).__pwaUpdate = updateSW;
