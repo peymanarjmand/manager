@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import {
   Car, Calculator, ClipboardCheck, HeartPulse, KeyRound, Coins, Phone, Settings as SettingsIcon,
-  CalendarClock, ArrowDownLeft, ArrowUpRight,
+  ArrowDownLeft, ArrowUpRight,
 } from 'lucide-react';
 import { DASHBOARD_ITEMS } from './constants';
 import { DashboardItem, View } from '../../types';
@@ -11,7 +11,7 @@ import { FocusTimer } from './components/FocusTimer';
 import { SettingsModal } from '../settings/SettingsModal';
 import { useDashboardStore } from './store';
 import { useAccountantStore } from '../smart-accountant/store';
-import { getNextUnpaidInstallment, computeTomanReceivablesPayables } from '../smart-accountant/calculations';
+import { getNextUnpaidInstallment, computeTomanReceivablesPayables, computeMonthInstallmentTotals } from '../smart-accountant/calculations';
 import { formatCurrency } from '../smart-accountant/SmartAccountantShared';
 import { ProgressRing } from '../../components/ui/ProgressRing';
 import { Sparkline } from '../../components/ui/Sparkline';
@@ -45,12 +45,10 @@ export const Dashboard = ({ onNavigate }: { onNavigate: (view: View) => void }):
 
   const nextInst = useMemo(() => getNextUnpaidInstallment(installments), [installments]);
   const { totalDebt, totalCredit } = useMemo(() => computeTomanReceivablesPayables(ledger), [ledger]);
-
-  const daysUntil = useMemo(() => {
-    if (!nextInst) return 0;
-    return Math.max(0, Math.ceil((new Date(nextInst.dueDate).getTime() - Date.now()) / 86400000));
-  }, [nextInst]);
-  const ringVal = Math.min(100, (daysUntil / 30) * 100);
+  const monthInst = useMemo(() => {
+    const now = moment();
+    return computeMonthInstallmentTotals(installments, now.jYear(), now.jMonth() + 1);
+  }, [installments]);
   const dueLabel = useMemo(() => (nextInst ? moment(nextInst.dueDate).locale('fa').format('jD jMMMM') : ''), [nextInst]);
 
   const orderedItems: DashboardItem[] = useMemo(() => {
@@ -72,17 +70,18 @@ export const Dashboard = ({ onNavigate }: { onNavigate: (view: View) => void }):
     <div className="px-4 pt-4 pb-2 max-w-md mx-auto animate-fade-in">
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setSettingsModalOpen(false)} />
 
-      {/* Finance hero — next installment with a days-to-due gauge */}
-      <div
-        className="rounded-3xl p-5 text-white relative overflow-hidden shadow-xl shadow-brand-900/30"
+      {/* Finance hero — next installment + this month's installment progress */}
+      <button
+        onClick={() => onNavigate('smart-accountant')}
+        className="block w-full text-right rounded-3xl p-5 text-white relative overflow-hidden shadow-xl shadow-brand-900/30 transition active:scale-[0.99]"
         style={{ background: 'linear-gradient(135deg, #574bd3 0%, #6d5ef6 55%, #7e6ff8 100%)' }}
       >
         <div className="flex items-center gap-4">
-          <button onClick={() => onNavigate('smart-accountant')} className="flex-1 text-right">
+          <div className="flex-1">
             <div className="text-sm text-white/75">قسط بعدی</div>
             {nextInst ? (
               <>
-                <div className="mt-1.5 text-[26px] font-medium leading-tight nums-tabular">
+                <div className="mt-1.5 text-[24px] font-medium leading-tight nums-tabular">
                   {formatCurrency(nextInst.amount + nextInst.penalty)}
                 </div>
                 <div className="mt-1.5 text-xs text-white/75">{nextInst.planTitle} • سررسید {dueLabel}</div>
@@ -90,16 +89,24 @@ export const Dashboard = ({ onNavigate }: { onNavigate: (view: View) => void }):
             ) : (
               <div className="mt-2 text-lg font-medium">قسط پرداخت‌نشده‌ای نداری</div>
             )}
-          </button>
-          {nextInst && (
-            <ProgressRing value={ringVal} size={94} stroke={7} progressClassName="stroke-white" trackClassName="stroke-white/25">
-              <CalendarClock size={17} className="text-white/90" />
-              <div className="text-[15px] font-medium mt-0.5 nums-tabular">{fa(daysUntil)} روز</div>
-              <div className="text-[10px] text-white/70">تا سررسید</div>
-            </ProgressRing>
-          )}
+          </div>
+          <ProgressRing value={monthInst.progress} size={92} stroke={7} progressClassName="stroke-white" trackClassName="stroke-white/25">
+            <div className="text-[18px] font-medium nums-tabular">{fa(Math.round(monthInst.progress))}٪</div>
+            <div className="text-[10px] text-white/70">این ماه</div>
+          </ProgressRing>
         </div>
-      </div>
+        {monthInst.hasInstallments && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-[11px] text-white/85 mb-1.5">
+              <span>مانده این ماه: <span className="font-medium nums-tabular">{formatCurrency(monthInst.unpaidAmount)}</span></span>
+              <span className="nums-tabular text-white/70">از {formatCurrency(monthInst.totalAmount)}</span>
+            </div>
+            <div className="h-2 rounded-full bg-white/20 overflow-hidden">
+              <div className="h-full rounded-full bg-white transition-all" style={{ width: `${Math.min(100, monthInst.progress)}%` }} />
+            </div>
+          </div>
+        )}
+      </button>
 
       {/* طلب / بدهی with sparklines */}
       <div className="grid grid-cols-2 gap-3 mt-3">

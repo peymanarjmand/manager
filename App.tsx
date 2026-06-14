@@ -131,7 +131,7 @@ function App(): React.ReactNode {
       <PwaUpdatePrompt />
       <footer className="text-center py-6 text-slate-500 text-sm">
         <p>
-          ساخته شده با ❤️ برای سازماندهی زندگی شما
+          ساخته شده با ❤️ توسط پیمان ارجمند
         </p>
       </footer>
       <BottomNav currentView={currentView} onNavigate={handleNavigate} />
