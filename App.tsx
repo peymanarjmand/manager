@@ -98,7 +98,7 @@ function App(): React.ReactNode {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans pb-24">
+    <div className="min-h-screen text-white font-sans pb-24">
       {!SUPABASE_ENABLED && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950">
           <div className="max-w-lg mx-auto p-6 rounded-xl ring-1 ring-slate-800 bg-slate-900 text-center">

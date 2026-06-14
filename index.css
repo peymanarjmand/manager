@@ -21,8 +21,13 @@
 @layer base {
   html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   body {
-    @apply bg-slate-900 text-slate-100;
+    @apply text-slate-100;
     font-family: 'Vazirmatn', 'Tahoma', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background-color: #0a0c16;
+    background-image: radial-gradient(125% 80% at 50% -10%, #241a52 0%, rgba(12, 13, 26, 0) 48%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 
