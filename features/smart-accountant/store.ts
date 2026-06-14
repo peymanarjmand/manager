@@ -912,7 +912,33 @@ export const useAccountantStore = create<AccountantState>()(
         }),
         {
             name: STORAGE_KEY,
-            storage: createJSONStorage(() => createSupabaseTableStateStorage('state_accountant') as unknown as Storage)
+            storage: createJSONStorage(() => createSupabaseTableStateStorage('state_accountant') as unknown as Storage),
+            // Persist ONLY UI preferences. All financial data lives in relational
+            // Supabase tables (hydrated via the load*() actions on mount), so it is
+            // never duplicated into this blob — removing the dual-source-of-truth
+            // divergence and the large per-write upload. Verified safe before enabling:
+            // every record in the previous blob already existed in its table.
+            partialize: (state) => ({
+                tabsOrder: state.tabsOrder,
+                peopleOrder: state.peopleOrder,
+                installmentsSortMode: state.installmentsSortMode,
+                installmentsCustomOrder: state.installmentsCustomOrder,
+                customCategories: state.customCategories,
+            }) as AccountantState,
+            // Take ONLY UI prefs from the persisted blob; ignore any financial arrays
+            // that might still exist in an older (pre-partialize) blob, so stale data
+            // can never be re-injected. Relational load*() remains the single source.
+            merge: (persisted, current) => {
+                const p = (persisted || {}) as Partial<AccountantState>;
+                return {
+                    ...current,
+                    tabsOrder: p.tabsOrder ?? current.tabsOrder,
+                    peopleOrder: p.peopleOrder ?? current.peopleOrder,
+                    installmentsSortMode: p.installmentsSortMode ?? current.installmentsSortMode,
+                    installmentsCustomOrder: p.installmentsCustomOrder ?? current.installmentsCustomOrder,
+                    customCategories: p.customCategories ?? current.customCategories,
+                };
+            },
         }
     )
 );
