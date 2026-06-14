@@ -5,6 +5,7 @@ import { SUPABASE_ENABLED, supabase } from './lib/supabase';
 import { LoginPage } from './features/auth/LoginPage';
 import { SignupPage } from './features/auth/SignupPage';
 import { View } from './types';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const PasswordManager = React.lazy(() => import('./features/password-manager/PasswordManager').then(m => ({ default: m.PasswordManager })));
 const PhoneBook = React.lazy(() => import('./features/phone-book/PhoneBook').then(m => ({ default: m.PhoneBook })));
@@ -107,19 +108,21 @@ function App(): React.ReactNode {
       )}
       <Header onLogout={handleLogout} sessionInfo={sessionInfo} />
       <main>
-        {currentView === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
-        {currentView !== 'dashboard' && (
-          <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>}>
-            {currentView === 'health-dashboard' && <HealthDashboard onNavigateBack={() => handleNavigate('dashboard')} />}
-            {currentView === 'password-manager' && <PasswordManager onNavigateBack={() => handleNavigate('dashboard')} />}
-            {currentView === 'smart-accountant' && <SmartAccountant onNavigateBack={() => handleNavigate('dashboard')} />}
-            {currentView === 'phone-book' && <PhoneBook onNavigateBack={() => handleNavigate('dashboard')} />}
-            {currentView === 'daily-tasks' && <DailyTasks onNavigateBack={() => handleNavigate('dashboard')} />}
-            {currentView === 'assets' && <Assets onNavigateBack={() => handleNavigate('dashboard')} />}
-            {currentView === 'darfak' && <Darfak onNavigateBack={() => handleNavigate('dashboard')} />}
-            {currentView === 'my-car' && <MyCar onNavigateBack={() => handleNavigate('dashboard')} />}
-          </Suspense>
-        )}
+        <ErrorBoundary key={currentView}>
+          {currentView === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
+          {currentView !== 'dashboard' && (
+            <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>}>
+              {currentView === 'health-dashboard' && <HealthDashboard onNavigateBack={() => handleNavigate('dashboard')} />}
+              {currentView === 'password-manager' && <PasswordManager onNavigateBack={() => handleNavigate('dashboard')} />}
+              {currentView === 'smart-accountant' && <SmartAccountant onNavigateBack={() => handleNavigate('dashboard')} />}
+              {currentView === 'phone-book' && <PhoneBook onNavigateBack={() => handleNavigate('dashboard')} />}
+              {currentView === 'daily-tasks' && <DailyTasks onNavigateBack={() => handleNavigate('dashboard')} />}
+              {currentView === 'assets' && <Assets onNavigateBack={() => handleNavigate('dashboard')} />}
+              {currentView === 'darfak' && <Darfak onNavigateBack={() => handleNavigate('dashboard')} />}
+              {currentView === 'my-car' && <MyCar onNavigateBack={() => handleNavigate('dashboard')} />}
+            </Suspense>
+          )}
+        </ErrorBoundary>
       </main>
       <footer className="text-center py-6 text-slate-500 text-sm">
         <p>

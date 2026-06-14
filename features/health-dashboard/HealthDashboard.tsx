@@ -275,7 +275,7 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = ({ onNavigateBack
           onClose={() => setActiveModal(null)}
           onSubmit={async (data) => {
             try {
-              await addMedicine(data);
+              await addMedicine(data as Parameters<typeof addMedicine>[0]);
               setActiveModal(null);
               // Refresh data after submission
               await fetchAllData();
@@ -292,7 +292,7 @@ export const HealthDashboard: React.FC<HealthDashboardProps> = ({ onNavigateBack
           onClose={() => setActiveModal(null)}
           onSubmit={async (data) => {
             try {
-              await addMeal(data);
+              await addMeal(data as unknown as Parameters<typeof addMeal>[0]);
               setActiveModal(null);
               // Refresh data after submission
               await fetchAllData();

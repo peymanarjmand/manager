@@ -251,7 +251,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({ title, data, typ
   // Add reference lines for blood pressure
   if (type === 'blood-pressure' && chartRef.current) {
     const chart = chartRef.current;
-    if (chart.options.plugins?.annotation) {
+    if ((chart.options.plugins as { annotation?: unknown } | undefined)?.annotation) {
       chart.update();
     }
   }

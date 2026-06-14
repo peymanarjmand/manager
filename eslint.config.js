@@ -1,4 +1,5 @@
 import tsParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 
@@ -10,26 +11,31 @@ export default [
       'dist-ssr/**',
       'dist-electron/**',
       'release/**',
-      'release-build/**'
+      'release-build/**',
+      'backups/**',
+      '**/*.config.js',
+      '**/*.config.ts'
     ],
     linterOptions: {
       reportUnusedDisableDirectives: false
     }
   },
   {
-    files: ['**/*.{ts,tsx,js,jsx}'],
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        ecmaFeatures: { jsx: true }
+        ecmaFeatures: { jsx: true },
+        projectService: true
       }
     },
     settings: {
       react: { version: 'detect' }
     },
     plugins: {
+      '@typescript-eslint': tsPlugin,
       react,
       'react-hooks': reactHooks
     },
@@ -37,7 +43,8 @@ export default [
       'react/react-in-jsx-scope': 'off',
       'react/jsx-uses-react': 'off',
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'off'
+      'react-hooks/exhaustive-deps': 'warn',
+      '@typescript-eslint/no-floating-promises': 'warn'
     }
   }
 ];

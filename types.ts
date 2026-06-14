@@ -315,4 +315,7 @@ export type View =
   | 'phone-book'
   | 'health-dashboard'
   | 'medical-records'
-  | 'my-car';
+  | 'my-car'
+  | 'daily-tasks'
+  | 'assets'
+  | 'darfak';
