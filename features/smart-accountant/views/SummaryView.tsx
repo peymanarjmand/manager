@@ -3,6 +3,10 @@ import moment from 'jalali-moment';
 import { AccountantData } from '../types';
 import { useAccountantStore } from '../store';
 import { formatCurrency } from '../SmartAccountantShared';
+import { ProgressRing } from '../../../components/ui/ProgressRing';
+import { Sparkline } from '../../../components/ui/Sparkline';
+
+const fa = (n: number) => (Number.isFinite(n) ? n : 0).toLocaleString('fa-IR');
 
 export const SummaryView = ({ data }: { data: AccountantData }) => {
     const [selectedMonthISO, setSelectedMonthISO] = useState<string>(() => moment().startOf('jMonth').toISOString());
@@ -96,10 +100,15 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
 
     const netWorth = totalAssets + totalDebt - totalCredit;
     
-    const StatCard = ({ title, value, colorClass }) => (
-        <div className="bg-white/[0.04] rounded-2xl p-3 ring-1 ring-white/[0.06]">
+    const StatCard = ({ title, value, colorClass, spark }: { title: string; value: number; colorClass: string; spark?: boolean }) => (
+        <div className="bg-white/[0.04] rounded-2xl p-3 ring-1 ring-white/[0.06] overflow-hidden">
             <h3 className="text-slate-400 text-[11px] leading-tight">{title}</h3>
             <p className={`text-[15px] font-medium mt-1.5 nums-tabular ${colorClass}`}>{formatCurrency(value)}</p>
+            {spark && (
+                <div className={`mt-1 -mb-1 opacity-35 ${colorClass}`}>
+                    <Sparkline data={[10, 13, 9, 14, 11, 15, 12]} height={20} />
+                </div>
+            )}
         </div>
     );
 
@@ -188,7 +197,7 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                 })}
             </div>
 
-            <div className="bg-slate-800/50 rounded-xl p-4 md:p-5 ring-1 ring-slate-700 space-y-3">
+            <div className="bg-white/[0.04] rounded-2xl p-4 ring-1 ring-white/[0.06] space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="text-slate-300 text-sm">صندوق نقدی {selectedMonthLabel}</div>
                     <button className="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs" onClick={() => setIsEditingFund(v => !v)}>{isEditingFund ? 'انصراف' : (currentFund ? 'ویرایش موجودی اولیه' : 'تنظیم موجودی اولیه')}</button>
@@ -214,32 +223,37 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                 )}
             </div>
             <div className="grid grid-cols-3 gap-2.5">
-                <StatCard title="ارزش خالص دارایی‌ها" value={netWorth} colorClass="text-sky-400" />
-                <StatCard title={`درآمد ${selectedMonthLabel}`} value={incomeOfMonth} colorClass="text-emerald-400" />
-                <StatCard title={`هزینه ${selectedMonthLabel}`} value={expensesOfMonth} colorClass="text-rose-400" />
+                <StatCard title="ارزش خالص دارایی‌ها" value={netWorth} colorClass="text-sky-400" spark />
+                <StatCard title={`درآمد ${selectedMonthLabel}`} value={incomeOfMonth} colorClass="text-emerald-400" spark />
+                <StatCard title={`هزینه ${selectedMonthLabel}`} value={expensesOfMonth} colorClass="text-rose-400" spark />
             </div>
 
             {monthlyInstallments.hasInstallments && (
-                <div className="bg-slate-800/50 rounded-xl p-6 ring-1 ring-slate-700 space-y-4">
-                    <h3 className="text-slate-300 text-lg font-semibold">
-                        خلاصه اقساط {selectedMonthLabel}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700 flex items-center justify-between"><span className="text-slate-300">کل اقساط این ماه</span><span className="font-bold text-slate-100">{formatCurrency(monthlyInstallments.totalAmount)}</span></div>
-                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700 flex items-center justify-between"><span className="text-slate-300">پرداخت شده</span><span className="font-bold text-emerald-400">{formatCurrency(monthlyInstallments.paidAmount)}</span></div>
-                        <div className="bg-slate-900/40 rounded-lg p-3 ring-1 ring-slate-700 flex items-center justify-between"><span className="text-slate-300">مانده</span><span className="font-bold text-rose-400">{formatCurrency(monthlyInstallments.unpaidAmount)}</span></div>
-                    </div>
-                    <div className="w-full bg-slate-700 rounded-full h-3 md:h-4 overflow-hidden">
-                        <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${monthlyInstallments.progress}%` }}></div>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3">
-                        <div className="text-slate-400 text-sm">ماه قبل: <button className="px-2 py-1 rounded-md bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs" onClick={() => setSelectedMonthISO(prevInstallments.iso)} title="مشاهده ماه قبل">{prevInstallments.label} • {formatCurrency(prevInstallments.total)}</button></div>
-                        <div className="flex flex-wrap gap-2 items-center">
-                            <span className="text-slate-400 text-sm">ماه‌های آینده:</span>
-                            {nextInstallments.map((m) => (
-                                <button key={m.iso} className="px-2 py-1 rounded-md bg-slate-700/60 hover:bg-slate-600 text-slate-200 text-xs" onClick={() => setSelectedMonthISO(m.iso)} title={`اقساط ${m.label}`}>{m.label} • {formatCurrency(m.total)}</button>
-                            ))}
+                <div className="bg-white/[0.04] rounded-2xl p-4 ring-1 ring-white/[0.06] space-y-4">
+                    <h3 className="text-slate-200 font-medium">خلاصه اقساط {selectedMonthLabel}</h3>
+                    <div className="flex items-center gap-4">
+                        <ProgressRing value={monthlyInstallments.progress} size={84} stroke={8} progressClassName="stroke-brand-500" trackClassName="stroke-white/10">
+                            <div className="text-base font-medium text-brand-300 nums-tabular">{fa(Math.round(monthlyInstallments.progress))}٪</div>
+                            <div className="text-[10px] text-slate-400">پرداخت‌شده</div>
+                        </ProgressRing>
+                        <div className="flex-1 space-y-2 text-sm">
+                            <div className="flex items-center justify-between"><span className="text-slate-400">کل این ماه</span><span className="font-medium text-slate-100 nums-tabular">{formatCurrency(monthlyInstallments.totalAmount)}</span></div>
+                            <div className="flex items-center justify-between"><span className="text-slate-400">پرداخت‌شده</span><span className="font-medium text-emerald-400 nums-tabular">{formatCurrency(monthlyInstallments.paidAmount)}</span></div>
+                            <div className="flex items-center justify-between"><span className="text-slate-400">مانده</span><span className="font-medium text-rose-400 nums-tabular">{formatCurrency(monthlyInstallments.unpaidAmount)}</span></div>
                         </div>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${monthlyInstallments.progress}%`, background: 'linear-gradient(90deg,#6d5ef6,#a855f7)' }}></div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 items-center">
+                        <span className="text-slate-400 text-xs">ماه قبل:</span>
+                        <button className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-slate-200 text-xs nums-tabular" onClick={() => setSelectedMonthISO(prevInstallments.iso)} title="مشاهده ماه قبل">{prevInstallments.label} • {formatCurrency(prevInstallments.total)}</button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 items-center">
+                        <span className="text-slate-400 text-xs">ماه‌های آینده:</span>
+                        {nextInstallments.map((m) => (
+                            <button key={m.iso} className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-slate-200 text-xs nums-tabular" onClick={() => setSelectedMonthISO(m.iso)} title={`اقساط ${m.label}`}>{m.label} • {formatCurrency(m.total)}</button>
+                        ))}
                     </div>
                 </div>
             )}
