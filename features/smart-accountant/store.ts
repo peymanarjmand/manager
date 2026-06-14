@@ -6,6 +6,16 @@ import { encryptedStateStorage } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 import { enqueue } from '../../lib/outbox';
 import moment from 'jalali-moment';
+import {
+    TRANSACTION_COLUMNS, mapTransactionRow, transactionToRow,
+    ASSET_COLUMNS, mapAssetRow, assetToRow,
+    PERSON_COLUMNS, LEDGER_COLUMNS, mapPersonRow, personToRow, mapLedgerRow, ledgerToRow,
+    PLAN_COLUMNS, PAYMENT_COLUMNS, mapPaymentRow, planToRow, paymentToRow,
+    CHECK_COLUMNS, mapCheckRow, checkToRow,
+    DARFAK_COLUMNS, mapDarfakRow, darfakToRow,
+    SOCIAL_INSURANCE_COLUMNS, mapSocialInsuranceRow, socialInsuranceToRow,
+    FUND_COLUMNS, mapFundRow, fundToRow,
+} from './data';
 
 // Keep in sync with AccountantTab in SmartAccountant.tsx (assets moved to its own module)
 type AccountantTab = 'summary' | 'transactions' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
@@ -99,20 +109,14 @@ export const useAccountantStore = create<AccountantState>()(
                 try {
                     const { data, error } = await supabase
                         .from('monthly_funds')
-                        .select('id,year,month,opening_amount,note')
+                        .select(FUND_COLUMNS)
                         .order('year', { ascending: true })
                         .order('month', { ascending: true });
                     if (error) {
                         console.warn('Funds load error', error);
                         return;
                     }
-                    const rows: MonthlyFund[] = (data || []).map((r: any) => ({
-                        id: r.id,
-                        year: Number(r.year) || 0,
-                        month: Number(r.month) || 0,
-                        openingAmount: Number(r.opening_amount) || 0,
-                        note: r.note || undefined,
-                    }));
+                    const rows: MonthlyFund[] = (data || []).map(mapFundRow);
                     set({ funds: rows });
                 } catch (e) {
                     console.warn('Funds load exception', e);
@@ -124,13 +128,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const next = [...rest, fund].sort((a,b) => (a.year === b.year ? a.month - b.month : a.year - b.year));
                     return { funds: next } as any;
                 });
-                void enqueue({ kind: 'upsert', table: 'monthly_funds', values: {
-                    id: fund.id,
-                    year: fund.year,
-                    month: fund.month,
-                    opening_amount: Number(fund.openingAmount) || 0,
-                    note: fund.note || null,
-                } });
+                void enqueue({ kind: 'upsert', table: 'monthly_funds', values: fundToRow(fund) });
             },
             deleteMonthlyFund: (id) => {
                 set((state) => ({ funds: (state.funds || []).filter(f => f.id !== id) }));
@@ -139,29 +137,20 @@ export const useAccountantStore = create<AccountantState>()(
             loadDarfak: async () => {
                 const { data, error } = await supabase
                     .from('darfak_expenses')
-                    .select('id,title,amount,date,tags,category,note,attachment_ref')
+                    .select(DARFAK_COLUMNS)
                     .order('date', { ascending: false });
                 if (error) {
                     console.warn('Darfak load error', error);
                     return;
                 }
-                const mapped: DarfakExpense[] = (data || []).map((r: any) => ({
-                    id: r.id,
-                    title: r.title,
-                    amount: Number(r.amount) || 0,
-                    date: r.date,
-                    tags: (r.tags as string[]) || [],
-                    category: r.category || undefined,
-                    note: r.note || undefined,
-                    attachment: (r.attachment_ref as string | null) || undefined,
-                }));
+                const mapped: DarfakExpense[] = (data || []).map(mapDarfakRow);
                 set({ darfak: mapped });
             },
             loadInstallments: async () => {
                 // Fetch existing plans from Supabase
                 const { data: plansData, error: plansError } = await supabase
                     .from('installment_plans')
-                    .select('id,title,loan_amount');
+                    .select(PLAN_COLUMNS);
                 if (plansError) {
                     console.warn('Installments load (plans) error', plansError);
                     return;
@@ -218,7 +207,7 @@ export const useAccountantStore = create<AccountantState>()(
                 // Reload plans after potential migration
                 const { data: finalPlans, error: finalPlansError } = await supabase
                     .from('installment_plans')
-                    .select('id,title,loan_amount');
+                    .select(PLAN_COLUMNS);
                 if (finalPlansError) {
                     console.warn('Installments reload (plans) error', finalPlansError);
                     return;
@@ -229,21 +218,14 @@ export const useAccountantStore = create<AccountantState>()(
                 if (finalPlanIds.length > 0) {
                     const { data: paymentsData, error: paymentsError } = await supabase
                         .from('installment_payments')
-                        .select('id,plan_id,amount,due_date,is_paid,paid_date,penalty')
+                        .select(PAYMENT_COLUMNS)
                         .in('plan_id', finalPlanIds);
                     if (paymentsError) {
                         console.warn('Installments load (payments) error', paymentsError);
                         return;
                     }
                     paymentsMap = (paymentsData || []).reduce((acc: Record<string, InstallmentPayment[]>, row: any) => {
-                        const p: InstallmentPayment = {
-                            id: row.id,
-                            dueDate: row.due_date,
-                            amount: Number(row.amount) || 0,
-                            isPaid: !!row.is_paid,
-                            paidDate: row.paid_date || undefined,
-                            penalty: Number(row.penalty || 0) || 0,
-                        };
+                        const p = mapPaymentRow(row);
                         const list = acc[row.plan_id] || [];
                         list.push(p);
                         acc[row.plan_id] = list;
@@ -270,20 +252,12 @@ export const useAccountantStore = create<AccountantState>()(
             loadTransactions: async () => {
                 const { data, error } = await supabase
                     .from('transactions')
-                    .select('id,type,amount,description,category,date,receipt_ref')
+                    .select(TRANSACTION_COLUMNS)
                     .order('date', { ascending: false });
                 if (error) {
                     console.warn('Transactions load error', error);
                 } else {
-                    const mapped: Transaction[] = (data || []).map((r: any) => ({
-                        id: r.id,
-                        type: r.type,
-                        amount: Number(r.amount) || 0,
-                        description: r.description,
-                        category: r.category,
-                        date: r.date,
-                        receiptImage: r.receipt_ref || undefined,
-                    }));
+                    const mapped: Transaction[] = (data || []).map(mapTransactionRow);
                     set({ transactions: mapped });
                 }
 
@@ -339,20 +313,12 @@ export const useAccountantStore = create<AccountantState>()(
             loadAssets: async () => {
                 const { data, error } = await supabase
                     .from('assets')
-                    .select('id,name,current_value,quantity,purchase_date,notes,owner_id')
+                    .select(ASSET_COLUMNS)
                     .order('purchase_date', { ascending: false });
                 if (error) {
                     console.warn('Assets load error', error);
                 } else {
-                    const mapped: Asset[] = (data || []).map((r: any) => ({
-                        id: r.id,
-                        name: r.name,
-                        currentValue: Number(r.current_value) || 0,
-                        quantity: Number(r.quantity) || 0,
-                        purchaseDate: r.purchase_date,
-                        notes: r.notes || undefined,
-                        ownerId: r.owner_id || undefined,
-                    }));
+                    const mapped: Asset[] = (data || []).map(mapAssetRow);
                     set({ assets: mapped });
                 }
 
@@ -407,37 +373,26 @@ export const useAccountantStore = create<AccountantState>()(
             loadPeopleAndLedger: async () => {
                 const { data: peopleData, error: peopleError } = await supabase
                     .from('people')
-                    .select('id,name,avatar_ref');
+                    .select(PERSON_COLUMNS);
                 if (peopleError) {
                     console.warn('People load error', peopleError);
                     return;
                 }
-                const people: Person[] = (peopleData || []).map((r: any) => ({ id: r.id, name: r.name, avatar: r.avatar_ref || undefined }));
+                const people: Person[] = (peopleData || []).map(mapPersonRow);
 
                 const personIds = people.map(p => p.id);
                 let ledger: Record<string, LedgerEntry[]> = {};
                 if (personIds.length > 0) {
                     const { data: ledgerData, error: ledgerError } = await supabase
                         .from('ledger_entries')
-                        .select('id,person_id,type,amount,description,date,is_settled,receipt_ref,unit')
+                        .select(LEDGER_COLUMNS)
                         .in('person_id', personIds);
                     if (ledgerError) {
                         console.warn('Ledger load error', ledgerError);
                         return;
                     }
                     ledger = (ledgerData || []).reduce((acc: Record<string, LedgerEntry[]>, row: any) => {
-                        const entry: LedgerEntry = {
-                            id: row.id,
-                            personId: row.person_id,
-                            type: row.type,
-                            amount: Number(row.amount) || 0,
-                            // default to 'toman' for older rows without unit
-                            unit: (row.unit || 'toman') as any,
-                            description: row.description,
-                            date: row.date,
-                            isSettled: !!row.is_settled,
-                            receiptImage: row.receipt_ref || undefined,
-                        };
+                        const entry = mapLedgerRow(row);
                         const list = acc[row.person_id] || [];
                         list.push(entry);
                         acc[row.person_id] = list;
@@ -517,26 +472,12 @@ export const useAccountantStore = create<AccountantState>()(
             loadChecks: async () => {
                 const { data, error } = await supabase
                     .from('checks')
-                    .select('id,type,amount,due_date,status,subject,sayyad_id,payee_name,payee_national_id,drawer_name,drawer_national_id,description,cashed_date')
+                    .select(CHECK_COLUMNS)
                     .order('due_date', { ascending: true });
                 if (error) {
                     console.warn('Checks load error', error);
                 } else {
-                    const mapped: Check[] = (data || []).map((r: any) => ({
-                        id: r.id,
-                        type: r.type,
-                        amount: Number(r.amount) || 0,
-                        dueDate: r.due_date,
-                        subject: r.subject,
-                        sayyadId: r.sayyad_id,
-                        status: r.status,
-                        description: r.description || undefined,
-                        payeeName: r.payee_name || undefined,
-                        payeeNationalId: r.payee_national_id || undefined,
-                        drawerName: r.drawer_name || undefined,
-                        drawerNationalId: r.drawer_national_id || undefined,
-                        cashedDate: r.cashed_date || undefined,
-                    }));
+                    const mapped: Check[] = (data || []).map(mapCheckRow);
                     set({ checks: mapped });
                 }
 
@@ -582,24 +523,13 @@ export const useAccountantStore = create<AccountantState>()(
             loadSocialInsurance: async () => {
                 const { data, error } = await supabase
                     .from('social_insurance')
-                    .select('id,year,month,days_covered,amount,registered_salary,pay_date,receipt_ref,note,is_settled')
+                    .select(SOCIAL_INSURANCE_COLUMNS)
                     .order('pay_date', { ascending: false });
                 if (error) {
                     console.warn('Social insurance load error', error);
                     return;
                 }
-                const mapped: SocialInsurancePayment[] = (data || []).map((r: any) => ({
-                    id: r.id,
-                    year: Number(r.year) || 0,
-                    month: Number(r.month) || 0,
-                    daysCovered: Number(r.days_covered) || 0,
-                    amount: Number(r.amount) || 0,
-                    registeredSalary: r.registered_salary != null ? Number(r.registered_salary) : undefined,
-                    payDate: r.pay_date,
-                    receiptRef: r.receipt_ref || undefined,
-                    note: r.note || undefined,
-                    isSettled: !!r.is_settled,
-                }));
+                const mapped: SocialInsurancePayment[] = (data || []).map(mapSocialInsuranceRow);
                 set({ socialInsurance: mapped });
             },
             saveDarfak: (exp) => {
@@ -607,16 +537,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const rest = state.darfak.filter(e => e.id !== exp.id);
                     return { darfak: [...rest, exp].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
                 });
-                void enqueue({ kind: 'upsert', table: 'darfak_expenses', values: {
-                    id: exp.id,
-                    title: exp.title,
-                    amount: exp.amount,
-                    date: exp.date,
-                    tags: exp.tags,
-                    category: exp.category || (exp.tags && exp.tags[0] ? exp.tags[0].replace(/^#/, '') : null),
-                    note: exp.note || null,
-                    attachment_ref: exp.attachment || null,
-                } });
+                void enqueue({ kind: 'upsert', table: 'darfak_expenses', values: darfakToRow(exp) });
             },
             deleteDarfak: (id) => {
                 set(state => ({ darfak: state.darfak.filter(e => e.id !== id) }));
@@ -627,15 +548,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const items = state.transactions.filter(t => t.id !== transaction.id);
                     return { transactions: [...items, transaction].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
                 });
-                void enqueue({ kind: 'upsert', table: 'transactions', values: {
-                    id: transaction.id,
-                    type: transaction.type,
-                    amount: Number(transaction.amount) || 0,
-                    description: transaction.description,
-                    category: transaction.category,
-                    date: transaction.date,
-                    receipt_ref: transaction.receiptImage || null,
-                } });
+                void enqueue({ kind: 'upsert', table: 'transactions', values: transactionToRow(transaction) });
             },
             deleteTransaction: (id) => {
                 set(state => ({ transactions: state.transactions.filter(t => t.id !== id) }));
@@ -646,15 +559,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const items = state.assets.filter(a => a.id !== asset.id);
                     return { assets: [...items, asset] };
                 });
-                void enqueue({ kind: 'upsert', table: 'assets', values: {
-                    id: asset.id,
-                    name: asset.name,
-                    current_value: Number(asset.currentValue) || 0,
-                    quantity: Number(asset.quantity) || 0,
-                    purchase_date: asset.purchaseDate,
-                    notes: asset.notes || null,
-                    owner_id: asset.ownerId || null,
-                } });
+                void enqueue({ kind: 'upsert', table: 'assets', values: assetToRow(asset) });
             },
             deleteAsset: (id) => {
                 set(state => ({ assets: state.assets.filter(a => a.id !== id) }));
@@ -672,7 +577,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const newLedger = state.ledger[person.id] ? {} : { [person.id]: [] };
                     return { people: newPeople, ledger: { ...state.ledger, ...newLedger }, peopleOrder: newOrder } as any;
                 });
-                void enqueue({ kind: 'upsert', table: 'people', values: { id: person.id, name: person.name, avatar_ref: person.avatar || null } });
+                void enqueue({ kind: 'upsert', table: 'people', values: personToRow(person) });
             },
             deletePerson: (id) => {
                 set(state => {
@@ -696,17 +601,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const newLedgerForPerson = [...personLedger, entry].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                     return { ledger: {...state.ledger, [personId]: newLedgerForPerson } };
                 });
-                void enqueue({ kind: 'upsert', table: 'ledger_entries', values: {
-                    id: entry.id,
-                    person_id: entry.personId,
-                    type: entry.type,
-                    amount: Number(entry.amount) || 0,
-                    description: entry.description,
-                    date: entry.date,
-                    is_settled: !!entry.isSettled,
-                    receipt_ref: entry.receiptImage || null,
-                    unit: (entry as any).unit || 'toman',
-                } });
+                void enqueue({ kind: 'upsert', table: 'ledger_entries', values: ledgerToRow(entry) });
             },
             deleteLedgerEntry: (personId, entryId) => {
                 set(state => {
@@ -734,16 +629,8 @@ export const useAccountantStore = create<AccountantState>()(
                         : [...state.installmentsCustomOrder, plan.id];
                     return { installments: nextList, installmentsCustomOrder: nextOrder };
                 });
-                void enqueue({ kind: 'upsert', table: 'installment_plans', values: { id: plan.id, title: plan.title, loan_amount: plan.loanAmount || 0 } });
-                const planPaymentRows = (plan.payments || []).map(pay => ({
-                    id: pay.id,
-                    plan_id: plan.id,
-                    amount: Number(pay.amount) || 0,
-                    due_date: pay.dueDate,
-                    is_paid: !!pay.isPaid,
-                    paid_date: pay.paidDate || null,
-                    penalty: Number(pay.penalty || 0) || 0,
-                }));
+                void enqueue({ kind: 'upsert', table: 'installment_plans', values: planToRow(plan) });
+                const planPaymentRows = (plan.payments || []).map(pay => paymentToRow(pay, plan.id));
                 if (planPaymentRows.length > 0) {
                     void enqueue({ kind: 'upsert', table: 'installment_payments', values: planPaymentRows });
                 }
@@ -817,21 +704,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const items = state.checks.filter(c => c.id !== check.id);
                     return { checks: [...items, check] };
                 });
-                void enqueue({ kind: 'upsert', table: 'checks', values: {
-                    id: check.id,
-                    type: check.type,
-                    amount: Number(check.amount) || 0,
-                    due_date: check.dueDate,
-                    status: check.status || 'pending',
-                    subject: check.subject,
-                    sayyad_id: check.sayyadId,
-                    payee_name: check.payeeName || null,
-                    payee_national_id: check.payeeNationalId || null,
-                    drawer_name: check.drawerName || null,
-                    drawer_national_id: check.drawerNationalId || null,
-                    description: check.description || null,
-                    cashed_date: check.cashedDate || null,
-                } });
+                void enqueue({ kind: 'upsert', table: 'checks', values: checkToRow(check) });
             },
             deleteCheck: (id) => {
                 set(state => ({ checks: state.checks.filter(c => c.id !== id) }));
@@ -857,18 +730,7 @@ export const useAccountantStore = create<AccountantState>()(
                     const rest = state.socialInsurance.filter(x => x.id !== p.id);
                     return { socialInsurance: [p, ...rest].sort((a,b) => new Date(b.payDate).getTime() - new Date(a.payDate).getTime()) };
                 });
-                void enqueue({ kind: 'upsert', table: 'social_insurance', values: {
-                    id: p.id,
-                    year: p.year,
-                    month: p.month,
-                    days_covered: p.daysCovered,
-                    amount: p.amount,
-                    registered_salary: p.registeredSalary ?? null,
-                    pay_date: p.payDate,
-                    receipt_ref: p.receiptRef || null,
-                    note: p.note || null,
-                    is_settled: !!p.isSettled,
-                } });
+                void enqueue({ kind: 'upsert', table: 'social_insurance', values: socialInsuranceToRow(p) });
             },
             settleSocialInsurance: async (id: string) => {
                 // Irreversible: mark as settled in DB and local state
