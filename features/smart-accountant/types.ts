@@ -109,7 +109,8 @@ export interface DarfakExpense {
     title: string;
     amount: number;
     date: string; // ISO
-    tags: string[]; // e.g., ['#مصالح', '#دستمزد']
+    tags: string[]; // legacy free tags (kept for back-compat)
+    category?: string; // primary category: مصالح/دستمزد/تاسیسات/کرایه/بیمه/سایر
     note?: string;
     attachment?: string; // ref to image in storage
 }

@@ -139,7 +139,7 @@ export const useAccountantStore = create<AccountantState>()(
             loadDarfak: async () => {
                 const { data, error } = await supabase
                     .from('darfak_expenses')
-                    .select('id,title,amount,date,tags,note,attachment_ref')
+                    .select('id,title,amount,date,tags,category,note,attachment_ref')
                     .order('date', { ascending: false });
                 if (error) {
                     console.warn('Darfak load error', error);
@@ -151,6 +151,7 @@ export const useAccountantStore = create<AccountantState>()(
                     amount: Number(r.amount) || 0,
                     date: r.date,
                     tags: (r.tags as string[]) || [],
+                    category: r.category || undefined,
                     note: r.note || undefined,
                     attachment: (r.attachment_ref as string | null) || undefined,
                 }));
@@ -612,6 +613,7 @@ export const useAccountantStore = create<AccountantState>()(
                     amount: exp.amount,
                     date: exp.date,
                     tags: exp.tags,
+                    category: exp.category || (exp.tags && exp.tags[0] ? exp.tags[0].replace(/^#/, '') : null),
                     note: exp.note || null,
                     attachment_ref: exp.attachment || null,
                 } });
