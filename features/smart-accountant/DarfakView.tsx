@@ -22,7 +22,7 @@ const catOf = (e: DarfakExpense): string => e.category || (e.tags && e.tags[0] ?
 const fa = (n: number) => (n || 0).toLocaleString('fa-IR');
 
 export default function DarfakView() {
-    const { darfak } = useAccountantStore();
+    const darfak = useAccountantStore(s => s.darfak);
     const { loadDarfak, saveDarfak, deleteDarfak } = useAccountantStore.getState();
     const [modalOpen, setModalOpen] = useState(false);
     const [editing, setEditing] = useState<DarfakExpense | null>(null);

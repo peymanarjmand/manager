@@ -73,7 +73,8 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
     const [showPaymentsList, setShowPaymentsList] = useState(false);
     const [selectedPaymentKeys, setSelectedPaymentKeys] = useState<string[]>([]);
 
-    const { installmentsSortMode, installmentsCustomOrder } = useAccountantStore();
+    const installmentsSortMode = useAccountantStore(s => s.installmentsSortMode);
+    const installmentsCustomOrder = useAccountantStore(s => s.installmentsCustomOrder);
     const { setInstallmentsSortMode, setInstallmentsCustomOrder } = useAccountantStore.getState();
 
     const today = useMemo(() => new Date(), []);

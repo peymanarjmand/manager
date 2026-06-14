@@ -11,7 +11,9 @@ import { OwnerGoldOverview } from './components/OwnerGoldOverview';
 import { TOKEN_TO_GRAMS_18K } from './goldSummary';
 
 export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBack: () => void; }): React.ReactNode {
-    const { gold, owners, loadOwners, loadGoldByOwner, saveGold, deleteGold, transferGold, getTransfersForGold } = useAssetsStore() as any;
+    const gold = useAssetsStore((s: any) => s.gold);
+    const owners = useAssetsStore((s: any) => s.owners);
+    const { loadOwners, loadGoldByOwner, saveGold, deleteGold, transferGold, getTransfersForGold } = useAssetsStore.getState() as any;
     const [isModalOpen, setModalOpen] = useState(false);
     const [subtype, setSubtype] = useState<GoldSubtype>('physical');
     const [form, setForm] = useState<any>({});

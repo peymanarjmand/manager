@@ -40,7 +40,7 @@ const statusOf = (rec?: SocialInsurancePayment): CoverageStatus => {
 };
 
 export const SocialInsuranceView = () => {
-    const { socialInsurance } = useAccountantStore();
+    const socialInsurance = useAccountantStore(s => s.socialInsurance);
     const { saveSocialInsurance, deleteSocialInsurance, settleSocialInsurance, settleSocialInsuranceMonth } = useAccountantStore.getState();
     const [previewRef, setPreviewRef] = useState<string | null>(null);
     const [modalOpen, setModalOpen] = useState(false);

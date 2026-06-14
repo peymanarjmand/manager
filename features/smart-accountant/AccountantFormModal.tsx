@@ -7,7 +7,8 @@ import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-i
 import { LEDGER_UNITS, getLedgerUnitConfig, FormInput, FormSelect, FormTextarea, FormImageUpload, JalaliDatePicker } from './SmartAccountantShared';
 
 export const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: {isOpen: boolean, onClose: () => void, onSave: (type:string, data:any)=>void, type?:string, payload?:any}) => {
-    const { customCategories, addCustomCategory } = useAccountantStore();
+    const customCategories = useAccountantStore(s => s.customCategories);
+    const addCustomCategory = useAccountantStore(s => s.addCustomCategory);
     const [formData, setFormData] = useState(payload || {});
     const [imagePreview, setImagePreview] = useState(payload?.receiptImage || payload?.avatar || null);
     const [isUploading, setIsUploading] = useState(false);

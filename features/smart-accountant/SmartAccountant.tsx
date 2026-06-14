@@ -27,7 +27,22 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
     const [currentInstallment, setCurrentInstallment] = useState<InstallmentPlan | null>(null);
     const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; confirmText?: string; cancelText?: string; tone?: 'warning' | 'danger' | 'success'; onConfirm: () => void } | null>(null);
 
-    const data = useAccountantStore();
+    // Subscribe only to the financial slices this container actually renders (plus
+    // tabsOrder for the tab bar). Changes to UI-pref-only slices that child views
+    // own their own subscriptions for (customCategories, installments sort order,
+    // peopleOrder, socialInsurance, darfak) no longer re-render the whole tree.
+    const transactions = useAccountantStore(s => s.transactions);
+    const assets = useAccountantStore(s => s.assets);
+    const people = useAccountantStore(s => s.people);
+    const ledger = useAccountantStore(s => s.ledger);
+    const installments = useAccountantStore(s => s.installments);
+    const checks = useAccountantStore(s => s.checks);
+    const funds = useAccountantStore(s => s.funds);
+    const tabsOrder = useAccountantStore(s => s.tabsOrder);
+    const data = useMemo(
+        () => ({ transactions, assets, people, ledger, installments, checks, funds }),
+        [transactions, assets, people, ledger, installments, checks, funds]
+    );
     const actions = useAccountantStore.getState();
     const viewLedgerPerson = useMemo(() => {
         if (!viewLedgerEntry) return null;
@@ -270,8 +285,7 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
                 <div className="border-b border-white/10">
                     <nav className="-mb-px flex space-x-4 space-x-reverse overflow-x-auto" aria-label="Tabs">
                         {(() => {
-                            const store = useAccountantStore.getState();
-                            const { tabsOrder, setTabsOrder } = store;
+                            const setTabsOrder = useAccountantStore.getState().setTabsOrder;
                             const all = [
                                 { id: 'summary', title: 'خلاصه', icon: <SummaryIcon /> },
                                 { id: 'transactions', title: 'تراکنش‌ها', icon: <TransactionsIcon /> },

@@ -15,9 +15,9 @@ const JalaliDate = ({ iso }: { iso: string }) => (
 );
 
 export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
-    const { assets } = useAccountantStore();
+    const assets = useAccountantStore(s => s.assets);
     const { saveAsset, deleteAsset, loadAssets } = useAccountantStore.getState();
-    const { owners } = useAssetsStore();
+    const owners = useAssetsStore(s => s.owners);
     const { loadOwners, saveOwner } = useAssetsStore.getState();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
