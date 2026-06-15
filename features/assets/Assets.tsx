@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import { useAccountantStore } from '../smart-accountant/store';
 import { Asset } from '../smart-accountant/types';
+import { confirm } from '../../lib/confirm';
 import { useAssetsStore } from './store';
 import OwnerAssetsDashboard from './OwnerAssetsDashboard';
 import { AssetsIcon, EditIcon, DeleteIcon, PlusIcon, BackIcon, UserCircleIcon } from '../../components/Icons';
@@ -58,8 +59,8 @@ export const Assets: React.FC<AssetsModuleProps> = ({ onNavigateBack }) => {
         setEditing(null);
     };
 
-    const onDelete = (id: string) => {
-        if (!window.confirm('آیا از حذف این دارایی مطمئن هستید؟')) return;
+    const onDelete = async (id: string) => {
+        if (!(await confirm({ title: 'حذف دارایی', message: 'آیا از حذف این دارایی مطمئن هستید؟', confirmText: 'حذف', tone: 'danger' }))) return;
         deleteAsset(id);
     };
 

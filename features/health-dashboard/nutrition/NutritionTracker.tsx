@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { PlusIcon, EditIcon, DeleteIcon, ClockIcon } from '../../../components/Icons';
 import { Meal } from '../../../types';
 import { useHealthStore } from '../store/healthStore';
+import { toast } from '../../../lib/toast';
+import { confirm } from '../../../lib/confirm';
 
 interface NutritionTrackerProps {
   onNavigateBack: () => void;
@@ -56,7 +58,7 @@ export const NutritionTracker: React.FC<NutritionTrackerProps> = ({ onNavigateBa
 
   const handleAddMeal = async () => {
     if (!newMeal.name || newMeal.calories <= 0) {
-      alert('لطفاً نام غذا و کالری را وارد کنید');
+      toast.warning('لطفاً نام غذا و کالری را وارد کنید');
       return;
     }
 
@@ -83,17 +85,17 @@ export const NutritionTracker: React.FC<NutritionTrackerProps> = ({ onNavigateBa
       setShowAddForm(false);
     } catch (error) {
       console.error('Error adding meal:', error);
-      alert('خطا در افزودن وعده غذایی');
+      toast.error('خطا در افزودن وعده غذایی');
     }
   };
 
   const handleDeleteMeal = async (mealId: string) => {
-    if (confirm('آیا از حذف این وعده غذایی اطمینان دارید؟')) {
+    if (await confirm({ title: 'حذف وعده غذایی', message: 'آیا از حذف این وعده غذایی اطمینان دارید؟', confirmText: 'حذف', tone: 'danger' })) {
       try {
         await deleteMeal(mealId);
       } catch (error) {
         console.error('Error deleting meal:', error);
-        alert('خطا در حذف وعده غذایی');
+        toast.error('خطا در حذف وعده غذایی');
       }
     }
   };

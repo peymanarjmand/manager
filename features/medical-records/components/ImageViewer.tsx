@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ZoomIn, ZoomOut, Download, Trash2, Calendar, User, MapPin, Image as ImageIcon } from 'lucide-react';
 import { MedicalImage } from '../types/medicalRecords.types';
+import { toast } from '../../../lib/toast';
 
 interface ImageViewerProps {
   image: MedicalImage;
@@ -157,7 +158,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
                 onLoad={() => setImageLoaded(true)}
                 onError={() => {
                   setImageLoaded(true);
-                  alert('خطا در بارگذاری تصویر');
+                  toast.error('خطا در بارگذاری تصویر');
                 }}
               />
             )}

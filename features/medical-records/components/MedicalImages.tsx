@@ -3,6 +3,8 @@ import { Plus, Search, Calendar, User, MapPin, Eye, Trash2, Edit, Image as Image
 import { MedicalImage } from '../types/medicalRecords.types';
 import { ImageViewer } from './ImageViewer';
 import { FileUpload } from './FileUpload';
+import { toast } from '../../../lib/toast';
+import { confirm } from '../../../lib/confirm';
 
 interface MedicalImagesProps {
   medicalImages: MedicalImage[];
@@ -66,7 +68,7 @@ export const MedicalImages: React.FC<MedicalImagesProps> = ({
     const formData = new FormData(e.currentTarget);
     
     if (!uploadedFile && !editingImage) {
-      alert('لطفاً یک تصویر آپلود کنید');
+      toast.warning('لطفاً یک تصویر آپلود کنید');
       return;
     }
 
@@ -104,7 +106,7 @@ export const MedicalImages: React.FC<MedicalImagesProps> = ({
       setShowAddForm(false);
       setUploadedFile(null);
     } catch (error) {
-      alert('خطا در ذخیره تصویر');
+      toast.error('خطا در ذخیره تصویر');
     }
   };
 
@@ -282,8 +284,8 @@ export const MedicalImages: React.FC<MedicalImagesProps> = ({
         <ImageViewer
           image={viewingImage}
           onClose={() => setViewingImage(null)}
-          onDelete={() => {
-            if (confirm('آیا از حذف این تصویر اطمینان دارید؟')) {
+          onDelete={async () => {
+            if (await confirm({ title: 'حذف تصویر', message: 'آیا از حذف این تصویر اطمینان دارید؟', confirmText: 'حذف', tone: 'danger' })) {
               onDeleteMedicalImage(viewingImage.id);
               setViewingImage(null);
             }
@@ -366,8 +368,8 @@ export const MedicalImages: React.FC<MedicalImagesProps> = ({
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm('آیا از حذف این تصویر اطمینان دارید؟')) {
+                      onClick={async () => {
+                        if (await confirm({ title: 'حذف تصویر', message: 'آیا از حذف این تصویر اطمینان دارید؟', confirmText: 'حذف', tone: 'danger' })) {
                           onDeleteMedicalImage(image.id);
                         }
                       }}

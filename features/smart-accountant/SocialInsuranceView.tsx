@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import { ShieldCheck, Award, CalendarDays, Wallet, TrendingUp, Coins, Eye, Pencil, Trash2, CheckCheck, Plus, StickyNote, Clock } from 'lucide-react';
 import { useAccountantStore } from './store';
+import { toast } from '../../lib/toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
 import { formatCurrency, JalaliDatePicker, ReceiptPreview } from './SmartAccountantShared';
@@ -418,7 +419,7 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
         const existing = useAccountantStore.getState().socialInsurance;
         const duplicate = existing.find(x => x.year === form.year && x.month === form.month && x.id !== form.id);
         if (duplicate) {
-            alert('برای این سال/ماه قبلا پرداخت ثبت شده است.');
+            toast.warning('برای این سال/ماه قبلا پرداخت ثبت شده است.');
             return;
         }
         const maxDays = computeDaysCovered(form.year, form.month);

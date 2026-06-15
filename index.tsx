@@ -5,6 +5,8 @@ import App from './App';
 import './index.css';
 import { initOutbox } from './lib/outbox';
 import { registerSW } from 'virtual:pwa-register';
+import { Toaster } from './components/ui/Toaster';
+import { ConfirmHost } from './components/ui/ConfirmHost';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -13,7 +15,11 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
-  <App />
+  <>
+    <App />
+    <Toaster />
+    <ConfirmHost />
+  </>
 );
 
 // Start the durable write-outbox: replays any queued writes on reconnect/focus.

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Search, Calendar, User, FileText, Trash2, Edit, Download } from 'lucide-react';
 import { LabTest } from '../types/medicalRecords.types';
+import { confirm } from '../../../lib/confirm';
 
 interface LabResultsProps {
   labTests: LabTest[];
@@ -320,8 +321,8 @@ export const LabResults: React.FC<LabResultsProps> = ({
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm('آیا از حذف این آزمایش اطمینان دارید؟')) {
+                    onClick={async () => {
+                      if (await confirm({ title: 'حذف آزمایش', message: 'آیا از حذف این آزمایش اطمینان دارید؟', confirmText: 'حذف', tone: 'danger' })) {
                         onDeleteLabTest(test.id);
                       }
                     }}

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Plus, Search, Calendar, User, FileText, Pill, Clock, Trash2, Edit, Download, Camera } from 'lucide-react';
 import { Prescription } from '../types/medicalRecords.types';
 import { FileUpload } from './FileUpload';
+import { toast } from '../../../lib/toast';
+import { confirm } from '../../../lib/confirm';
 
 interface PrescriptionsProps {
   prescriptions: Prescription[];
@@ -68,12 +70,12 @@ export const Prescriptions: React.FC<PrescriptionsProps> = ({
     const formData = new FormData(e.currentTarget);
     
     if (!uploadedFile && !editingPrescription) {
-      alert('لطفاً تصویر نسخه را آپلود کنید');
+      toast.warning('لطفاً تصویر نسخه را آپلود کنید');
       return;
     }
 
     if (medications.length === 0) {
-      alert('لطفاً حداقل یک دارو اضافه کنید');
+      toast.warning('لطفاً حداقل یک دارو اضافه کنید');
       return;
     }
 
@@ -83,7 +85,7 @@ export const Prescriptions: React.FC<PrescriptionsProps> = ({
     );
 
     if (validMedications.length === 0) {
-      alert('لطفاً اطلاعات داروها را کامل وارد کنید');
+      toast.warning('لطفاً اطلاعات داروها را کامل وارد کنید');
       return;
     }
 
@@ -116,7 +118,7 @@ export const Prescriptions: React.FC<PrescriptionsProps> = ({
       setUploadedFile(null);
       setMedications([]);
     } catch (error) {
-      alert('خطا در ذخیره نسخه');
+      toast.error('خطا در ذخیره نسخه');
     }
   };
 
@@ -437,8 +439,8 @@ export const Prescriptions: React.FC<PrescriptionsProps> = ({
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm('آیا از حذف این نسخه اطمینان دارید؟')) {
+                    onClick={async () => {
+                      if (await confirm({ title: 'حذف نسخه', message: 'آیا از حذف این نسخه اطمینان دارید؟', confirmText: 'حذف', tone: 'danger' })) {
                         onDeletePrescription(prescription.id);
                       }
                     }}

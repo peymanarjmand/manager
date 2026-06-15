@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useMyCarStore } from './store';
+import { toast } from '../../lib/toast';
 import type {
   Vehicle,
   VehicleInsurance,
@@ -155,7 +156,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
 
     const items = maintenanceForm.items || [];
     if (!items.length) {
-      window.alert('حداقل یک مورد سرویس را انتخاب کنید.');
+      toast.warning('حداقل یک مورد سرویس را انتخاب کنید.');
       return;
     }
 
@@ -165,7 +166,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
       maintenanceForm.odometerKm === null ||
       Number.isNaN(maintenanceForm.odometerKm as number)
     ) {
-      window.alert('لطفاً کیلومتر فعلی را وارد کنید.');
+      toast.warning('لطفاً کیلومتر فعلی را وارد کنید.');
       return;
     }
 
@@ -175,7 +176,7 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
       maintenanceForm.cost === null ||
       Number.isNaN(maintenanceForm.cost as number)
     ) {
-      window.alert('لطفاً مبلغ سرویس را وارد کنید (صفر هم قابل قبول است).');
+      toast.warning('لطفاً مبلغ سرویس را وارد کنید (صفر هم قابل قبول است).');
       return;
     }
 
@@ -270,13 +271,13 @@ export const MyCar: React.FC<MyCarProps> = ({ onNavigateBack }) => {
         ? Number(expenseForm.amount)
         : NaN;
     if (Number.isNaN(amount)) {
-      window.alert('لطفاً مبلغ را به‌صورت عدد وارد کنید (صفر هم مجاز است).');
+      toast.warning('لطفاً مبلغ را به‌صورت عدد وارد کنید (صفر هم مجاز است).');
       return;
     }
 
     const category = (expenseForm.category || '').trim();
     if (!category) {
-      window.alert('لطفاً بابت هزینه را مشخص کنید.');
+      toast.warning('لطفاً بابت هزینه را مشخص کنید.');
       return;
     }
 

@@ -6,6 +6,7 @@ import { Prescriptions } from './components/Prescriptions';
 import { Reports } from './components/Reports';
 import { useMedicalRecordsStore } from './store/medicalRecordsStore';
 import { LabTest, MedicalImage, Prescription, MedicalReport, SearchFilters } from './types/medicalRecords.types';
+import { toast } from '../../lib/toast';
 
 interface MedicalRecordsProps {
   onNavigateBack: () => void;
@@ -76,7 +77,7 @@ export const MedicalRecords: React.FC<MedicalRecordsProps> = ({ onNavigateBack }
 
   const handleExportPDF = () => {
     // TODO: Implement PDF export functionality
-    alert('امکان خروجی PDF به زودی اضافه خواهد شد');
+    toast.info('امکان خروجی PDF به زودی اضافه خواهد شد');
   };
 
   const tabs = [

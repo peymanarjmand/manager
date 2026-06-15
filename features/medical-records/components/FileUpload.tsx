@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Upload, X, FileText, Image, FileCheck } from 'lucide-react';
+import { toast } from '../../../lib/toast';
 
 interface FileUploadProps {
   onFileUpload: (file: File) => void;
@@ -53,13 +54,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     // Validate file type
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!acceptedTypes.some(type => type.toLowerCase() === fileExtension)) {
-      alert(`نوع فایل پشتیبانی نمی‌شود. فایل‌های پشتیبانی شده: ${acceptedTypes.join(', ')}`);
+      toast.error(`نوع فایل پشتیبانی نمی‌شود. فایل‌های پشتیبانی شده: ${acceptedTypes.join(', ')}`);
       return;
     }
 
     // Validate file size
     if (file.size > maxFileSize) {
-      alert(`حجم فایل بیش از حد مجاز است. حداکثر حجم: ${maxFileSize / (1024 * 1024)}MB`);
+      toast.error(`حجم فایل بیش از حد مجاز است. حداکثر حجم: ${maxFileSize / (1024 * 1024)}MB`);
       return;
     }
 

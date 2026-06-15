@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, ChangeEvent } from 'react';
 import { Contact, TypedEntry } from './types';
 import { parseVCF, generateVCF } from './vcf';
+import { confirm } from '../../lib/confirm';
 import { BackIcon, PlusIcon, EditIcon, DeleteIcon, CloseIcon, UserCircleIcon, SearchIcon, ImportIcon, ExportIcon, PhoneBookIcon } from '../../components/Icons';
 import { usePhoneBookStore } from './store';
 import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
@@ -205,8 +206,8 @@ export const PhoneBook = ({ onNavigateBack }: { onNavigateBack: () => void; }): 
         closeModal();
     };
 
-    const handleDelete = (id: string) => {
-        if(window.confirm('آیا از حذف این مخاطب اطمینان دارید؟')) {
+    const handleDelete = async (id: string) => {
+        if (await confirm({ title: 'حذف مخاطب', message: 'آیا از حذف این مخاطب اطمینان دارید؟', confirmText: 'حذف', tone: 'danger' })) {
             deleteContact(id);
             closeModal();
         }

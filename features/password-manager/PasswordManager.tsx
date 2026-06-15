@@ -1,6 +1,7 @@
 import React, { useState, useMemo, ChangeEvent, useRef } from 'react';
 import { PASSWORD_CATEGORIES } from './constants';
 import { AnyPasswordEntry, PasswordCategory } from './types';
+import { confirm } from '../../lib/confirm';
 import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon, EyeOffIcon, CloseIcon, AlertIcon, DefaultImageIcon, CopyIcon, CheckCircleIcon } from '../../components/Icons';
 import { usePasswordStore } from './store';
 import { saveImageDataURL, isImageRef, getObjectURLByRef } from '../../lib/idb-images';
@@ -292,8 +293,8 @@ export const PasswordManager = ({ onNavigateBack }: { onNavigateBack: () => void
         closeModal();
     };
 
-    const handleDelete = (id: string) => {
-        if(window.confirm('آیا از حذف این مورد اطمینان دارید؟ این عمل قابل بازگشت نیست.')) {
+    const handleDelete = async (id: string) => {
+        if (await confirm({ title: 'حذف مورد', message: 'آیا از حذف این مورد اطمینان دارید؟ این عمل قابل بازگشت نیست.', confirmText: 'حذف', tone: 'danger' })) {
             deleteEntry(activeCategory, id);
         }
     };

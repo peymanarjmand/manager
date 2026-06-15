@@ -35,3 +35,20 @@
   /* Tabular figures for aligned, non-jumping money/number columns. */
   .nums-tabular { font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; }
 }
+
+/* Toaster + ConfirmHost (bottom-sheet) enter/exit animations. */
+@keyframes lm-toast-in { from { opacity: 0; transform: translateY(-14px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes lm-toast-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-10px) scale(.97); } }
+@keyframes lm-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lm-backdrop-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes lm-sheet-in { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes lm-sheet-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(26px); } }
+.lm-toast-in { animation: lm-toast-in .24s cubic-bezier(.2, .8, .2, 1) both; }
+.lm-toast-out { animation: lm-toast-out .2s ease-in both; }
+.lm-backdrop-in { animation: lm-backdrop-in .2s ease-out both; }
+.lm-backdrop-out { animation: lm-backdrop-out .2s ease-in both; }
+.lm-sheet-in { animation: lm-sheet-in .28s cubic-bezier(.2, .8, .2, 1) both; }
+.lm-sheet-out { animation: lm-sheet-out .22s ease-in both; }
+@media (prefers-reduced-motion: reduce) {
+  .lm-toast-in, .lm-toast-out, .lm-backdrop-in, .lm-backdrop-out, .lm-sheet-in, .lm-sheet-out { animation-duration: .01ms; }
+}

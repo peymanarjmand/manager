@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, ChangeEvent } from 'react'
 import moment from 'jalali-moment';
 import { useDailyTasksStore } from './store';
 import { Task, Project, Subtask, TaskPriority } from './types';
+import { confirm } from '../../lib/confirm';
 import { PRIORITIES, PROJECTS_COLORS } from './constants';
 import { BackIcon, InboxIcon, CalendarIcon, UpcomingIcon, ProjectIcon, PlusIcon, CloseIcon, EditIcon, DeleteIcon, SearchIcon, CompletedIcon, TagIcon, ChevronDownIcon, CalendarViewIcon, ArrowRightIcon, ArrowLeftIcon } from '../../components/Icons';
 
@@ -641,8 +642,8 @@ const ProjectModal = ({ isOpen, onClose, project }) => {
         }
     };
     
-    const handleDelete = () => {
-        if(project && window.confirm(`آیا از حذف پروژه "${project.name}" اطمینان دارید؟ کارهای داخل آن حذف نخواهند شد.`)){
+    const handleDelete = async () => {
+        if (project && (await confirm({ title: 'حذف پروژه', message: `آیا از حذف پروژه "${project.name}" اطمینان دارید؟ کارهای داخل آن حذف نخواهند شد.`, confirmText: 'حذف', tone: 'danger' }))) {
             deleteProject(project.id);
             onClose();
         }
