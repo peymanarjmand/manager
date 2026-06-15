@@ -1,21 +1,34 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import moment from 'jalali-moment';
 import { Transaction, Person, LedgerEntry, InstallmentPlan, InstallmentPayment, CheckStatus } from './types';
 import { SummaryIcon, TransactionsIcon, PeopleIcon, InstallmentsIcon, ChecksIcon, BackIcon, PlusIcon, WalletIcon } from '../../components/Icons';
-import DarfakView from './DarfakView';
+import DarfakViewBase from './DarfakView';
 import { useAccountantStore } from './store';
 import { TransactionVoucherModal } from './TransactionVoucherModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { getLedgerUnitConfig } from './SmartAccountantShared';
-import { SummaryView, TransactionsView, PeopleView, ChecksView, LedgerEntrySummaryModal } from './SmartAccountantViews';
+import { SummaryView as SummaryViewBase, TransactionsView as TransactionsViewBase, PeopleView as PeopleViewBase, ChecksView as ChecksViewBase, LedgerEntrySummaryModal } from './SmartAccountantViews';
 import { AccountantFormModal } from './AccountantFormModal';
-import { InstallmentsView } from './InstallmentsView';
-import { SocialInsuranceView } from './SocialInsuranceView';
+import { InstallmentsView as InstallmentsViewBase } from './InstallmentsView';
+import { SocialInsuranceView as SocialInsuranceViewBase } from './SocialInsuranceView';
 import { newId } from '../../lib/id';
 
 // CONFIG
 type AccountantTab = 'summary' | 'transactions' | 'people' | 'installments' | 'checks' | 'darfak' | 'social_insurance';
 type ModalConfig = { isOpen: boolean; type?: 'transaction' | 'asset' | 'person' | 'ledger' | 'installmentPlan' | 'installmentPayment' | 'check'; payload?: any };
+
+// Memoize the tab views. Unrelated container state (opening a modal, the confirm
+// dialog, viewing a voucher/ledger) re-renders this container; with the stable
+// props below, the active heavy view no longer re-renders along with it.
+// SocialInsurance and Darfak take no props, so memo fully isolates them from
+// container renders (they keep their own store subscriptions).
+const SummaryView = React.memo(SummaryViewBase);
+const TransactionsView = React.memo(TransactionsViewBase);
+const PeopleView = React.memo(PeopleViewBase);
+const ChecksView = React.memo(ChecksViewBase);
+const InstallmentsView = React.memo(InstallmentsViewBase);
+const SocialInsuranceView = React.memo(SocialInsuranceViewBase);
+const DarfakView = React.memo(DarfakViewBase);
 
 // Main Component
 export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void; }): React.ReactNode => {
@@ -43,7 +56,6 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
         () => ({ transactions, assets, people, ledger, installments, checks, funds }),
         [transactions, assets, people, ledger, installments, checks, funds]
     );
-    const actions = useAccountantStore.getState();
     const viewLedgerPerson = useMemo(() => {
         if (!viewLedgerEntry) return null;
         return data.people.find(p => p.id === viewLedgerEntry.personId) || null;
@@ -78,10 +90,11 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
         }
     }, [data.installments, currentInstallment]);
 
-    const openModal = (type: ModalConfig['type'], payload = null) => setModal({ isOpen: true, type, payload });
-    const closeModal = () => setModal({ isOpen: false });
+    const openModal = useCallback((type: ModalConfig['type'], payload = null) => setModal({ isOpen: true, type, payload }), []);
+    const closeModal = useCallback(() => setModal({ isOpen: false }), []);
 
     const handleSave = (itemType: string, itemData: any) => {
+        const actions = useAccountantStore.getState();
         const id = itemData.id || newId();
     
         switch (itemType) {
@@ -138,7 +151,8 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
         closeModal();
     };
 
-    const handleDelete = (itemType: string, id: string, personId?: string) => {
+    const handleDelete = useCallback((itemType: string, id: string, personId?: string) => {
+        const actions = useAccountantStore.getState();
         const performDelete = () => {
             switch (itemType) {
                 case 'transaction':
@@ -195,19 +209,36 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
             tone: 'danger',
             onConfirm: performDelete,
         });
-    };
-    
-    const handleSettle = (personId: string, ledgerId: string) => {
-       actions.toggleSettle(personId, ledgerId);
-    }
-    
-    const handleTogglePaidStatus = (planId: string, paymentId: string) => {
-       actions.togglePaidStatus(planId, paymentId);
-    }
+    }, []);
 
-     const handleUpdateCheckStatus = (checkId: string, status: CheckStatus) => {
-       actions.updateCheckStatus(checkId, status);
-    }
+    const handleSettle = useCallback((personId: string, ledgerId: string) => {
+       useAccountantStore.getState().toggleSettle(personId, ledgerId);
+    }, []);
+
+    const handleTogglePaidStatus = useCallback((planId: string, paymentId: string) => {
+       useAccountantStore.getState().togglePaidStatus(planId, paymentId);
+    }, []);
+
+     const handleUpdateCheckStatus = useCallback((checkId: string, status: CheckStatus) => {
+       useAccountantStore.getState().updateCheckStatus(checkId, status);
+    }, []);
+
+    // Stable per-view callbacks bundled in one memo (both deps are stable), so the
+    // memoized views keep identical prop identities across unrelated container
+    // re-renders. Without this, the inline closures would defeat React.memo.
+    const cb = useMemo(() => ({
+        editTransaction: (t: Transaction) => openModal('transaction', t),
+        deleteTransaction: (id: string) => handleDelete('transaction', id),
+        editCheck: (c: any) => openModal('check', c),
+        deleteCheck: (id: string) => handleDelete('check', id),
+        editPlan: (plan: any) => openModal('installmentPlan', plan),
+        deletePlan: (id: string) => handleDelete('installmentPlan', id),
+        editPayment: (p: any) => openModal('installmentPayment', p),
+        editPerson: (p: Person) => openModal('person', p),
+        deletePerson: (id: string) => handleDelete('person', id),
+        editLedger: (l: LedgerEntry) => openModal('ledger', l),
+        deleteLedger: (personId: string, ledgerId: string) => handleDelete('ledger', ledgerId, personId),
+    }), [openModal, handleDelete]);
 
     const handleAddButtonClick = () => {
         let modalType: ModalConfig['type'] = undefined;
@@ -333,10 +364,10 @@ export const SmartAccountant = ({ onNavigateBack }: { onNavigateBack: () => void
             {/* Content */}
             <div className="animate-fade-in">
                 {activeTab === 'summary' && <SummaryView data={data} />}
-                {activeTab === 'transactions' && <TransactionsView transactions={data.transactions} onEdit={(t) => openModal('transaction', t)} onDelete={(id) => handleDelete('transaction', id)} onView={setViewTransaction} />}
-                {activeTab === 'checks' && <ChecksView checks={data.checks} onEdit={(c) => openModal('check', c)} onDelete={(id) => handleDelete('check', id)} onStatusChange={handleUpdateCheckStatus} />}
-                {activeTab === 'installments' && <InstallmentsView installments={data.installments} currentInstallment={currentInstallment} setCurrentInstallment={setCurrentInstallment} onEditPlan={(plan) => openModal('installmentPlan', plan)} onDeletePlan={(id) => handleDelete('installmentPlan', id)} onEditPayment={(p) => openModal('installmentPayment', p)} onTogglePaidStatus={handleTogglePaidStatus} />}
-                {activeTab === 'people' && <PeopleView data={data} onEditPerson={(p) => openModal('person', p)} onDeletePerson={(id) => handleDelete('person', id)} onEditLedger={(l) => openModal('ledger', l)} onDeleteLedger={(personId, ledgerId) => handleDelete('ledger', ledgerId, personId)} onSettle={handleSettle} currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} onViewLedger={setViewLedgerEntry} />}
+                {activeTab === 'transactions' && <TransactionsView transactions={data.transactions} onEdit={cb.editTransaction} onDelete={cb.deleteTransaction} onView={setViewTransaction} />}
+                {activeTab === 'checks' && <ChecksView checks={data.checks} onEdit={cb.editCheck} onDelete={cb.deleteCheck} onStatusChange={handleUpdateCheckStatus} />}
+                {activeTab === 'installments' && <InstallmentsView installments={data.installments} currentInstallment={currentInstallment} setCurrentInstallment={setCurrentInstallment} onEditPlan={cb.editPlan} onDeletePlan={cb.deletePlan} onEditPayment={cb.editPayment} onTogglePaidStatus={handleTogglePaidStatus} />}
+                {activeTab === 'people' && <PeopleView data={data} onEditPerson={cb.editPerson} onDeletePerson={cb.deletePerson} onEditLedger={cb.editLedger} onDeleteLedger={cb.deleteLedger} onSettle={handleSettle} currentPerson={currentPerson} setCurrentPerson={setCurrentPerson} onViewLedger={setViewLedgerEntry} />}
                 {activeTab === 'social_insurance' && <SocialInsuranceView />}
                 {activeTab === 'darfak' && <DarfakView />}
             </div>
