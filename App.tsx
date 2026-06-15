@@ -91,6 +91,27 @@ function App(): React.ReactNode {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
+  // PWA shortcut launch intent: a manifest shortcut opens `/?go=<module>`, which
+  // we read once on startup to jump straight into that module, then strip the
+  // query so a refresh or Back press stays clean. This is a one-shot launch
+  // reader, not full URL routing (per-module URLs are intentionally deferred).
+  useEffect(() => {
+    const go = new URLSearchParams(window.location.search).get('go');
+    if (!go) return;
+    const modules: View[] = [
+      'smart-accountant', 'assets', 'daily-tasks', 'my-car',
+      'phone-book', 'darfak', 'health-dashboard', 'password-manager',
+    ];
+    const url = new URL(window.location.href);
+    url.searchParams.delete('go');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    if ((modules as string[]).includes(go)) {
+      navigatedRef.current = true;
+      window.history.pushState({ view: go }, '');
+      setCurrentView(go as View);
+    }
+  }, []);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setSession(null);

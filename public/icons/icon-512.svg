@@ -1,5 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<rect width="512" height="512" fill="#0f172a"/>
-<circle cx="256" cy="256" r="200" fill="#22c55e"/>
-<text x="256" y="290" font-size="180" text-anchor="middle" fill="#0f172a" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Arial, 'Noto Sans', 'Liberation Sans', sans-serif">LM</text>
+  <defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#574bd3"/>
+    <stop offset="0.55" stop-color="#6d5ef6"/>
+    <stop offset="1" stop-color="#7e6ff8"/>
+  </linearGradient>
+  <radialGradient id="halo" cx="256" cy="110" r="340" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="area" x1="0" y1="170" x2="0" y2="356" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.24"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="dot" cx="372" cy="184" r="48" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </radialGradient></defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#halo)"/>
+  
+  <g transform="translate(256 256) scale(1) translate(-256 -256)">
+    <path d="M150 322 L224 252 L290 292 L372 184 L372 356 L150 356 Z" fill="url(#area)"/>
+    <circle cx="372" cy="184" r="48" fill="url(#dot)"/>
+    <path d="M150 322 L224 252 L290 292 L372 184" fill="none" stroke="#ffffff"
+      stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="372" cy="184" r="21" fill="#ffffff"/>
+  </g>
 </svg>
