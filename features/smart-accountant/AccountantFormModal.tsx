@@ -116,7 +116,9 @@ export const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: 
         const tType = (formData.type || 'expense') as 'income' | 'expense';
         const defaultCats = TRANSACTION_CATEGORIES[tType] || [];
         const customCats = customCategories[tType] || [];
-        const allCats = [...defaultCats, ...customCats];
+        // Always keep the row's own category selectable (covers legacy/edited rows
+        // whose category isn't in defaults or customs) so editing never drops it.
+        const allCats = [...defaultCats, ...customCats, ...(formData.category ? [formData.category] : [])];
         const uniqueCats = Array.from(new Set(allCats));
 
         return (
