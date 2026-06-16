@@ -1,287 +1,231 @@
-import React, { useState, useEffect } from 'react';
-import {
-  PlusIcon,
-  EditIcon,
-  DeleteIcon,
-  CalendarIcon,
-  FileTextIcon,
-} from '../../../components/Icons';
-import JalaliDatePicker from '../../assets/components/JalaliDatePicker';
-import { isImageRef, getObjectURLByRef } from '../../../lib/idb-images';
+import React, { useState } from 'react';
+import { Plus, Pencil, Trash2, ShieldCheck } from 'lucide-react';
 import type { VehicleInsurance, VehicleInsuranceType } from '../types';
-import { formatDateLabel, fileToImageRef } from '../shared';
+import { computeInsuranceStatus, formatJalali, formatToman, type StatusTone } from '../vehicle-status';
+import {
+  Sheet,
+  SheetActions,
+  Field,
+  TextInput,
+  TextArea,
+  Select,
+  DateField,
+  AttachmentField,
+  DocumentLink,
+  EmptyState,
+  IconButton,
+} from './ui';
+import { todayIsoDateOnly } from '../shared';
 
-interface InsuranceTabProps {
+const CHIP: Record<StatusTone, string> = {
+  emerald: 'bg-emerald-500/12 text-emerald-300',
+  amber: 'bg-amber-500/12 text-amber-300',
+  rose: 'bg-rose-500/12 text-rose-300',
+  brand: 'bg-brand-500/12 text-brand-300',
+  slate: 'bg-white/[0.06] text-slate-300',
+};
+
+const typeLabel = (t: VehicleInsuranceType) => (t === 'third_party' ? 'بیمه شخص ثالث' : 'بیمه بدنه');
+
+interface Props {
   insurances: VehicleInsurance[];
-  form: Partial<VehicleInsurance>;
-  onChange: (f: Partial<VehicleInsurance>) => void;
-  onSubmit: (e: React.FormEvent) => Promise<void> | void;
-  onDelete: (id: string) => Promise<void>;
+  vehicleId: string;
+  onSave: (payload: Omit<VehicleInsurance, 'createdAt'>) => Promise<void>;
+  onDelete: (id: string) => void;
   onShowDetails: (ins: VehicleInsurance) => void;
 }
 
-export const InsuranceTab: React.FC<InsuranceTabProps> = ({
+const FORM_ID = 'my-car-insurance-form';
+
+export const InsuranceTab: React.FC<Props> = ({
   insurances,
-  form,
-  onChange,
-  onSubmit,
+  vehicleId,
+  onSave,
   onDelete,
   onShowDetails,
-}) => (
-  <div className="space-y-4">
-    <form onSubmit={onSubmit} className="bg-slate-900/40 rounded-lg p-4 border border-slate-800 space-y-3">
-      <h4 className="font-semibold text-slate-100 flex items-center gap-2">
-        <PlusIcon />
-        <span>افزودن / ویرایش بیمه</span>
-      </h4>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">نوع بیمه</label>
-          <select
-            value={form.type || 'third_party'}
-            onChange={(e) =>
-              onChange({ ...form, type: e.target.value as VehicleInsuranceType })
-            }
-            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
-          >
-            <option value="third_party">شخص ثالث</option>
-            <option value="body">بیمه بدنه</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">شرکت بیمه</label>
-          <input
-            value={form.company || ''}
-            onChange={(e) => onChange({ ...form, company: e.target.value })}
-            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
-            placeholder="ایران، آسیا، دی، ..."
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">شماره بیمه‌نامه</label>
-          <input
-            value={form.policyNumber || ''}
-            onChange={(e) => onChange({ ...form, policyNumber: e.target.value })}
-            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">تاریخ شروع</label>
-          <div className="flex items-center bg-slate-900/60 border border-white/10 rounded-md px-3 py-1.5">
-            <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
-            <div className="flex-1">
-              <JalaliDatePicker
-                id="vehicle-ins-start"
-                value={form.startDate || new Date().toISOString()}
-                onChange={(iso) =>
-                  onChange({
-                    ...form,
-                    startDate: iso.slice(0, 10),
-                  })
-                }
-              />
-            </div>
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">تاریخ پایان</label>
-          <div className="flex items-center bg-slate-900/60 border border-white/10 rounded-md px-3 py-1.5">
-            <CalendarIcon className="h-4 w-4 text-slate-400 ml-2" />
-            <div className="flex-1">
-              <JalaliDatePicker
-                id="vehicle-ins-end"
-                value={form.endDate || new Date().toISOString()}
-                onChange={(iso) =>
-                  onChange({
-                    ...form,
-                    endDate: iso.slice(0, 10),
-                  })
-                }
-              />
-            </div>
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">درصد تخفیف</label>
-          <input
-            type="number"
-            value={form.discountPercent ?? ''}
-            onChange={(e) =>
-              onChange({
-                ...form,
-                discountPercent: e.target.value ? Number(e.target.value) : undefined,
-              })
-            }
-            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
-            placeholder="مثلاً ۷۰"
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">مبلغ حق بیمه (تومان)</label>
-          <input
-            type="number"
-            value={form.premiumAmount ?? ''}
-            onChange={(e) =>
-              onChange({
-                ...form,
-                premiumAmount: e.target.value ? Number(e.target.value) : undefined,
-              })
-            }
-            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100"
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="block text-xs text-slate-400 mb-1">
-            توضیحات پوشش‌ها (سرقت، آتش‌سوزی، سرنشین و ...)
-          </label>
-          <textarea
-            rows={2}
-            value={form.coverageDescription || ''}
-            onChange={(e) =>
-              onChange({ ...form, coverageDescription: e.target.value })
-            }
-            className="w-full bg-slate-900/60 border border-white/10 rounded-md px-3 py-2 text-sm text-slate-100 resize-none"
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-slate-400 mb-1">
-            فایل بیمه‌نامه (PDF / تصویر)
-          </label>
-          <input
-            type="file"
-            accept="image/*,application/pdf"
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const ref = await fileToImageRef(file);
-              onChange({ ...form, documentRef: ref });
-            }}
-            className="w-full text-xs text-slate-300"
-          />
-        </div>
-      </div>
-      <div className="flex justify-end">
+}) => {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<Partial<VehicleInsurance>>({ type: 'third_party' });
+
+  const openAdd = () => {
+    setForm({ type: 'third_party', startDate: todayIsoDateOnly(), endDate: todayIsoDateOnly() });
+    setOpen(true);
+  };
+  const openEdit = (ins: VehicleInsurance) => {
+    setForm({ ...ins });
+    setOpen(true);
+  };
+
+  const patch = (p: Partial<VehicleInsurance>) => setForm((prev) => ({ ...prev, ...p }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.startDate || !form.endDate) return;
+    await onSave({
+      id: form.id || '',
+      vehicleId,
+      type: (form.type as VehicleInsuranceType) || 'third_party',
+      company: form.company,
+      policyNumber: form.policyNumber,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      discountPercent: form.discountPercent,
+      premiumAmount: form.premiumAmount,
+      coverageDescription: form.coverageDescription,
+      documentRef: form.documentRef,
+    });
+    setOpen(false);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-bold text-slate-200">بیمه‌نامه‌ها</h4>
         <button
-          type="submit"
-          className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold px-4 py-2 rounded-md transition"
+          type="button"
+          onClick={openAdd}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold px-3 py-2 transition"
         >
-          <PlusIcon />
-          <span>{form.id ? 'ذخیره بیمه' : 'افزودن بیمه'}</span>
+          <Plus size={15} />
+          <span>افزودن بیمه</span>
         </button>
       </div>
-    </form>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {insurances.map((ins) => (
-        <article
-          key={ins.id}
-          className="bg-slate-900/40 border border-slate-800 rounded-lg p-4 flex flex-col space-y-2 cursor-pointer hover:border-sky-500/60 transition"
-          onClick={() => onShowDetails(ins)}
-        >
-          <div className="flex items-center justify-between gap-2">
-            <h5 className="font-semibold text-slate-100">
-              {ins.type === 'third_party' ? 'بیمه شخص ثالث' : 'بیمه بدنه'}
-            </h5>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onChange({
-                    id: ins.id,
-                    vehicleId: ins.vehicleId,
-                    type: ins.type,
-                    company: ins.company,
-                    policyNumber: ins.policyNumber,
-                    startDate: ins.startDate,
-                    endDate: ins.endDate,
-                    discountPercent: ins.discountPercent,
-                    premiumAmount: ins.premiumAmount,
-                    coverageDescription: ins.coverageDescription,
-                    documentRef: ins.documentRef,
-                  });
-                }}
-                className="p-1 rounded-full hover:bg-slate-800 text-slate-300"
-                aria-label="ویرایش بیمه"
+      {insurances.length === 0 ? (
+        <EmptyState icon={<ShieldCheck size={30} />}>
+          هنوز بیمه‌ای برای این خودرو ثبت نشده است. با دکمه «افزودن بیمه» اولین بیمه‌نامه را وارد کنید.
+        </EmptyState>
+      ) : (
+        <div className="space-y-2.5">
+          {insurances.map((ins) => {
+            const st = computeInsuranceStatus([ins]);
+            return (
+              <article
+                key={ins.id}
+                onClick={() => onShowDetails(ins)}
+                className="rounded-2xl bg-white/[0.04] ring-1 ring-white/[0.06] p-3.5 hover:bg-white/[0.06] transition cursor-pointer"
               >
-                <EditIcon />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(ins.id);
-                }}
-                className="p-1 rounded-full hover:bg-slate-800 text-rose-400"
-              >
-                <DeleteIcon />
-              </button>
-            </div>
-          </div>
-          <p className="text-xs text-slate-400">
-            {ins.company || '-'} {ins.policyNumber && ` | شماره: ${ins.policyNumber}`}
-          </p>
-          <p className="text-xs text-slate-400 flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            <span>
-              {formatDateLabel(ins.startDate)} تا {formatDateLabel(ins.endDate)}
-            </span>
-          </p>
-          <p className="text-xs text-slate-400">
-            تخفیف: {ins.discountPercent != null ? `${ins.discountPercent}%` : '-'}
-          </p>
-          <p className="text-xs text-slate-400">
-            مبلغ حق بیمه: {ins.premiumAmount != null ? `${ins.premiumAmount.toLocaleString()} تومان` : '-'}
-          </p>
-          {ins.coverageDescription && (
-            <p className="text-xs text-slate-300 border-t border-slate-800/60 pt-2 mt-2">
-              {ins.coverageDescription}
-            </p>
-          )}
-          {ins.documentRef && (
-            <InsuranceDocumentLink documentRef={ins.documentRef} />
-          )}
-        </article>
-      ))}
-      {insurances.length === 0 && (
-        <p className="text-sm text-slate-400">
-          هنوز هیچ بیمه‌ای برای این خودرو ثبت نشده است.
-        </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${CHIP[st.tone]}`}>
+                      <ShieldCheck size={18} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-slate-100">{typeLabel(ins.type)}</p>
+                      <p className="text-[11px] text-slate-400 truncate">
+                        {[ins.company, ins.policyNumber].filter(Boolean).join(' · ') || 'بدون مشخصات'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <IconButton
+                      label="ویرایش بیمه"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(ins);
+                      }}
+                    >
+                      <Pencil size={15} />
+                    </IconButton>
+                    <IconButton
+                      label="حذف بیمه"
+                      tone="danger"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(ins.id);
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </IconButton>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className={`text-[11px] font-medium px-2 py-1 rounded-lg ${CHIP[st.tone]}`}>{st.label}</span>
+                  <span className="text-[11px] text-slate-400 nums-tabular" dir="ltr">
+                    {formatJalali(ins.startDate)} – {formatJalali(ins.endDate)}
+                  </span>
+                </div>
+
+                {(ins.premiumAmount != null || ins.discountPercent != null) && (
+                  <div className="mt-2.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between gap-2 text-[11px]">
+                    <span className="text-slate-400">
+                      حق بیمه:{' '}
+                      <span className="text-slate-200 nums-tabular">
+                        {ins.premiumAmount != null ? formatToman(ins.premiumAmount) : '—'}
+                      </span>
+                    </span>
+                    {ins.discountPercent != null && (
+                      <span className="text-slate-400 nums-tabular">تخفیف {ins.discountPercent}٪</span>
+                    )}
+                  </div>
+                )}
+
+                {ins.documentRef && (
+                  <div className="mt-2.5" onClick={(e) => e.stopPropagation()}>
+                    <DocumentLink documentRef={ins.documentRef} label="مشاهده بیمه‌نامه" />
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
       )}
-    </div>
-  </div>
-);
 
-export const InsuranceDocumentLink: React.FC<{ documentRef: string }> = ({ documentRef }) => {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    let revoke: string | null = null;
-    (async () => {
-      if (documentRef && isImageRef(documentRef)) {
-        const u = await getObjectURLByRef(documentRef);
-        if (u) {
-          setUrl(u);
-          revoke = u;
+      <Sheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title={form.id ? 'ویرایش بیمه‌نامه' : 'افزودن بیمه‌نامه'}
+        subtitle="اطلاعات بیمه‌نامه خودرو را وارد کنید."
+        icon={<ShieldCheck size={20} />}
+        footer={
+          <SheetActions formId={FORM_ID} onCancel={() => setOpen(false)} submitLabel={form.id ? 'ذخیره تغییرات' : 'افزودن بیمه'} />
         }
-      }
-    })();
-    return () => {
-      if (revoke) URL.revokeObjectURL(revoke);
-    };
-  }, [documentRef]);
-
-  if (!documentRef) return null;
-  return (
-    <a
-      href={url || '#'}
-      target="_blank"
-      rel="noreferrer"
-      className={`inline-flex items-center gap-1 text-xs mt-1 ${
-        url ? 'text-sky-400 hover:text-sky-300' : 'text-slate-500 cursor-default'
-      }`}
-    >
-      <FileTextIcon />
-      <span>مشاهده بیمه‌نامه</span>
-    </a>
+      >
+        <form id={FORM_ID} onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
+          <Field label="نوع بیمه" required>
+            <Select value={form.type || 'third_party'} onChange={(e) => patch({ type: e.target.value as VehicleInsuranceType })}>
+              <option value="third_party">شخص ثالث</option>
+              <option value="body">بدنه</option>
+            </Select>
+          </Field>
+          <Field label="شرکت بیمه">
+            <TextInput value={form.company || ''} onChange={(e) => patch({ company: e.target.value })} placeholder="ایران، آسیا، دی…" />
+          </Field>
+          <Field label="شماره بیمه‌نامه" className="col-span-2">
+            <TextInput value={form.policyNumber || ''} onChange={(e) => patch({ policyNumber: e.target.value })} />
+          </Field>
+          <div className="col-span-2">
+            <DateField label="تاریخ شروع" id="ins-start" value={form.startDate} onChange={(iso) => patch({ startDate: iso.slice(0, 10) })} required />
+          </div>
+          <div className="col-span-2">
+            <DateField label="تاریخ پایان" id="ins-end" value={form.endDate} onChange={(iso) => patch({ endDate: iso.slice(0, 10) })} required />
+          </div>
+          <Field label="درصد تخفیف">
+            <TextInput
+              type="number"
+              min={0}
+              value={form.discountPercent ?? ''}
+              onChange={(e) => patch({ discountPercent: e.target.value ? Number(e.target.value) : undefined })}
+              placeholder="مثلاً ۷۰"
+            />
+          </Field>
+          <Field label="حق بیمه (تومان)">
+            <TextInput
+              type="number"
+              min={0}
+              value={form.premiumAmount ?? ''}
+              onChange={(e) => patch({ premiumAmount: e.target.value ? Number(e.target.value) : undefined })}
+            />
+          </Field>
+          <Field label="پوشش‌ها (سرقت، آتش‌سوزی، سرنشین…)" className="col-span-2">
+            <TextArea value={form.coverageDescription || ''} onChange={(e) => patch({ coverageDescription: e.target.value })} rows={2} />
+          </Field>
+          <div className="col-span-2">
+            <AttachmentField label="فایل بیمه‌نامه (PDF / تصویر)" value={form.documentRef} onChange={(ref) => patch({ documentRef: ref })} />
+          </div>
+        </form>
+      </Sheet>
+    </div>
   );
 };
