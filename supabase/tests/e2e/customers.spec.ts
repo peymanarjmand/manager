@@ -150,37 +150,186 @@ test("mobile customer dossier, financial acceptance, encryption, offline retry a
   await expect(
     page.getByText("تسویه · ۰ تومان", { exact: true }),
   ).toBeVisible();
-  const addLedger = async (type: string, title: string, value: string) => {
+  const financialColors = {
+    receipt: "rgb(134, 239, 172)",
+    expense: "rgb(252, 165, 165)",
+    payment: "rgb(252, 165, 165)",
+    charge: "rgb(147, 197, 253)",
+    owe: "rgb(252, 211, 77)",
+    opening: "rgb(196, 181, 253)",
+  };
+  const ledgerCard = (title: string) =>
+    page
+      .getByRole("button")
+      .filter({ has: page.getByText(title, { exact: true }) });
+  const addLedger = async (
+    type: keyof typeof financialColors,
+    title: string,
+    value: string,
+    direction = "receivable",
+  ) => {
     await page.getByRole("button", { name: "افزودن", exact: true }).click();
     const d = page.getByRole("dialog");
     await d.getByLabel("نوع عملیات").selectOption(type);
     await d.getByLabel("عنوان *", { exact: true }).fill(title);
     await d.getByLabel("مبلغ (تومان) *").fill(value);
-    if (type === "receipt")
+    if (type === "receipt" || type === "payment")
       await d.getByLabel("روش دریافت یا پرداخت").selectOption("انتقال بانکی");
+    if (type === "opening")
+      await d.getByLabel("جهت ماندهٔ اول دوره").selectOption(direction);
+    const label = {
+      receipt: "دریافت از مشتری",
+      expense: "هزینه برای مشتری",
+      payment: "پرداخت به مشتری",
+      charge: "طلب از مشتری",
+      owe: "بدهی من به مشتری",
+      opening: `ماندهٔ اول دوره · ${direction === "payable" ? "بدهی من" : "طلب من"}`,
+    }[type];
+    await expect(d.locator("span").filter({ hasText: label })).toHaveCSS(
+      "color",
+      financialColors[type],
+    );
     if (type === "expense")
       await d
         .getByLabel("پروژهٔ مرتبط (اختیاری)")
         .selectOption({ label: "وب‌سایت اول" });
     await d.getByRole("button", { name: "ذخیره", exact: true }).click();
     await expect(d).not.toBeVisible();
+    const card = ledgerCard(title);
+    await expect(card.getByText(label, { exact: true })).toBeVisible();
+    await expect(
+      card.getByText(`${BigInt(value).toLocaleString("fa-IR")} تومان`, {
+        exact: true,
+      }),
+    ).toHaveCSS("color", financialColors[type]);
   };
   await addLedger("expense", "خرید سرور", "5000000");
   await addLedger("receipt", "دریافت اول", "2000000");
   await expect(
     page.getByText("مشتری بدهکار است · ۳٬۰۰۰٬۰۰۰ تومان", { exact: true }),
-  ).toBeVisible();
+  ).toHaveCSS("color", financialColors.charge);
   await addLedger("receipt", "دریافت اضافه", "4000000");
   await expect(
     page.getByText("مشتری بستانکار است · ۱٬۰۰۰٬۰۰۰ تومان", { exact: true }),
-  ).toBeVisible();
+  ).toHaveCSS("color", financialColors.owe);
   await page.screenshot({
     path: "test-results/customers-mobile-ledger.png",
+    fullPage: true,
+  });
+  await addLedger("payment", "بازپرداخت به مشتری", "1000000");
+  await expect(page.getByText("تسویه · ۰ تومان", { exact: true })).toHaveCSS(
+    "color",
+    "rgb(203, 213, 225)",
+  );
+  await addLedger("charge", "حق‌الزحمهٔ طراحی", "500000");
+  await addLedger("owe", "بدهی بابت ودیعه", "500000");
+  await addLedger("opening", "طلب اول دوره", "200000");
+  await addLedger("opening", "اعتبار اول دوره", "200000", "payable");
+  await expect(
+    page.getByText("تسویه · ۰ تومان", { exact: true }),
+  ).toBeVisible();
+  await ledgerCard("حق‌الزحمهٔ طراحی").click();
+  dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("طلب از مشتری", { exact: true })).toHaveCSS(
+    "color",
+    financialColors.charge,
+  );
+  page.once("dialog", (d) => d.accept());
+  await dialog
+    .getByRole("button", { name: "ابطال ثبت مالی", exact: true })
+    .click();
+  await expect(dialog.getByText("باطل‌شده", { exact: true })).toHaveCSS(
+    "color",
+    "rgb(148, 163, 184)",
+  );
+  await dialog.getByRole("button", { name: "بستن", exact: true }).click();
+  await expect(
+    ledgerCard("حق‌الزحمهٔ طراحی").getByText("۵۰۰٬۰۰۰ تومان"),
+  ).toHaveCSS("text-decoration-line", "line-through");
+  await expect(
+    page.getByText("مشتری بستانکار است · ۵۰۰٬۰۰۰ تومان", { exact: true }),
+  ).toHaveCSS("color", financialColors.owe);
+  await page.screenshot({
+    path: "test-results/customers-finance-colors.png",
     fullPage: true,
   });
   await page
     .getByRole("button", { name: "حساب‌ها و سرویس‌ها", exact: true })
     .click();
+  const services = [
+    {
+      type: "irnic",
+      title: "ایرنیک آزمایشی",
+      fields: {
+        "شناسهٔ ایرنیک (NIC Handle)": "fixture123-irnic",
+        "پاسخ محرمانه": "irnic-secret-fixture",
+        "دامنه‌های ایرنیک": "example.ir\nexample.co.ir",
+      },
+      secret: "پاسخ محرمانه",
+    },
+    {
+      type: "torob",
+      title: "ترب و ترب‌پی آزمایشی",
+      fields: {
+        "موبایل ورود به ترب": "۰۹۱۲۳۴۵۶۷۸۹",
+        "نام فروشگاه در ترب": "فروشگاه آزمایشی",
+        "شناسهٔ پذیرنده / درگاه ترب‌پی": "fixture-merchant",
+        "کلید API / توکن ترب‌پی": "torobpay-secret-fixture",
+      },
+      secret: "کلید API / توکن ترب‌پی",
+      group: "ترب‌پی (اختیاری)",
+    },
+    {
+      type: "snappay",
+      title: "اسنپ‌پی آزمایشی",
+      fields: {
+        "نام کاربری وب‌سرویس اسنپ‌پی": "fixture-snapp-user",
+        "Client ID اسنپ‌پی": "fixture-client-id",
+        "Client Secret اسنپ‌پی": "snapppay-secret-fixture",
+      },
+      secret: "Client Secret اسنپ‌پی",
+      group: "اتصال درگاه اسنپ‌پی (اختیاری)",
+    },
+  ];
+  for (const service of services) {
+    await page.getByRole("button", { name: "افزودن", exact: true }).click();
+    dialog = page.getByRole("dialog");
+    await dialog.getByLabel("نوع حساب یا سرویس").selectOption(service.type);
+    await dialog.getByLabel("عنوان رکورد *").fill(service.title);
+    if (service.group)
+      await expect(
+        dialog.getByRole("group", { name: service.group }),
+      ).toBeVisible();
+    for (const [label, value] of Object.entries(service.fields))
+      await dialog.getByLabel(label, { exact: true }).fill(value);
+    await expect(
+      dialog.getByLabel(service.secret, { exact: true }),
+    ).toHaveAttribute("type", "password");
+    await dialog.getByRole("button", { name: "ذخیره", exact: true }).click();
+    await expect(dialog).not.toBeVisible();
+    await page
+      .getByRole("button")
+      .filter({ has: page.getByText(service.title, { exact: true }) })
+      .click();
+    dialog = page.getByRole("dialog");
+    for (const [label, value] of Object.entries(service.fields))
+      await expect(dialog.getByLabel(label, { exact: true })).toHaveValue(
+        label === "موبایل ورود به ترب" ? "09123456789" : value,
+      );
+    await expect(
+      dialog.getByLabel(service.secret, { exact: true }),
+    ).toHaveAttribute("type", "password");
+    if (service.group)
+      await expect(
+        dialog.getByRole("group", { name: service.group }),
+      ).toBeVisible();
+    if (service.type === "torob")
+      await page.screenshot({
+        path: "test-results/customers-torob-services.png",
+        fullPage: true,
+      });
+    await dialog.getByRole("button", { name: "بستن", exact: true }).click();
+  }
   await page.getByRole("button", { name: "افزودن", exact: true }).click();
   dialog = page.getByRole("dialog");
   const ssh = dialog.getByLabel("اطلاعات SSH", { exact: true });
@@ -218,6 +367,12 @@ test("mobile customer dossier, financial acceptance, encryption, offline retry a
   await expect(dialog).not.toBeVisible();
   expect(requests.join("")).not.toContain("a-secret-client");
   expect(requests.join("")).not.toContain("multiline-fixture-key");
+  for (const secret of [
+    "irnic-secret-fixture",
+    "torobpay-secret-fixture",
+    "snapppay-secret-fixture",
+  ])
+    expect(requests.join("")).not.toContain(secret);
   expect(requests.join("")).not.toContain("مشتری امن");
   expect(requests.join("")).not.toContain("5000000");
   const stores = await page.evaluate(async () => {

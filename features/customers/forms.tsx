@@ -8,8 +8,13 @@ import {
   validateLedger,
   amount,
 } from "./domain";
-import { SERVICE_TEMPLATES, LEDGER_OPTIONS } from "./templates";
+import {
+  SERVICE_TEMPLATES,
+  LEDGER_OPTIONS,
+  type ServiceField,
+} from "./templates";
 import { toBase64 } from "../vault/crypto";
+import { LedgerStatus } from "./finance";
 import type {
   ContactValue,
   Customer,
@@ -251,6 +256,16 @@ export function ServiceFields({
   const setField = (key: string, v: string) =>
     onChange({ ...value, fields: { ...value.fields, [key]: v } });
   const method = value.fields.loginMethod || "email";
+  const renderField = (field: ServiceField) => (
+    <Field
+      key={field.key}
+      label={field.label}
+      value={value.fields[field.key]}
+      onChange={(v) => setField(field.key, field.number ? digits(v) : v)}
+      secret={field.secret}
+      multiline={field.multiline}
+    />
+  );
   return (
     <>
       <Field
@@ -293,22 +308,27 @@ export function ServiceFields({
                   field.key,
                 )
               ) &&
+              !field.group &&
               field.key !== "bankAccount",
           )
-          .map((field) => (
-            <Field
-              key={field.key}
-              label={field.label}
-              value={value.fields[field.key]}
-              onChange={(v) =>
-                setField(field.key, field.number ? digits(v) : v)
-              }
-              secret={field.secret}
-              multiline={field.multiline}
-            />
-          ))}
+          .map(renderField)}
       </div>
-      {value.type === "aqaye" && (
+      {[...new Set(template.fields.map((f) => f.group).filter(Boolean))].map(
+        (group) => (
+          <fieldset
+            key={group}
+            className="border border-slate-700 rounded-xl p-3"
+          >
+            <legend className="font-bold px-2">{group}</legend>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {template.fields
+                .filter((f) => f.group === group)
+                .map(renderField)}
+            </div>
+          </fieldset>
+        ),
+      )}
+      {template.fields.some((field) => field.key === "bankAccount") && (
         <Select
           label="حساب تسویهٔ مرتبط"
           value={value.fields.bankAccount || ""}
@@ -569,6 +589,7 @@ export function LedgerFields({
         onChange={(v) => set("type", v)}
         options={LEDGER_OPTIONS}
       />
+      <LedgerStatus entry={value} />
       <Field
         label="عنوان"
         required

@@ -9,6 +9,7 @@ import {
   Field,
   Modal,
   Select,
+  CopyButton,
 } from "../vault/ui";
 import { history, saveEntity } from "../vault/repository";
 import { useCustomers, reloadCustomers } from "./store";
@@ -31,7 +32,14 @@ import {
   initialData,
   validatePayload,
 } from "./forms";
-import { LEDGER_OPTIONS, SERVICE_TEMPLATES } from "./templates";
+import { SERVICE_TEMPLATES } from "./templates";
+import {
+  balanceColor,
+  FinanceLegend,
+  LedgerAmount,
+  LedgerStatus,
+  ledgerStyle,
+} from "./finance";
 import type {
   Customer,
   Entity,
@@ -176,6 +184,15 @@ function EntityEditor({
 }
 function RecordView({ record }: { record: ServiceRecord }) {
   const template = SERVICE_TEMPLATES[record.type] || SERVICE_TEMPLATES.custom;
+  const renderField = (f: (typeof template.fields)[number]) => (
+    <Field
+      key={f.key}
+      label={f.label}
+      value={record.fields[f.key]}
+      secret={f.secret}
+      multiline={f.multiline}
+    />
+  );
   return (
     <div className="space-y-4">
       <div className="grid sm:grid-cols-2 gap-3">
@@ -183,17 +200,27 @@ function RecordView({ record }: { record: ServiceRecord }) {
           <Field label="روش ورود" value={record.fields.loginMethod} />
         )}
         {template.fields
-          .filter((f) => record.fields[f.key])
-          .map((f) => (
-            <Field
-              key={f.key}
-              label={f.label}
-              value={record.fields[f.key]}
-              secret={f.secret}
-              multiline={f.multiline}
-            />
-          ))}
+          .filter((f) => !f.group && record.fields[f.key])
+          .map(renderField)}
       </div>
+      {[...new Set(template.fields.map((f) => f.group).filter(Boolean))].map(
+        (group) => {
+          const fields = template.fields.filter(
+            (f) => f.group === group && record.fields[f.key],
+          );
+          return fields.length ? (
+            <fieldset
+              key={group}
+              className="border border-slate-700 rounded-xl p-3"
+            >
+              <legend className="font-bold px-2">{group}</legend>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {fields.map(renderField)}
+              </div>
+            </fieldset>
+          ) : null;
+        },
+      )}
       {record.customFields.map((f) => (
         <Field
           key={f.id}
@@ -370,12 +397,14 @@ function EntityDetails({
         )}
         {kind === "ledger" && (
           <>
-            <p className={l.voided ? "text-rose-300" : "text-teal-300"}>
-              {l.voided
-                ? "ثبت باطل‌شده؛ در مانده محاسبه نمی‌شود"
-                : LEDGER_OPTIONS.find((o) => o.value === l.type)?.label}
-            </p>
-            <Field label="مبلغ" value={toman(amount(l.amount))} />
+            <LedgerStatus entry={l} />
+            <div>
+              <p className="text-sm text-slate-300 mb-1.5">مبلغ</p>
+              <div className="flex items-center gap-2">
+                <LedgerAmount entry={l} />
+                <CopyButton value={toman(amount(l.amount))} />
+              </div>
+            </div>
             <Field
               label="تاریخ و ساعت ایران"
               value={tehranDateTime(l.occurredAt)}
@@ -453,7 +482,8 @@ export function CustomersContent({ onBack }: { onBack: () => void }) {
     void reloadCustomers().catch(() => {});
   }, []);
   const customer = state.customers.find((c) => c.id === selected),
-    relevant = state.ledger.filter((l) => l.customer_id === selected);
+    relevant = state.ledger.filter((l) => l.customer_id === selected),
+    customerBalance = balance(relevant);
   const balances = useMemo(() => {
     const result = new Map(state.customers.map((c) => [c.id, 0n]));
     for (const row of state.ledger)
@@ -552,16 +582,21 @@ export function CustomersContent({ onBack }: { onBack: () => void }) {
         <button
           key={row.id}
           onClick={() => setDetail({ kind, id: row.id })}
-          className="block w-full text-right rounded-2xl border border-slate-700 bg-slate-900/70 p-4 hover:border-teal-600"
+          className={`block w-full text-right rounded-2xl border border-slate-700 bg-slate-900/70 p-4 hover:bg-slate-800/70 ${kind === "ledger" ? `border-r-4 ${ledgerStyle(row.data as LedgerEntry).border}` : ""}`}
         >
-          <div className="flex justify-between gap-3">
-            <span className="font-bold">{(row.data as Project).title}</span>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <span className="font-bold min-w-0 break-words">
+              {(row.data as Project).title}
+            </span>
             {kind === "ledger" && (
-              <span className="text-teal-300 shrink-0">
-                {toman(amount((row.data as LedgerEntry).amount))}
-              </span>
+              <LedgerAmount entry={row.data as LedgerEntry} />
             )}
           </div>
+          {kind === "ledger" && (
+            <div className="mt-3">
+              <LedgerStatus entry={row.data as LedgerEntry} />
+            </div>
+          )}
           <p className="text-xs text-slate-400 mt-2">
             {row.archived_at ? "بایگانی · " : ""}
             {kind === "ledger"
@@ -622,15 +657,15 @@ export function CustomersContent({ onBack }: { onBack: () => void }) {
       ) : !customer ? (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 rounded-2xl bg-teal-950/40 border border-teal-900">
+            <div className="p-4 rounded-2xl bg-blue-950/40 border border-blue-900">
               <p className="text-sm text-slate-300">طلب از مشتریان</p>
-              <p className="text-teal-300 text-lg mt-2">
+              <p className="text-blue-300 text-lg mt-2">
                 {toman(totals.receivable)}
               </p>
             </div>
-            <div className="p-4 rounded-2xl bg-rose-950/30 border border-rose-900">
+            <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-900">
               <p className="text-sm text-slate-300">بدهی / اعتبار مشتریان</p>
-              <p className="text-rose-300 text-lg mt-2">
+              <p className="text-amber-300 text-lg mt-2">
                 {toman(totals.payable)}
               </p>
             </div>
@@ -695,7 +730,7 @@ export function CustomersContent({ onBack }: { onBack: () => void }) {
                     c.data.emails.find((v) => v.value)?.value}
                 </p>
                 <p
-                  className={`text-sm mt-4 ${balances.get(c.id)! < 0n ? "text-rose-300" : "text-teal-300"}`}
+                  className={`text-sm mt-4 ${balanceColor(balances.get(c.id)!)}`}
                 >
                   {balanceLabel(balances.get(c.id)!)} ·{" "}
                   {toman(
@@ -755,12 +790,10 @@ export function CustomersContent({ onBack }: { onBack: () => void }) {
               <p className="text-xs text-slate-400">
                 ماندهٔ کل مشتری، شامل همهٔ پروژه‌ها
               </p>
-              <p className="text-lg mt-1 text-teal-300">
-                {balanceLabel(balance(relevant))} ·{" "}
+              <p className={`text-lg mt-1 ${balanceColor(customerBalance)}`}>
+                {balanceLabel(customerBalance)} ·{" "}
                 {toman(
-                  balance(relevant) < 0n
-                    ? -balance(relevant)
-                    : balance(relevant),
+                  customerBalance < 0n ? -customerBalance : customerBalance,
                 )}
               </p>
             </div>
@@ -829,6 +862,7 @@ export function CustomersContent({ onBack }: { onBack: () => void }) {
             )
           ) : tab === "ledger" ? (
             <>
+              <FinanceLegend />
               <p className="text-xs text-slate-400">
                 هر هزینه یک‌بار طلب ایجاد می‌کند. دریافت عمومی به تقسیم بین
                 پروژه‌ها نیاز ندارد. ثبت باطل‌شده در مانده نیست.

@@ -5,6 +5,7 @@ export interface ServiceField {
   multiline?: boolean;
   number?: boolean;
   login?: boolean;
+  group?: string;
 }
 export interface ServiceTemplate {
   title: string;
@@ -98,6 +99,69 @@ export const SERVICE_TEMPLATES: Record<string, ServiceTemplate> = {
       f("gatewayUrl", "نشانی درگاه"),
       f("callback", "Callback URL"),
       f("bankAccount", "شناسه / عنوان حساب تسویهٔ مرتبط"),
+    ],
+  },
+  irnic: {
+    title: "ایرنیک (IRNIC)",
+    fields: [
+      f("nicHandle", "شناسهٔ ایرنیک (NIC Handle)"),
+      f("email", "ایمیل"),
+      f("mobile", "موبایل", false, false, true),
+      f("password", "رمز عبور ایرنیک", true),
+      f("panelUrl", "نشانی پنل ایرنیک"),
+      f("securityQuestion", "پرسش محرمانه"),
+      f("securityAnswer", "پاسخ محرمانه", true),
+      f("domains", "دامنه‌های ایرنیک", false, true),
+      f("nameservers", "Name Serverها", false, true),
+      f("transferPin", "رمز انتقال دامنه / PIN", true),
+      ...twoFA,
+    ],
+  },
+  torob: {
+    title: "ترب و ترب‌پی",
+    fields: [
+      f("mobile", "موبایل ورود به ترب", false, false, true),
+      f("email", "ایمیل"),
+      f("password", "رمز پنل ترب (در صورت وجود)", true),
+      f("storeName", "نام فروشگاه در ترب"),
+      f("storeId", "شناسهٔ فروشگاه در ترب"),
+      f("siteUrl", "نشانی سایت فروشگاه"),
+      f("panelUrl", "نشانی پنل ترب"),
+      f("productFeed", "نشانی فید / API محصولات"),
+      f("bankAccount", "شناسه / عنوان حساب تسویهٔ مرتبط"),
+      ...[
+        f("torobPayPanelUrl", "نشانی پنل ترب‌پی"),
+        f("torobPayMobile", "موبایل ورود به ترب‌پی", false, false, true),
+        f("torobPayUsername", "نام کاربری ترب‌پی"),
+        f("torobPayPassword", "رمز پنل ترب‌پی", true),
+        f("torobPayMerchantId", "شناسهٔ پذیرنده / درگاه ترب‌پی"),
+        f("torobPayApiKey", "کلید API / توکن ترب‌پی", true),
+        f("torobPayCallback", "Callback URL ترب‌پی"),
+        f("torobPaySettlement", "اطلاعات تسویهٔ ترب‌پی", false, true),
+      ].map((field) => ({ ...field, group: "ترب‌پی (اختیاری)" })),
+    ],
+  },
+  snappay: {
+    title: "اسنپ‌پی",
+    fields: [
+      f("panelUser", "موبایل / نام کاربری پرتال اسنپ‌پی"),
+      f("panelPassword", "رمز پرتال اسنپ‌پی", true),
+      f("email", "ایمیل"),
+      f("storeName", "نام فروشگاه"),
+      f("siteUrl", "نشانی سایت فروشگاه"),
+      f("panelUrl", "نشانی پرتال اسنپ‌پی"),
+      f("merchantId", "شناسهٔ پذیرنده / قرارداد اسنپ‌پی"),
+      ...[
+        f("apiUser", "نام کاربری وب‌سرویس اسنپ‌پی"),
+        f("apiPassword", "رمز وب‌سرویس اسنپ‌پی", true),
+        f("client_id", "Client ID اسنپ‌پی", true),
+        f("client_secret", "Client Secret اسنپ‌پی", true),
+        f("apiBaseUrl", "نشانی وب‌سرویس اسنپ‌پی"),
+        f("accessToken", "توکن دسترسی اسنپ‌پی", true),
+        f("callback", "Callback URL اسنپ‌پی"),
+      ].map((field) => ({ ...field, group: "اتصال درگاه اسنپ‌پی (اختیاری)" })),
+      f("bankAccount", "شناسه / عنوان حساب تسویهٔ مرتبط"),
+      f("settlement", "شرایط و دورهٔ تسویه", false, true),
     ],
   },
   kavenegar: {
@@ -210,10 +274,10 @@ export const SERVICE_TEMPLATES: Record<string, ServiceTemplate> = {
   },
 };
 export const LEDGER_OPTIONS = [
-  { value: "expense", label: "هزینهٔ پرداخت‌شده برای مشتری (+ طلب)" },
-  { value: "charge", label: "حق‌الزحمه / طلب از مشتری (+)" },
-  { value: "owe", label: "بدهی من به مشتری (−)" },
-  { value: "receipt", label: "دریافت از مشتری / پیش‌پرداخت (−)" },
-  { value: "payment", label: "پرداخت / بازپرداخت به مشتری (+)" },
+  { value: "expense", label: "هزینهٔ پرداخت‌شده برای مشتری" },
+  { value: "charge", label: "حق‌الزحمه / طلب از مشتری" },
+  { value: "owe", label: "بدهی من به مشتری" },
+  { value: "receipt", label: "دریافت از مشتری / پیش‌پرداخت" },
+  { value: "payment", label: "پرداخت / بازپرداخت به مشتری" },
   { value: "opening", label: "ماندهٔ اول دوره" },
 ];
