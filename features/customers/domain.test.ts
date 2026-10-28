@@ -95,6 +95,17 @@ describe("customer identity, dates and search", () => {
     expect(jalaliToDate("۱۳۳۰/۰۱/۰۱")).toBe("1951-03-22");
     expect(jalaliToDate("۱۴۰۲/۱۲/۳۰")).toBeNull();
   });
+  it.each([
+    "۱",
+    "۱۳۳۰/",
+    "۱۳۳۰/۰۱/",
+    "invalid",
+    "۹۹۹۹/۰۱/۰۱",
+    "۱۴۰۲/۱۳/۰۱",
+    "۱۴۰۲/۰۲/۳۲",
+  ])("rejects incomplete or unsupported dates without throwing: %s", (value) => {
+    expect(jalaliToDate(value)).toBeNull();
+  });
   it("round trips Tehran time independent of the host time zone, including historic DST", () => {
     for (const iso of [
       "2026-10-27T10:30:00.000Z",

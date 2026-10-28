@@ -147,9 +147,14 @@ export function safeSearch(record: ServiceRecord): string {
 export function jalaliToDate(value: string): string | null {
   const normalized = digits(value).trim();
   if (!/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(normalized)) return null;
-  const date = moment(normalized, "jYYYY/jM/jD", true);
-  return date.isValid() &&
-    date.format("jYYYY/jM/jD") === normalized.split("/").map(Number).join("/")
-    ? date.format("YYYY-MM-DD")
-    : null;
+  try {
+    const date = moment(normalized, "jYYYY/jM/jD", true);
+    return date.isValid() &&
+      date.format("jYYYY/jM/jD") === normalized.split("/").map(Number).join("/")
+      ? date.format("YYYY-MM-DD")
+      : null;
+  } catch {
+    // The calendar library throws for years outside its supported range.
+    return null;
+  }
 }

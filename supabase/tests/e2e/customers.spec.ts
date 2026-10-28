@@ -75,7 +75,30 @@ test("mobile customer dossier, financial acceptance, encryption, offline retry a
   await dialog.getByRole("button", { name: "ذخیره", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("حداقل یک موبایل");
   await dialog.getByLabel("موبایل 1", { exact: true }).fill("۰۹۱۲۳۴۵۶۷۸۹");
-  await dialog.getByLabel(/تاریخ تولد/).fill("۱۳۳۰/۰۱/۰۱");
+  const birthday = dialog.getByLabel(/تاریخ تولد/);
+  for (const text of ["۱۳۳۰/۰۱/۰۱", "1330/1/1"]) {
+    await birthday.clear();
+    for (const character of text) {
+      await birthday.pressSequentially(character);
+      await expect(birthday).toBeVisible();
+      expect(errors).toEqual([]);
+    }
+    await expect(birthday).toHaveValue(text);
+    for (let length = text.length; length > 0; length--) {
+      await birthday.press("Backspace");
+      await expect(birthday).toHaveValue(text.slice(0, length - 1));
+    }
+  }
+  await birthday.clear();
+  await birthday.pressSequentially("۹۹۹۹/۰۱/۰۱");
+  await dialog.getByRole("button", { name: "ذخیره", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("تاریخ تولد معتبر");
+  await expect(dialog.getByLabel("نام *", { exact: true })).toHaveValue(
+    "مشتری امن",
+  );
+  await birthday.clear();
+  await expect(birthday).toHaveValue("");
+  await birthday.pressSequentially("۱۳۳۰/۰۱/۰۱");
   await context.setOffline(true);
   await dialog.getByRole("button", { name: "ذخیره", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("اینترنت");

@@ -167,9 +167,17 @@ export function DateField({
   value?: string;
   onChange: (v: string) => void;
 }) {
-  const [draft, setDraft] = useState(
-    value ? moment(value, "YYYY-MM-DD").format("jYYYY/jMM/jDD") : "",
-  );
+  // Convert the saved date once. While typing, the parent can contain the
+  // "invalid" marker, which must never be passed back to the date formatter.
+  const [draft, setDraft] = useState(() => {
+    if (!value || value === "invalid") return "";
+    try {
+      const date = moment(value, "YYYY-MM-DD", true);
+      return date.isValid() ? date.format("jYYYY/jMM/jDD") : value;
+    } catch {
+      return value;
+    }
+  });
   const invalid = !!draft && !jalaliToDate(draft);
   return (
     <div>
