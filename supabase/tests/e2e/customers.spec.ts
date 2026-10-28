@@ -75,6 +75,8 @@ test("mobile customer dossier, financial acceptance, encryption, offline retry a
   await dialog.getByRole("button", { name: "ذخیره", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("حداقل یک موبایل");
   await dialog.getByLabel("موبایل 1", { exact: true }).fill("۰۹۱۲۳۴۵۶۷۸۹");
+  await dialog.getByLabel("آدرس", { exact: true }).fill("نشانی آزمایشی مشتری");
+  await dialog.getByLabel("کد پستی", { exact: true }).fill("۱۲۳۴۵۶۷۸۹۰");
   const birthday = dialog.getByLabel(/تاریخ تولد/);
   for (const text of ["۱۳۳۰/۰۱/۰۱", "1330/1/1"]) {
     await birthday.clear();
@@ -113,6 +115,8 @@ test("mobile customer dossier, financial acceptance, encryption, offline retry a
   await expect(page.getByLabel("تاریخ تولد", { exact: true })).toHaveValue(
     "۱۳۳۰/۰۱/۰۱",
   );
+  await expect(page.getByLabel("کد پستی", { exact: true })).toHaveValue("1234567890");
+  await expect(page.getByLabel("آدرس", { exact: true })).toHaveValue("نشانی آزمایشی مشتری");
   const image = await page.evaluate(() => {
     const canvas = document.createElement("canvas");
     canvas.width = 2;
@@ -173,6 +177,9 @@ test("mobile customer dossier, financial acceptance, encryption, offline retry a
     await d.getByLabel("نوع عملیات").selectOption(type);
     await d.getByLabel("عنوان *", { exact: true }).fill(title);
     await d.getByLabel("مبلغ (تومان) *").fill(value);
+    await expect(d.getByLabel("مبلغ (تومان) *")).toHaveValue(BigInt(value).toLocaleString("en-US"));
+    await d.getByLabel("ساعت ایران", { exact: true }).fill("۱۵:۳۰");
+    await expect(d.getByLabel("ساعت ایران", { exact: true })).toHaveValue("15:30");
     if (type === "receipt" || type === "payment")
       await d.getByLabel("روش دریافت یا پرداخت").selectOption("انتقال بانکی");
     if (type === "opening")
@@ -374,6 +381,8 @@ test("mobile customer dossier, financial acceptance, encryption, offline retry a
   ])
     expect(requests.join("")).not.toContain(secret);
   expect(requests.join("")).not.toContain("مشتری امن");
+  expect(requests.join("")).not.toContain("نشانی آزمایشی مشتری");
+  expect(requests.join("")).not.toContain("1234567890");
   expect(requests.join("")).not.toContain("5000000");
   const stores = await page.evaluate(async () => {
     const entries: unknown[] = [];

@@ -1,3 +1,4 @@
+import { TimeInput24 } from '../../../components/TimeInput24';
 import React, { useState } from 'react';
 import { XIcon } from '../../../components/Icons';
 
@@ -173,7 +174,7 @@ export const MealEntryModal: React.FC<MealEntryModalProps> = ({
               <label className="block text-sm font-medium text-slate-300 mb-2">
                 زمان
               </label>
-              <input
+              <TimeInput24
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}

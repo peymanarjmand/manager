@@ -3,7 +3,7 @@
 import { InstallmentPlan, InstallmentPayment } from '../types';
 
 export const PLAN_COLUMNS = 'id,title,loan_amount';
-export const PAYMENT_COLUMNS = 'id,plan_id,amount,due_date,is_paid,paid_date,penalty';
+export const PAYMENT_COLUMNS = 'id,plan_id,amount,due_date,is_paid,paid_date,penalty,receipt_history';
 
 export const mapPaymentRow = (r: any): InstallmentPayment => ({
     id: r.id,
@@ -12,6 +12,7 @@ export const mapPaymentRow = (r: any): InstallmentPayment => ({
     isPaid: !!r.is_paid,
     paidDate: r.paid_date || undefined,
     penalty: Number(r.penalty || 0) || 0,
+    ...(Array.isArray(r.receipt_history) && r.receipt_history.length ? { receipts: r.receipt_history } : {}),
 });
 
 export const planToRow = (plan: Pick<InstallmentPlan, 'id' | 'title' | 'loanAmount'>) => ({
@@ -28,4 +29,5 @@ export const paymentToRow = (pay: InstallmentPayment, planId: string) => ({
     is_paid: !!pay.isPaid,
     paid_date: pay.paidDate || null,
     penalty: Number(pay.penalty || 0) || 0,
+    ...(pay.receipts?.length ? { receipt_history: pay.receipts } : {}),
 });

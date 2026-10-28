@@ -4,7 +4,9 @@ import { AccountantData, Transaction, Asset, Person, LedgerEntry, InstallmentPla
 import { createSupabaseTableStateStorage } from '../../lib/supabaseStorage';
 import { encryptedStateStorage } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
-import { enqueue } from '../../lib/outbox';
+import { enqueue, flush } from '../../lib/outbox';
+import type { InstallmentReceipt } from './types';
+import { paymentTotals, validateReceipt } from './installmentPayments';
 import moment from 'jalali-moment';
 import {
     TRANSACTION_COLUMNS, mapTransactionRow, transactionToRow,
@@ -62,6 +64,8 @@ interface AccountantState extends AccountantData {
     deleteInstallmentPlan: (id: string) => void;
     updateInstallmentPayment: (planId: string, payment: Pick<InstallmentPayment, 'id' | 'amount' | 'dueDate' | 'penalty'>) => void;
     togglePaidStatus: (planId: string, paymentId: string) => void;
+    recordReceipt: (planId: string, paymentId: string, receipt: InstallmentReceipt) => Promise<void>;
+    voidReceipt: (planId: string, paymentId: string, receiptId: string) => Promise<void>;
     saveCheck: (check: Check) => void;
     deleteCheck: (id: string) => void;
     updateCheckStatus: (id: string, status: CheckStatus) => void;
@@ -76,7 +80,7 @@ interface AccountantState extends AccountantData {
 
 export const useAccountantStore = create<AccountantState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             transactions: [],
             assets: [],
             people: [],
@@ -194,6 +198,7 @@ export const useAccountantStore = create<AccountantState>()(
                             is_paid: !!pay.isPaid,
                             paid_date: pay.paidDate || null,
                             penalty: Number(pay.penalty || 0) || 0,
+                            ...(pay.receipts?.length ? { receipt_history: pay.receipts } : {}),
                         })));
                         if (paymentRows.length > 0) {
                             const { error: upsertPaymentsError } = await supabase.from('installment_payments').upsert(paymentRows);
@@ -663,6 +668,9 @@ export const useAccountantStore = create<AccountantState>()(
                      const paymentIndex = newInstallments[planIndex].payments.findIndex(p => p.id === paymentData.id);
                      if (paymentIndex > -1) {
                          const newPayments = [...newInstallments[planIndex].payments];
+                         const previousPayment = newPayments[paymentIndex];
+                         if (previousPayment.receipts?.length && Number(paymentData.amount) + Number(paymentData.penalty || 0) < paymentTotals(previousPayment).paid)
+                             throw new Error('مبلغ قسط نمی‌تواند از مجموع پرداخت‌های فعال کمتر باشد.');
                          newPayments[paymentIndex] = { 
                              ...newPayments[paymentIndex],
                              amount: parseFloat(String(paymentData.amount)),
@@ -679,7 +687,33 @@ export const useAccountantStore = create<AccountantState>()(
                 }, match: { id: paymentData.id } });
                 return { installments: newInstallments };
             }),
+            recordReceipt: async (planId, paymentId, receipt) => {
+                if (!navigator.onLine) throw new Error('برای تأیید پرداخت به اینترنت متصل شوید؛ پیش‌نویس حفظ شد.');
+                const payment = get().installments.find(p => p.id === planId)?.payments.find(p => p.id === paymentId);
+                if (!payment) throw new Error('قسط پیدا نشد.');
+                const already = payment.receipts?.find(r => r.id === receipt.id);
+                const invalid = !already && validateReceipt(receipt, paymentTotals(payment).remaining);
+                if (invalid) throw new Error(invalid);
+                await flush();
+                const { data, error } = await supabase.rpc('record_installment_receipt', { p_payment_id: paymentId, p_receipt: receipt });
+                if (error || !data) throw new Error('ذخیرهٔ پرداخت تأیید نشد؛ اتصال یا ماندهٔ جدید قسط را بررسی و دوباره تلاش کنید.');
+                const updated = mapPaymentRow(data);
+                set(state => ({ installments: state.installments.map(plan => plan.id === planId ? {
+                    ...plan, payments: plan.payments.map(p => p.id === paymentId ? updated : p),
+                } : plan) }));
+            },
+            voidReceipt: async (planId, paymentId, receiptId) => {
+                if (!navigator.onLine) throw new Error('برای ابطال پرداخت به اینترنت متصل شوید.');
+                const { data, error } = await supabase.rpc('void_installment_receipt', { p_payment_id: paymentId, p_receipt_id: receiptId });
+                if (error || !data) throw new Error('ابطال پرداخت تأیید نشد؛ دوباره تلاش کنید.');
+                const updated = mapPaymentRow(data);
+                set(state => ({ installments: state.installments.map(plan => plan.id === planId ? {
+                    ...plan, payments: plan.payments.map(p => p.id === paymentId ? updated : p),
+                } : plan) }));
+            },
             togglePaidStatus: (planId, paymentId) => set(state => {
+                if (state.installments.find(p => p.id === planId)?.payments.find(p => p.id === paymentId)?.receipts?.length)
+                    return {};
                 const newInstallments = [...state.installments]; // keep order while toggling
                 const planIndex = newInstallments.findIndex(p => p.id === planId);
                 if (planIndex > -1) {

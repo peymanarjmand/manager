@@ -1,3 +1,4 @@
+import { MoneyInput } from '../../../components/MoneyInput';
 import React, { useState } from 'react';
 import { Plus, Pencil, Trash2, Wrench, BellRing } from 'lucide-react';
 import type { VehicleMaintenanceRecord } from '../types';
@@ -303,7 +304,7 @@ export const MaintenanceTab: React.FC<Props> = ({
           )}
 
           <Field label="مبلغ کل سرویس (تومان)" required className="col-span-2">
-            <TextInput
+            <MoneyInput
               type="number"
               min={0}
               value={form.cost ?? ''}

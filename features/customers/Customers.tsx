@@ -285,7 +285,8 @@ function CustomerProfile({ row }: { row: Entity<Customer> }) {
             ))}
         </div>
       ))}
-      <Field label="نشانی" value={c.address} multiline />
+      <Field label="آدرس" value={c.address} multiline />
+      <Field label="کد پستی" value={c.postalCode} />
       <Field label="توضیحات" value={c.notes} multiline />
       <Gallery
         parent={{ kind: "customer", id: row.id }}

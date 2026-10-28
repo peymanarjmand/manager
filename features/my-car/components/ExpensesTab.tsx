@@ -1,3 +1,4 @@
+import { MoneyInput } from '../../../components/MoneyInput';
 import React, { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, Wallet, SlidersHorizontal } from 'lucide-react';
 import type { VehicleExpense } from '../types';
@@ -301,7 +302,7 @@ export const ExpensesTab: React.FC<Props> = ({
       >
         <form id={FORM_ID} onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
           <Field label="مبلغ (تومان)" required>
-            <TextInput
+            <MoneyInput
               type="number"
               min={0}
               value={form.amount ?? ''}

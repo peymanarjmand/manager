@@ -5,6 +5,8 @@ import { useAccountantStore } from './store';
 import { CheckCircleIcon, UncheckedCircleIcon, ArrowRightIcon, EditIcon, DeleteIcon } from '../../components/Icons';
 import { formatCurrency, formatDate } from './SmartAccountantShared';
 import { ProgressRing } from '../../components/ui/ProgressRing';
+import { paymentTotals } from './installmentPayments';
+import { InstallmentReceiptModal } from './InstallmentReceiptModal';
 
 const fa = (n: number) => (Number.isFinite(n) ? n : 0).toLocaleString('fa-IR');
 
@@ -71,6 +73,8 @@ const getPaymentKey = (planId: string, paymentId: string) => `${planId}::${payme
 
 export const InstallmentsView = ({ installments, currentInstallment, setCurrentInstallment, onEditPlan, onDeletePlan, onEditPayment, onTogglePaidStatus }) => {
     const [showPaymentsList, setShowPaymentsList] = useState(false);
+    const [showCompleted, setShowCompleted] = useState(false);
+    const [receiptTarget, setReceiptTarget] = useState<{ planId: string; paymentId: string } | null>(null);
     const [selectedPaymentKeys, setSelectedPaymentKeys] = useState<string[]>([]);
 
     const installmentsSortMode = useAccountantStore(s => s.installmentsSortMode);
@@ -85,7 +89,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
 
     const getPlanNearestDueDate = (plan: InstallmentPlan): Date | null => {
         const upcoming = plan.payments
-            .filter(p => !p.isPaid)
+            .filter(p => !paymentTotals(p).settled)
             .map(p => new Date(p.dueDate))
             .sort((a, b) => a.getTime() - b.getTime());
         return upcoming[0] || null;
@@ -158,8 +162,8 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
     };
 
     const sortedInstallments = useMemo(() => applySorting(installments), [installments, installmentsSortMode, installmentsCustomOrder]);
-    const activePlans = sortedInstallments.filter(plan => plan.payments.some(p => !p.isPaid));
-    const completedPlans = sortedInstallments.filter(plan => plan.payments.length > 0 && plan.payments.every(p => p.isPaid));
+    const activePlans = sortedInstallments.filter(plan => plan.payments.some(p => !paymentTotals(p).settled));
+    const completedPlans = sortedInstallments.filter(plan => plan.payments.length > 0 && plan.payments.every(p => paymentTotals(p).settled));
 
     const monthlyRows = useMemo(() => {
         const jy = instJYear;
@@ -168,7 +172,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
             .flatMap(plan => plan.payments.map((p, idx) => ({ plan, p, idx })))
             .filter(r => {
                 const d = moment(r.p.dueDate);
-                return d.jYear() === jy && (d.jMonth() + 1) === jm;
+                return !paymentTotals(r.p).settled && d.jYear() === jy && (d.jMonth() + 1) === jm;
             })
             .sort((a, b) => new Date(a.p.dueDate).getTime() - new Date(b.p.dueDate).getTime());
     }, [installments, instJYear, instJMonth]);
@@ -179,7 +183,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
 
     const selectedSummary = useMemo(() => {
         const rows = selectedPaymentKeys.map(k => monthlyRowMap.get(k)).filter(Boolean) as Array<{ plan: InstallmentPlan; p: InstallmentPayment; idx: number }>;
-        const total = rows.reduce((sum, r) => sum + (r.p.amount || 0) + (r.p.penalty || 0), 0);
+        const total = rows.reduce((sum, r) => sum + paymentTotals(r.p).remaining, 0);
         return { count: rows.length, total };
     }, [selectedPaymentKeys, monthlyRowMap]);
 
@@ -210,26 +214,25 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                         const isSelected = selectedPaymentKeys.includes(key);
                         const amount = (r.p.amount || 0) + (r.p.penalty || 0);
                         return (
-                            <button
+                            <div
                                 key={key}
-                                type="button"
-                                onClick={() => togglePaymentSelection(key)}
                                 className={`w-full text-right p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 transition ${isSelected ? 'bg-slate-800/70' : 'bg-transparent'}`}
                             >
-                                <div className="flex items-center gap-3">
+                                <button type="button" onClick={() => togglePaymentSelection(key)} aria-pressed={isSelected} className="flex items-center gap-3 text-right">
                                     <span className="p-1.5 rounded-full bg-slate-900/60 ring-1 ring-white/10">
                                         {isSelected ? <CheckCircleIcon /> : <UncheckedCircleIcon />}
                                     </span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ring-1 ${r.p.isPaid ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30' : 'bg-rose-500/10 text-rose-400 ring-rose-500/30'}`}>
-                                        {r.p.isPaid ? 'پرداخت شده' : 'پرداخت نشده'}
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] ring-1 ${paymentTotals(r.p).settled ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30' : 'bg-amber-500/10 text-amber-300 ring-amber-500/30'}`}>
+                                        {paymentTotals(r.p).settled ? 'پرداخت شده' : paymentTotals(r.p).paid > 0 ? 'بخشی پرداخت شده' : 'پرداخت نشده'}
                                     </span>
                                     <div className="min-w-0">
                                         <div className="text-slate-100 font-bold text-sm truncate">{r.plan.title}</div>
                                         <div className="text-xs text-slate-400">تاریخ سررسید: {formatDate(r.p.dueDate)}</div>
                                     </div>
-                                </div>
-                                <div className="text-slate-100 font-extrabold">{formatCurrency(amount)}</div>
-                            </button>
+                                </button>
+                                <div className="text-slate-100 font-extrabold">{formatCurrency(amount)}<p className="text-xs text-rose-300 font-normal">مانده: {formatCurrency(paymentTotals(r.p).remaining)}</p></div>
+                                <button type="button" onClick={() => setReceiptTarget({ planId: r.plan.id, paymentId: r.p.id })} className="text-sm text-brand-300 border border-brand-800 rounded-xl px-3 py-2">{paymentTotals(r.p).settled ? 'سوابق پرداخت' : 'پرداخت مرحله‌ای'}</button>
+                            </div>
                         );
                     })
                 )}
@@ -251,152 +254,65 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
         </div>
     );
 
+    const receiptPayment = receiptTarget && installments.find(p => p.id === receiptTarget.planId)?.payments.find(p => p.id === receiptTarget.paymentId);
+    const receiptModal = receiptTarget && receiptPayment ? <InstallmentReceiptModal key={receiptPayment.id} planId={receiptTarget.planId} payment={receiptPayment} onClose={() => setReceiptTarget(null)} /> : null;
     if (currentInstallment) {
-        const isCompleted = currentInstallment.payments.length > 0 && currentInstallment.payments.every(p => p.isPaid);
-
-        if (!isCompleted) {
-            const paidCount = currentInstallment.payments.filter(p => p.isPaid).length;
-            const totalCount = currentInstallment.payments.length;
-            const remainingAmount = currentInstallment.payments.filter(p => !p.isPaid).reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
-            
-            return (
-                <div>
-                    <button onClick={() => setCurrentInstallment(null)} className="flex items-center gap-1.5 text-slate-300 hover:text-brand-300 transition-colors text-sm mb-4">
-                        <ArrowRightIcon />
-                        <span>بازگشت به لیست اقساط</span>
-                    </button>
-                    <div className="bg-white/[0.04] rounded-2xl p-4 ring-1 ring-white/[0.06] mb-4 flex items-center gap-4">
-                        <ProgressRing value={totalCount > 0 ? (paidCount / totalCount) * 100 : 0} size={88} stroke={8} progressClassName="stroke-brand-500" trackClassName="stroke-white/10">
-                            <div className="text-base font-medium text-brand-300 nums-tabular">{fa(Math.round(totalCount > 0 ? (paidCount / totalCount) * 100 : 0))}٪</div>
-                            <div className="text-[10px] text-slate-400">پرداخت‌شده</div>
-                        </ProgressRing>
-                        <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-slate-100 truncate">{currentInstallment.title}</h3>
-                            <p className="text-sm text-slate-400 mt-1">پرداخت‌شده {fa(paidCount)} از {fa(totalCount)}</p>
-                            <p className="text-sm text-slate-400 mt-0.5">مانده: <span className="text-rose-400 font-medium nums-tabular">{formatCurrency(remainingAmount)}</span></p>
-                        </div>
-                    </div>
-                    <PlanStats plan={currentInstallment} />
-                    {currentInstallment.payments.length === 0 ? <p className="text-slate-500 text-center py-16 bg-white/[0.03] rounded-2xl">پرداختی برای این قسط وجود ندارد.</p> :
-                    <div className="relative mt-4 pr-1">
-                        <div className="absolute top-3 bottom-3 right-[7px] w-px bg-white/10" aria-hidden="true" />
-                        <div className="space-y-3">
-                        {currentInstallment.payments.map((payment, index) => {
-                            const isNext = !payment.isPaid && currentInstallment.payments.findIndex(p => !p.isPaid) === index;
-                            return (
-                            <div key={payment.id} className="relative flex items-stretch gap-3">
-                                <span className={`mt-4 z-10 w-3.5 h-3.5 rounded-full ring-4 ring-[#0a0c16] shrink-0 ${payment.isPaid ? 'bg-emerald-500' : isNext ? 'bg-brand-500' : 'bg-slate-600'}`} style={isNext ? { boxShadow: '0 0 10px rgba(109,94,246,0.85)' } : undefined} />
-                                <div className={`flex-1 bg-white/[0.04] rounded-xl p-3 flex items-center justify-between ring-1 ${isNext ? 'ring-brand-500/40' : 'ring-white/[0.06]'} ${payment.isPaid ? 'opacity-70' : ''}`}>
-                                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                                        <button onClick={() => onTogglePaidStatus(currentInstallment.id, payment.id)} className="p-1 hover:bg-white/10 rounded-full" title={payment.isPaid ? 'علامت به عنوان پرداخت نشده' : 'علامت به عنوان پرداخت شده'}>
-                                           {payment.isPaid ? <CheckCircleIcon /> : <UncheckedCircleIcon />}
-                                        </button>
-                                        <div className="min-w-0">
-                                            <p className="font-medium text-slate-100 text-sm truncate">قسط شماره {fa(index + 1)}{isNext && <span className="mr-2 text-[10px] text-brand-300">بعدی</span>}</p>
-                                            <p className="text-xs text-slate-400 truncate">{formatDate(payment.dueDate)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="text-left">
-                                            <p className={`font-medium text-sm nums-tabular ${payment.isPaid ? 'text-slate-500 line-through' : 'text-brand-300'}`}>{formatCurrency(payment.amount)}</p>
-                                            {payment.penalty > 0 && (
-                                                <p className={`text-xs nums-tabular ${payment.isPaid ? 'text-slate-600 line-through' : 'text-rose-400'}`}>+ {formatCurrency(payment.penalty)} جریمه</p>
-                                            )}
-                                        </div>
-                                        {!payment.isPaid && (
-                                            <button onClick={() => onEditPayment({...payment, planId: currentInstallment.id})} className="p-1.5 hover:bg-white/10 rounded-full hover:text-brand-300 transition text-slate-400"><EditIcon/></button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                            );
-                        })}
-                        </div>
-                    </div>
-                    }
+        const totals = currentInstallment.payments.reduce((sum, p) => {
+            const t = paymentTotals(p); return { total: sum.total + t.total, paid: sum.paid + t.paid, remaining: sum.remaining + t.remaining };
+        }, { total: 0, paid: 0, remaining: 0 });
+        const progress = totals.total ? totals.paid / totals.total * 100 : 0;
+        const completed = currentInstallment.payments.length > 0 && currentInstallment.payments.every(p => paymentTotals(p).settled);
+        return <div className="space-y-4">
+            {receiptModal}
+            <button onClick={() => setCurrentInstallment(null)} className="flex items-center gap-2 text-slate-300 hover:text-brand-300 text-sm"><ArrowRightIcon />بازگشت به لیست اقساط</button>
+            <div className="rounded-2xl bg-white/[0.04] p-5 ring-1 ring-white/10 flex items-center gap-4">
+                <ProgressRing value={progress} size={84} stroke={8} progressClassName="stroke-brand-500" trackClassName="stroke-white/10">
+                    <span className="text-brand-300 font-bold">{fa(Math.round(progress))}٪</span>
+                </ProgressRing>
+                <div className="min-w-0 space-y-1">
+                    <h3 className="font-bold text-lg text-white">{currentInstallment.title}</h3>
+                    {completed && <p className="text-emerald-300 text-sm">این طرح تکمیل شده است</p>}
+                    <p className="text-sm text-emerald-300">پرداخت‌شده: {formatCurrency(totals.paid)}</p>
+                    <p className="text-sm text-rose-300">مانده: {formatCurrency(totals.remaining)}</p>
                 </div>
-            );
-        }
-        
-        if (isCompleted) {
-            const loanAmount = currentInstallment.loanAmount || 0;
-            const totalPaidPrincipal = currentInstallment.payments.reduce((sum, p) => sum + p.amount, 0);
-            const stats = {
-                loanAmount,
-                totalPaidPrincipal,
-                totalInterest: totalPaidPrincipal - loanAmount,
-                totalPenalty: currentInstallment.payments.reduce((sum, p) => sum + (p.penalty || 0), 0),
-                startDate: currentInstallment.payments[0]?.dueDate,
-                endDate: [...currentInstallment.payments]
-                    .filter(p => p.paidDate)
-                    .sort((a,b) => new Date(b.paidDate).getTime() - new Date(a.paidDate).getTime())[0]?.paidDate,
-                paymentCount: currentInstallment.payments.length,
-            };
-
-            return (
-                <div>
-                     <div className="flex justify-between items-center mb-6 p-4 bg-slate-800 rounded-lg">
-                         <button onClick={() => setCurrentInstallment(null)} className="flex items-center gap-2 text-slate-300 hover:text-sky-400 transition-colors">
-                            <ArrowRightIcon />
-                            <span>بازگشت به لیست اقساط</span>
-                        </button>
-                        <div className="text-left">
-                            <h3 className="text-xl font-bold text-white">{currentInstallment.title}</h3>
-                            <p className="text-emerald-400 font-semibold">این طرح تکمیل شده است</p>
+            </div>
+            <PlanStats plan={currentInstallment} />
+            <div className="space-y-3">
+                {currentInstallment.payments.map((payment, index) => {
+                    const t = paymentTotals(payment);
+                    return <article key={payment.id} aria-label={`قسط شماره ${index + 1}`} className={`rounded-2xl border p-4 space-y-3 ${t.settled ? 'border-emerald-900 bg-emerald-950/20' : t.paid > 0 ? 'border-amber-800/60 bg-amber-950/10' : 'border-slate-700 bg-white/[0.03]'}`}>
+                        <div className="flex flex-wrap justify-between items-start gap-3">
+                            <div><h4 className="font-bold text-slate-100">قسط شماره {fa(index + 1)}</h4><p className="text-xs text-slate-400 mt-1">سررسید: {formatDate(payment.dueDate)}</p></div>
+                            <span className={`rounded-full px-2 py-1 text-xs ${t.settled ? 'text-emerald-300 bg-emerald-950' : t.paid > 0 ? 'text-amber-300 bg-amber-950' : 'text-rose-300 bg-rose-950'}`}>{t.settled ? 'تسویه‌شده' : t.paid > 0 ? 'بخشی پرداخت شده' : 'پرداخت نشده'}</span>
                         </div>
-                    </div>
-
-                    <div className="p-6 bg-slate-900/50 rounded-lg ring-1 ring-white/10">
-                        <h4 className="text-lg font-semibold mb-4 text-slate-200">خلاصه طرح</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                            <div className="flex justify-between border-b border-slate-800 py-2"><span className="text-slate-400">مبلغ کل وام:</span><span className="text-slate-100 font-medium">{formatCurrency(stats.loanAmount)}</span></div>
-                            <div className="flex justify-between border-b border-slate-800 py-2"><span className="text-slate-400">تعداد اقساط:</span><span className="text-slate-100 font-medium">{stats.paymentCount}</span></div>
-                            <div className="flex justify-between border-b border-slate-800 py-2"><span className="text-slate-400">مجموع پرداختی (اصل):</span><span className="text-slate-100 font-medium">{formatCurrency(stats.totalPaidPrincipal)}</span></div>
-                            <div className="flex justify-between border-b border-slate-800 py-2"><span className="text-slate-400">مجموع سود:</span><span className="text-slate-100 font-medium">{formatCurrency(stats.totalInterest > 0 ? stats.totalInterest : 0)}</span></div>
-                            <div className="flex justify-between border-b border-slate-800 py-2"><span className="text-slate-400">مجموع جرائم:</span><span className="text-rose-400 font-medium">{formatCurrency(stats.totalPenalty)}</span></div>
-                            <div className="flex justify-between border-b border-slate-800 py-2"><span className="text-slate-400">تاریخ شروع:</span><span className="text-slate-100 font-medium">{stats.startDate ? formatDate(stats.startDate) : 'N/A'}</span></div>
-                            <div className="flex justify-between border-b border-slate-800 py-2 sm:col-span-2"><span className="text-slate-400">تاریخ تسویه کامل:</span><span className="text-slate-100 font-medium">{stats.endDate ? formatDate(stats.endDate) : 'N/A'}</span></div>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                            <p className="text-slate-400">کل قسط<strong className="block mt-1 text-slate-200">{formatCurrency(t.total)}</strong></p>
+                            <p className="text-slate-400">پرداخت‌شده<strong className="block mt-1 text-emerald-300">{formatCurrency(t.paid)}</strong></p>
+                            <p className="text-slate-400">مانده<strong className="block mt-1 text-rose-300">{formatCurrency(t.remaining)}</strong></p>
                         </div>
-                    </div>
-
-                    <div className="text-center my-6">
-                        <button onClick={() => setShowPaymentsList(s => !s)} className="py-2 px-5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-md text-sm transition duration-300">
-                            {showPaymentsList ? 'پنهان کردن ریز پرداخت‌ها' : 'نمایش ریز پرداخت‌ها'}
-                        </button>
-                    </div>
-                    
-                    {showPaymentsList && (
-                        <div className="space-y-3 animate-fade-in">
-                            {currentInstallment.payments.map((payment, index) => (
-                                 <div key={payment.id} className="bg-white/[0.04] rounded-lg p-3 sm:p-4 flex items-center justify-between ring-1 ring-white/10 opacity-80">
-                                    <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse flex-1 min-w-0">
-                                        <CheckCircleIcon />
-                                        <div className="min-w-0">
-                                            <p className="font-bold text-slate-100 truncate">قسط شماره {index + 1}</p>
-                                            <p className="text-sm text-slate-400 truncate">تاریخ پرداخت: {payment.paidDate ? formatDate(payment.paidDate) : formatDate(payment.dueDate)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="font-bold text-sm sm:text-base text-slate-300">{formatCurrency(payment.amount)}</p>
-                                        {payment.penalty > 0 && <p className="text-xs text-rose-500">+ {formatCurrency(payment.penalty)} جریمه</p>}
-                                    </div>
-                                </div>
-                            ))}
+                        {payment.penalty > 0 && <p className="text-xs text-rose-300">شامل {formatCurrency(payment.penalty)} جریمه</p>}
+                        <div className="h-1.5 rounded-full bg-white/10 overflow-hidden"><div className="h-full bg-emerald-400 transition-all" style={{ width: `${t.total ? t.paid / t.total * 100 : 0}%` }} /></div>
+                        <div className="flex flex-wrap gap-2">
+                            <button onClick={() => setReceiptTarget({ planId: currentInstallment.id, paymentId: payment.id })} className="rounded-xl bg-brand-600 hover:bg-brand-500 px-4 py-2 text-sm text-white">{t.settled ? 'سوابق پرداخت' : 'پرداخت مرحله‌ای'}</button>
+                            {!t.settled && <button aria-label={`ویرایش قسط ${index + 1}`} onClick={() => onEditPayment({ ...payment, planId: currentInstallment.id })} className="rounded-xl border border-slate-600 px-3 py-2 text-sm text-slate-300">ویرایش مبلغ و سررسید</button>}
                         </div>
-                    )}
-                </div>
-            );
-        }
+                    </article>;
+                })}
+            </div>
+        </div>;
     }
+
     if (installments.length === 0) {
         return <p className="text-slate-500 text-center py-16 bg-slate-800/20 rounded-lg">هنوز برنامه قسطی ثبت نشده است.</p>;
     }
     
     const PlanCard: React.FC<{ plan: any; isCompleted?: boolean }> = ({ plan, isCompleted = false }) => {
-        const paidCount = plan.payments.filter(p => p.isPaid).length;
+        const paidCount = plan.payments.filter(p => paymentTotals(p).settled).length;
         const totalCount = plan.payments.length;
-        const remainingAmount = plan.payments.filter(p => !p.isPaid).reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
-        const nextPayment = plan.payments.find(p => !p.isPaid);
+        const remainingAmount = plan.payments.reduce((sum, p) => sum + paymentTotals(p).remaining, 0);
+        const planTotal = plan.payments.reduce((sum, p) => sum + paymentTotals(p).total, 0);
+        const planProgress = planTotal > 0 ? (planTotal - remainingAmount) / planTotal * 100 : 0;
+        const nextPayment = plan.payments.find(p => !paymentTotals(p).settled);
         const lastPaymentDate = isCompleted ? plan.payments.map(p => p.paidDate).filter(Boolean).sort((a,b) => new Date(b).getTime() - new Date(a).getTime())[0] : null;
 
         return (
@@ -423,7 +339,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                         {(() => {
                             const monthPays = plan.payments.filter(p => isInInstMonth(p.dueDate));
                             const monthAmount = monthPays.reduce((s, p) => s + (p.amount || 0) + (p.penalty || 0), 0);
-                            const monthPaid = monthPays.length > 0 ? monthPays.every(p => p.isPaid) : false;
+                            const monthPaid = monthPays.length > 0 ? monthPays.every(p => paymentTotals(p).settled) : false;
                             const earliestMonthDue = monthPays.length > 0 ? monthPays.map(p => p.dueDate).sort((a,b) => new Date(a).getTime() - new Date(b).getTime())[0] : null;
                             const daysUntil = earliestMonthDue ? Math.ceil((new Date(earliestMonthDue).getTime() - new Date().getTime()) / (1000*60*60*24)) : null;
                             return (
@@ -461,10 +377,10 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                         <div className="mt-auto pt-3 border-t border-white/10 text-xs text-slate-400">
                            <div className="flex justify-between items-center mb-1">
                                <span>پیشرفت</span>
-                               <span>{paidCount} / {totalCount}</span>
+                               <span>{fa(Math.round(planProgress))}٪ · {fa(paidCount)} از {fa(totalCount)} قسط تسویه</span>
                            </div>
                            <div className="w-full bg-slate-700 rounded-full h-1.5">
-                               <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: `${totalCount > 0 ? (paidCount/totalCount)*100 : 0}%`}}></div>
+                               <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: `${planProgress}%`}}></div>
                            </div>
                            {nextPayment && <p className="mt-2 text-center">پرداخت بعدی: {formatDate(nextPayment.dueDate)}</p>}
                         </div>
@@ -475,7 +391,9 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
     };
 
     return (
-        <div className="space-y-12">
+        <div className="space-y-6">
+            {receiptModal}
+            <button onClick={() => setShowCompleted(true)} className="w-full flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-emerald-900 bg-emerald-950/20 px-5 py-4 text-sm text-emerald-300"><span>مشاهدهٔ طرح‌های تسویه‌شده</span><span className="rounded-full bg-emerald-900/50 px-3 py-1">{fa(completedPlans.length)} طرح</span></button>
             <div>
                 <div className="flex flex-wrap items-center gap-2 mb-4">
                     <button onClick={() => setInstallmentsSortMode('nearest')} className={`px-3 py-1 rounded-full text-xs border ${installmentsSortMode==='nearest' ? 'bg-sky-500 text-white border-sky-500' : 'bg-slate-700/50 text-slate-200 border-slate-600'}`}>نزدیک‌ترین اقساط</button>
@@ -495,10 +413,11 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                     const inThisMonth = (p) => isInInstMonth(p.dueDate);
                     const monthlyPayments = installments.flatMap(p => p.payments).filter(inThisMonth);
                     const monthAll = monthlyPayments.reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
-                    const monthPaid = monthlyPayments.filter(p => p.isPaid).reduce((sum, p) => sum + (p.amount || 0) + (p.penalty || 0), 0);
+                    const monthPaid = monthlyPayments.reduce((sum, p) => sum + paymentTotals(p).paid, 0);
                     const monthRemaining = Math.max(0, monthAll - monthPaid);
                     const progress = monthAll > 0 ? (monthPaid / monthAll) * 100 : 0;
-                    return (
+                    if (showCompleted) return <div className="space-y-5">{receiptModal}<button onClick={() => setShowCompleted(false)} className="flex gap-2 text-brand-300"><ArrowRightIcon />بازگشت به اقساط فعال</button><h3 className="text-xl font-bold text-emerald-300">طرح‌های تسویه‌شده</h3><p className="text-sm text-slate-400">{fa(completedPlans.length)} طرح؛ تمام سوابق و پرداخت‌ها محفوظ‌اند.</p><div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">{completedPlans.map(plan => <PlanCard key={plan.id} plan={plan} isCompleted />)}</div></div>;
+    return (
                         <div className="bg-white/[0.04] rounded-2xl p-4 ring-1 ring-white/[0.06] mb-5">
                             <div className="flex items-center gap-4">
                                 <ProgressRing value={progress} size={84} stroke={8} progressClassName="stroke-brand-500" trackClassName="stroke-white/10">
@@ -570,32 +489,7 @@ export const InstallmentsView = ({ installments, currentInstallment, setCurrentI
                 )}
             </div>
             
-            {completedPlans.length > 0 && (
-                 <div>
-                    <div className="relative my-8">
-                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                            <div className="w-full border-t border-white/10" />
-                        </div>
-                        <div className="relative flex justify-center">
-                            <span className="bg-slate-900 px-3 text-lg font-medium text-slate-400">
-                                تاریخچه
-                            </span>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {completedPlans
-                            .sort((a, b) => {
-                                const dateA = a.payments.map(p => p.paidDate).filter(Boolean).sort((d1, d2) => new Date(d2).getTime() - new Date(d1).getTime())[0];
-                                const dateB = b.payments.map(p => p.paidDate).filter(Boolean).sort((d1, d2) => new Date(d2).getTime() - new Date(d1).getTime())[0];
-                                if (!dateA) return 1;
-                                if (!dateB) return -1;
-                                return new Date(dateB).getTime() - new Date(dateA).getTime();
-                            })
-                            .map(plan => <PlanCard key={plan.id} plan={plan} isCompleted={true} />)
-                        }
-                    </div>
-                </div>
-            )}
+
         </div>
     );
 }

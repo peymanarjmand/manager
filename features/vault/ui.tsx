@@ -3,6 +3,8 @@ import { Copy, Eye, EyeOff, X, ExternalLink } from "lucide-react";
 import moment from "jalali-moment";
 import { copyValue } from "./clipboard";
 import { jalaliToDate } from "../customers/domain";
+import { MoneyInput } from "../../components/MoneyInput";
+import { TimeInput24 } from "../../components/TimeInput24";
 
 export const inputClass =
   "w-full rounded-xl bg-slate-950/60 border border-slate-600 px-3 py-2.5 text-white outline-none focus:border-teal-400 min-w-0";
@@ -47,6 +49,7 @@ export function Field({
   type = "text",
   required = false,
   dir = "auto",
+  money = false,
 }: {
   label: string;
   value?: string;
@@ -56,9 +59,11 @@ export function Field({
   type?: string;
   required?: boolean;
   dir?: "ltr" | "rtl" | "auto";
+  money?: boolean;
 }) {
   const id = useId(),
     [show, setShow] = useState(false);
+  const Input = money && onChange ? MoneyInput : type === "time" ? TimeInput24 : "input";
   return (
     <div className="min-w-0">
       <label htmlFor={id} className="block text-sm text-slate-300 mb-1.5">
@@ -81,7 +86,7 @@ export function Field({
               spellCheck={false}
             />
           ) : (
-            <input
+            <Input
               id={id}
               dir={dir}
               className={inputClass}

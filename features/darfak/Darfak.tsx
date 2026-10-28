@@ -1,3 +1,4 @@
+import { MoneyInput } from '../../components/MoneyInput';
 import React, { useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import { useDarfakStore, DarfakExpense } from './store';
@@ -152,7 +153,7 @@ const ExpenseModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; o
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-sm text-slate-300 mb-1">مبلغ (تومان)</label>
-                                <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.amount} onChange={e => setForm(p => ({...p, amount: Number(e.target.value)}))} required/>
+                                <MoneyInput type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.amount} onChange={e => setForm(p => ({...p, amount: Number(e.target.value)}))} required/>
                             </div>
                             <div>
                                 <label className="block text-sm text-slate-300 mb-1">تاریخ</label>

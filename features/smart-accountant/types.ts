@@ -43,6 +43,15 @@ export interface LedgerEntry {
 }
 
 // New Types for Installments
+export interface InstallmentReceipt {
+    id: string;
+    amount: number;
+    paidAt: string;
+    method?: string;
+    reference?: string;
+    note?: string;
+    voidedAt?: string;
+}
 export interface InstallmentPayment {
     id: string; // e.g., planId-0, planId-1
     dueDate: string; // ISO string
@@ -50,6 +59,7 @@ export interface InstallmentPayment {
     isPaid: boolean;
     paidDate?: string; // ISO string, set when marked as paid
     penalty?: number;
+    receipts?: InstallmentReceipt[];
 }
 
 export interface InstallmentPlan {

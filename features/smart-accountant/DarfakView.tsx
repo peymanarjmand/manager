@@ -1,3 +1,4 @@
+import { MoneyInput } from '../../components/MoneyInput';
 import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import { Package, HardHat, Wrench, Truck, ShieldCheck, Tag, Search, Plus, Eye, Download, Pencil, Trash2 } from 'lucide-react';
@@ -290,7 +291,7 @@ const DarfakModal = ({ isOpen, onClose, onSave, expense }: { isOpen: boolean; on
                             </div>
                             <div>
                                 <label className="block text-sm text-slate-300 mb-1">مبلغ (تومان)</label>
-                                <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-brand-500 focus:outline-none" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: Number(e.target.value) }))} required />
+                                <MoneyInput type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-brand-500 focus:outline-none" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: Number(e.target.value) }))} required />
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">

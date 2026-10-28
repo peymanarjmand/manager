@@ -1,3 +1,4 @@
+import { MoneyInput } from '../../components/MoneyInput';
 import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import JalaliDatePicker from './components/JalaliDatePicker';
@@ -308,12 +309,12 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                             ) : (
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-1">مبلغ از</label>
-                                    <input type="number" value={minAmount ?? ''} onChange={(e) => setMinAmount(((e.target as HTMLInputElement).value || '') === '' ? undefined : Number((e.target as HTMLInputElement).value))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                    <MoneyInput type="number" value={minAmount ?? ''} onChange={(e) => setMinAmount(((e.target as HTMLInputElement).value || '') === '' ? undefined : Number((e.target as HTMLInputElement).value))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                 </div>
                             )}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">مبلغ تا</label>
-                                <input type="number" value={maxAmount ?? ''} onChange={(e) => setMaxAmount(((e.target as HTMLInputElement).value || '') === '' ? undefined : Number((e.target as HTMLInputElement).value))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                <MoneyInput type="number" value={maxAmount ?? ''} onChange={(e) => setMaxAmount(((e.target as HTMLInputElement).value || '') === '' ? undefined : Number((e.target as HTMLInputElement).value))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                             </div>
                         </div>
                     </div>
@@ -473,11 +474,11 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">قیمت هر گرم (تومان)</label>
-                                        <input type="number" value={String(form.pricePerGram ?? '')} onChange={e => setForm((f: any) => ({ ...f, pricePerGram: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400" />
+                                        <MoneyInput type="number" value={String(form.pricePerGram ?? '')} onChange={e => setForm((f: any) => ({ ...f, pricePerGram: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">مجموع پرداختی (تومان)</label>
-                                        <input type="number" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400" />
+                                        <MoneyInput type="number" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-slate-300">فاکتور 1</label>
@@ -514,16 +515,16 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">قیمت هر توکن (تومان)</label>
-                                        <input type="number" step="any" inputMode="decimal" value={String(form.priceTokenToman ?? '')} onChange={e => setForm((f: any) => ({ ...f, priceTokenToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <MoneyInput type="number" step="any" inputMode="decimal" value={String(form.priceTokenToman ?? '')} onChange={e => setForm((f: any) => ({ ...f, priceTokenToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">{(form.txType||txType)==='sell' ? 'مبلغ دریافتی (تومان)' : 'مجموع پرداختی (تومان)'}</label>
-                                        <input type="number" step="any" inputMode="decimal" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <MoneyInput type="number" step="any" inputMode="decimal" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">کارمزد (تومان)</label>
-                                        <input type="number" step="any" inputMode="decimal" value={String(form.feeToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, feeToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <MoneyInput type="number" step="any" inputMode="decimal" value={String(form.feeToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, feeToman: (e.target as HTMLInputElement).value }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     <div className="text-[11px] text-slate-400 mt-1">گرم معادل = مقدار × 41.4713</div>
                                     </div>
                                     <div>
@@ -544,15 +545,15 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">قیمت هر میلی‌گرم</label>
-                                        <input type="number" value={String(form.pricePerMg ?? '')} onChange={e => setForm((f: any) => ({ ...f, pricePerMg: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <MoneyInput type="number" value={String(form.pricePerMg ?? '')} onChange={e => setForm((f: any) => ({ ...f, pricePerMg: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">مجموع پرداختی (تومان)</label>
-                                        <input type="number" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <MoneyInput type="number" value={String(form.totalPaidToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, totalPaidToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-300 mb-1">کارمزد (تومان)</label>
-                                        <input type="number" value={String(form.feeManualToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, feeManualToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
+                                        <MoneyInput type="number" value={String(form.feeManualToman ?? 0)} onChange={e => setForm((f: any) => ({ ...f, feeManualToman: Number((e.target as HTMLInputElement).value) }))} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" />
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className="block text-sm font-medium text-slate-300 mb-1">فاکتور/رسید</label>
@@ -721,7 +722,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                                             <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">قیمت هر توکن: <span className="font-bold">{pricePerToken != null ? pricePerToken.toLocaleString('fa-IR') : '—'}</span> <span className="text-xs">تومان</span></div>
                                             <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">مجموع پرداختی: <span className="font-bold">{totalPaid.toLocaleString('fa-IR')}</span> <span className="text-xs">تومان</span></div>
                                             <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">کارمزد: <span className="font-bold">{fee.toLocaleString('fa-IR')}</span> <span className="text-xs">تومان</span> <span className="text-xs text-slate-400">({feePercent}%)</span></div>
-                                            {usdPrice != null && <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">قیمت دلار هنگام معامله: <span className="font-bold">{usdPrice}</span></div>}
+                                            {usdPrice != null && <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">قیمت دلار هنگام معامله: <span className="font-bold">{usdPrice.toLocaleString('fa-IR', { maximumFractionDigits: 20 })}</span></div>}
                                             {usdRate != null && <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">نرخ دلار (تومان): <span className="font-bold">{usdRate.toLocaleString('fa-IR')}</span></div>}
                                             {pricePerGramToday != null && <div className="bg-white/[0.05] p-3 rounded-lg ring-1 ring-white/10">قیمت هر گرم امروز (تومان): <span className="font-bold">{pricePerGramToday.toLocaleString('fa-IR')}</span></div>}
                                         </div>
@@ -748,7 +749,7 @@ export function OwnerGoldDashboard({ ownerId, onBack }: { ownerId: string; onBac
                         <div className="p-5 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">مبلغ فروش (تومان)</label>
-                                <input type="number" value={salePrice} onChange={e => setSalePrice((e.target as HTMLInputElement).value)} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" placeholder="مثلاً 25000000" />
+                                <MoneyInput type="number" value={salePrice} onChange={e => setSalePrice((e.target as HTMLInputElement).value)} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" placeholder="مثلاً 25000000" />
                             </div>
                             <div className="text-xs text-slate-400">خرید: {((saleTarget as any).totalPaidToman || 0).toLocaleString('fa-IR')} تومان • تاریخ خرید: {j((saleTarget as any).purchaseDate)}</div>
                         </div>

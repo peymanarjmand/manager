@@ -10,6 +10,7 @@ import {
   tehranLocalToIso,
   validateCustomer,
   validateLedger,
+  tehranDateTime,
 } from "./domain";
 import type { Customer, Entity, LedgerEntry, ServiceRecord } from "./types";
 const entry = (
@@ -115,6 +116,9 @@ describe("customer identity, dates and search", () => {
       expect(tehranLocalToIso(local.date, local.time)).toBe(iso);
     }
     expect(tehranLocalToIso("invalid", "10:30")).toBeNull();
+    expect(tehranLocalToIso("2026-10-28", "24:00")).toBeNull();
+    expect(tehranLocalToIso("2026-10-28", "15:60")).toBeNull();
+    expect(tehranDateTime("2026-10-28T12:00:00Z")).toContain("۱۵:۳۰");
   });
   it("groups exact local calendar dates and excludes secrets from search", () => {
     const now = new Date("2026-10-27T10:00:00Z");

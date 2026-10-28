@@ -1,3 +1,4 @@
+import { MoneyInput } from '../../components/MoneyInput';
 import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import { ShieldCheck, Award, CalendarDays, Wallet, TrendingUp, Coins, Eye, Pencil, Trash2, CheckCheck, Plus, StickyNote, Clock } from 'lucide-react';
@@ -453,7 +454,7 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
                         </div>
                         <div>
                             <label className="block text-sm text-slate-300 mb-1">حقوق ثبت‌شده (اختیاری)</label>
-                            <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.registeredSalary || ''} onChange={e => setForm(p => ({...p, registeredSalary: Number((e.target as HTMLInputElement).value) || 0 }))} placeholder="مثلا 15,000,000" />
+                            <MoneyInput type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.registeredSalary || ''} onChange={e => setForm(p => ({...p, registeredSalary: Number((e.target as HTMLInputElement).value) || 0 }))} placeholder="مثلا 15,000,000" />
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -466,7 +467,7 @@ const SocialInsuranceModal = ({ isOpen, onClose, onSave, payment }: { isOpen: bo
                             </div>
                             <div>
                                 <label className="block text-sm text-slate-300 mb-1">مبلغ (تومان)</label>
-                                <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.amount} onChange={e => setForm(p => ({...p, amount: Number((e.target as HTMLInputElement).value)}))} required />
+                                <MoneyInput type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none" value={form.amount} onChange={e => setForm(p => ({...p, amount: Number((e.target as HTMLInputElement).value)}))} required />
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">

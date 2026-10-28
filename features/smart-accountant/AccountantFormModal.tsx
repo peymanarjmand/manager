@@ -3,6 +3,7 @@ import moment from 'jalali-moment';
 import { TRANSACTION_CATEGORIES } from './constants';
 import { PlusIcon, CloseIcon } from '../../components/Icons';
 import { useAccountantStore } from './store';
+import { paymentTotals } from './installmentPayments';
 import { isImageRef, saveImageDataURL, getObjectURLByRef } from '../../lib/idb-images';
 import { LEDGER_UNITS, getLedgerUnitConfig, FormInput, FormSelect, FormTextarea, FormImageUpload, JalaliDatePicker } from './SmartAccountantShared';
 
@@ -13,9 +14,11 @@ export const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: 
     const [imagePreview, setImagePreview] = useState(payload?.receiptImage || payload?.avatar || null);
     const [isUploading, setIsUploading] = useState(false);
     const [isCustomCategoryMode, setIsCustomCategoryMode] = useState(false);
+    const [formError, setFormError] = useState('');
 
     useEffect(() => {
         setIsCustomCategoryMode(false);
+        setFormError('');
         const isoNow = new Date().toISOString();
         let defaultData: any = {};
         if (payload) {
@@ -89,6 +92,9 @@ export const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (type === 'installmentPayment' && payload?.receipts?.length && Number(formData.amount) + Number(formData.penalty || 0) < paymentTotals(payload).paid) {
+            setFormError('مبلغ قسط و جریمه نمی‌تواند از مبلغ پرداخت‌شده کمتر باشد.'); return;
+        }
         if (type === 'transaction') {
             const cat = formData.category;
             const tType = formData.type as 'income' | 'expense';
@@ -96,7 +102,7 @@ export const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: 
                 addCustomCategory(tType, cat);
             }
         }
-        onSave(type, formData);
+        try { onSave(type, formData); } catch(e) { setFormError((e as Error).message); }
     };
 
     const getTitle = () => {
@@ -289,6 +295,7 @@ export const AccountantFormModal = ({ isOpen, onClose, onSave, type, payload }: 
                       </button>
                   </div>
                   <div className="p-6 space-y-4">
+                      {formError && <p role="alert" className="rounded-xl bg-rose-950/50 p-3 text-sm text-rose-300">{formError}</p>}
                       {type === 'transaction' && renderTransactionFields()}
                       {type === 'asset' && renderAssetFields()}
                       {type === 'person' && renderPersonFields()}

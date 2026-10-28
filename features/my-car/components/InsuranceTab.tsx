@@ -1,3 +1,4 @@
+import { MoneyInput } from '../../../components/MoneyInput';
 import React, { useState } from 'react';
 import { Plus, Pencil, Trash2, ShieldCheck } from 'lucide-react';
 import type { VehicleInsurance, VehicleInsuranceType } from '../types';
@@ -211,7 +212,7 @@ export const InsuranceTab: React.FC<Props> = ({
             />
           </Field>
           <Field label="حق بیمه (تومان)">
-            <TextInput
+            <MoneyInput
               type="number"
               min={0}
               value={form.premiumAmount ?? ''}

@@ -21,6 +21,7 @@ export interface Customer {
   fatherName?: string;
   company?: string;
   address?: string;
+  postalCode?: string;
   notes?: string;
 }
 export interface Project {

@@ -1,3 +1,4 @@
+import { MoneyInput } from '../../../components/MoneyInput';
 import React, { useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import { Transaction } from '../types';
@@ -213,8 +214,8 @@ export const TransactionsView = ({ transactions, onEdit, onDelete, onView }: { t
                         <div>
                             <div className="text-[11px] text-slate-400 mb-1.5">محدوده‌ی مبلغ (تومان)</div>
                             <div className="grid grid-cols-2 gap-2.5">
-                                <input type="number" inputMode="numeric" placeholder="از" value={amountMin} onChange={(e) => setAmountMin(e.target.value)} className="bg-white/[0.04] ring-1 ring-white/10 focus:ring-2 focus:ring-brand-500 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none nums-tabular" />
-                                <input type="number" inputMode="numeric" placeholder="تا" value={amountMax} onChange={(e) => setAmountMax(e.target.value)} className="bg-white/[0.04] ring-1 ring-white/10 focus:ring-2 focus:ring-brand-500 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none nums-tabular" />
+                                <MoneyInput type="number" inputMode="numeric" placeholder="از" value={amountMin} onChange={(e) => setAmountMin(e.target.value)} className="bg-white/[0.04] ring-1 ring-white/10 focus:ring-2 focus:ring-brand-500 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none nums-tabular" />
+                                <MoneyInput type="number" inputMode="numeric" placeholder="تا" value={amountMax} onChange={(e) => setAmountMax(e.target.value)} className="bg-white/[0.04] ring-1 ring-white/10 focus:ring-2 focus:ring-brand-500 rounded-xl py-2 px-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none nums-tabular" />
                             </div>
                         </div>
                         <div className="flex items-center justify-between">

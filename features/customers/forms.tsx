@@ -156,11 +156,13 @@ export function CustomerFields({
         onChange={(v) => set("emails", v)}
       />
       <Field
-        label="نشانی"
+        label="آدرس"
         value={value.address}
         onChange={(v) => set("address", v)}
         multiline
       />
+      <Field label="کد پستی" value={value.postalCode}
+        onChange={(v) => set("postalCode", digits(v))} dir="ltr" />
       <Field
         label="توضیحات"
         value={value.notes}
@@ -221,6 +223,7 @@ export function ProjectFields({
       </div>
       <Field
         label="مبلغ توافق‌شده (تومان، اختیاری)"
+        money
         value={value.contractAmount}
         onChange={(v) => set("contractAmount", digits(v))}
       />
@@ -404,6 +407,7 @@ export function ServiceFields({
         />
         <Field
           label="هزینهٔ پیشنهادی تمدید (تومان)"
+          money
           value={value.renewalCost}
           onChange={(renewalCost) =>
             onChange({ ...value, renewalCost: digits(renewalCost) })
@@ -598,6 +602,7 @@ export function LedgerFields({
       />
       <Field
         label="مبلغ (تومان)"
+        money
         required
         value={value.amount}
         onChange={(v) => set("amount", digits(v))}

@@ -1,3 +1,5 @@
+import { paymentTotals, paymentCashFlow } from "../installmentPayments";
+import { MoneyInput } from '../../../components/MoneyInput';
 import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import { AccountantData } from '../types';
@@ -58,9 +60,7 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                 return d.jYear() === jjYear && (d.jMonth() + 1) === jjMonth;
             });
 
-        const paidAmount = allPaymentsThisMonth
-            .filter(p => p.isPaid)
-            .reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
+        const paidAmount = allPaymentsThisMonth.reduce((sum, p) => sum + paymentTotals(p).paid, 0);
 
         const totalAmount = allPaymentsThisMonth.reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
 
@@ -86,7 +86,7 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
             return d.jYear() === jy && (d.jMonth() + 1) === jm;
         });
         const total = all.reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
-        const paid = all.filter(p => p.isPaid).reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
+        const paid = all.reduce((sum, p) => sum + paymentTotals(p).paid, 0);
         const unpaid = total - paid;
         return { total, paid, unpaid, label: m.clone().locale('fa').format('jMMM jYY'), iso: s.toISOString() };
     };
@@ -150,9 +150,7 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
     const ledgerInflow = useMemo(() => ledgerEntries.filter(e => e.type === 'credit' && !e.isSettled).reduce((s, e) => s + e.amount, 0) + ledgerEntries.filter(e => e.type === 'credit' && e.isSettled).reduce((s,e)=>s+e.amount,0), [ledgerEntries]);
     const ledgerOutflow = useMemo(() => ledgerEntries.filter(e => e.type === 'debt' && !e.isSettled).reduce((s, e) => s + e.amount, 0) + ledgerEntries.filter(e => e.type === 'debt' && e.isSettled).reduce((s,e)=>s+e.amount,0), [ledgerEntries]);
 
-    const installmentOut = useMemo(() => (data.installments || []).flatMap(p => p.payments)
-        .filter(p => p.isPaid && p.paidDate && moment(p.paidDate).isBetween(startOfSelected, endOfSelected, undefined, '[]'))
-        .reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0), [data.installments, selectedMonthISO]);
+    const installmentOut = useMemo(() => (data.installments || []).flatMap(p => p.payments).flatMap(paymentCashFlow).filter(r => moment(r.paidAt).isBetween(startOfSelected, endOfSelected, undefined, "[]")).reduce((sum, r) => sum + r.amount, 0), [data.installments, selectedMonthISO]);
 
     const checksCashed = useMemo(() => (data.checks || []).filter(c => c.status === 'cashed' && c.cashedDate && moment(c.cashedDate).isBetween(startOfSelected, endOfSelected, undefined, '[]')), [data.checks, selectedMonthISO]);
     const checksIn = useMemo(() => checksCashed.filter(c => c.type === 'received').reduce((s, c) => s + c.amount, 0), [checksCashed]);
@@ -213,7 +211,7 @@ export const SummaryView = ({ data }: { data: AccountantData }) => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-1">موجودی ابتدای ماه (تومان)</label>
-                            <input type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" value={fundInput} onChange={(e)=>setFundInput((e.target as HTMLInputElement).value)} />
+                            <MoneyInput type="number" className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3" value={fundInput} onChange={(e)=>setFundInput((e.target as HTMLInputElement).value)} />
                         </div>
                         <div className="md:col-span-2 flex items-center gap-2">
                             <button className="px-4 py-2 rounded-md bg-sky-600 hover:bg-sky-500 text-white text-sm font-bold" onClick={saveFund}>ذخیره</button>

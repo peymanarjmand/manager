@@ -1,19 +1,20 @@
 import React from 'react';
 import { DefaultImageIcon } from '../../../components/Icons';
+import { MoneyInput } from '../../../components/MoneyInput';
 
 export const FormInput = ({ label, id, value, onChange, type = 'text', required = false, ...props }) => (
     <div>
         <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
-        <input
-            type={type}
-            id={id}
-            name={id}
-            value={value || ''}
-            onChange={onChange}
-            required={required}
-            className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition"
-            {...props}
-        />
+        {React.createElement(type === 'number' && ['amount','currentValue','loanAmount','paymentAmount','penalty','qAmount'].includes(id) ? MoneyInput : 'input', {
+            type,
+            id,
+            name: id,
+            value: value ?? '',
+            onChange,
+            required,
+            className: 'w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition',
+            ...props,
+        })}
     </div>
 );
 

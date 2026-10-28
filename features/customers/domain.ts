@@ -20,6 +20,8 @@ export function validateCustomer(value: Customer): string | null {
     return "ایمیل معتبر وارد کنید.";
   if (value.nationalId && !/^\d{10}$/.test(digits(value.nationalId)))
     return "کد ملی باید ۱۰ رقم باشد.";
+  if (value.postalCode && !/^\d{10}$/.test(digits(value.postalCode)))
+    return "کد پستی باید ۱۰ رقم باشد.";
   return null;
 }
 export function amount(value: string): bigint {
@@ -81,6 +83,7 @@ export function tehranDateTime(iso: string): string {
     timeZone: "Asia/Tehran",
     dateStyle: "short",
     timeStyle: "short",
+    hourCycle: "h23",
   }).format(new Date(iso));
 }
 export function localTehranInput(iso: string): { date: string; time: string } {
@@ -102,6 +105,7 @@ export function localTehranInput(iso: string): { date: string; time: string } {
 export function tehranLocalToIso(date: string, time: string): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time))
     return null;
+  if (Number(time.slice(0, 2)) > 23 || Number(time.slice(3)) > 59) return null;
   const target = Date.parse(`${date}T${time}:00Z`);
   if (!Number.isFinite(target)) return null;
   let guess = target;

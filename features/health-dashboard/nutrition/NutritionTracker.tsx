@@ -1,3 +1,4 @@
+import { TimeInput24 } from '../../../components/TimeInput24';
 import React, { useState } from 'react';
 import { PlusIcon, EditIcon, DeleteIcon, ClockIcon } from '../../../components/Icons';
 import { Meal } from '../../../types';
@@ -20,7 +21,7 @@ export const NutritionTracker: React.FC<NutritionTrackerProps> = ({ onNavigateBa
     protein: 0,
     carbs: 0,
     fat: 0,
-    time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+    time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }),
     mealType: 'lunch',
     notes: ''
   });
@@ -78,7 +79,7 @@ export const NutritionTracker: React.FC<NutritionTrackerProps> = ({ onNavigateBa
         protein: 0,
         carbs: 0,
         fat: 0,
-        time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }),
+        time: new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }),
         mealType: 'lunch',
         notes: ''
       });
@@ -210,7 +211,7 @@ export const NutritionTracker: React.FC<NutritionTrackerProps> = ({ onNavigateBa
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">زمان</label>
-                <input
+                <TimeInput24
                   type="time"
                   value={newMeal.time}
                   onChange={(e) => setNewMeal({ ...newMeal, time: e.target.value })}

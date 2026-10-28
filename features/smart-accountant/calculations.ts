@@ -1,12 +1,12 @@
 import moment from 'jalali-moment';
 import { Asset, InstallmentPayment, InstallmentPlan, LedgerEntry } from './types';
+import { paymentTotals } from './installmentPayments';
 
 /**
  * Pure money-math helpers for the Smart Accountant.
  *
- * These mirror the CURRENT in-component formulas EXACTLY (characterization), so
- * that when the views are refactored to consume this module (a later phase),
- * the accompanying tests guarantee the displayed numbers do not change.
+ * Monthly installment totals include individual partial payments. Legacy paid
+ * installments without history keep their original full-payment semantics.
  *
  * NOTE: where the current behavior is a known simplification (e.g. APR is a
  * simple annual rate, and non-toman ledger units are excluded from toman totals)
@@ -79,9 +79,7 @@ export function computeMonthInstallmentTotals(
       return d.jYear() === jYear && d.jMonth() + 1 === jMonth;
     });
   const totalAmount = all.reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
-  const paidAmount = all
-    .filter((p) => p.isPaid)
-    .reduce((sum, p) => sum + p.amount + (p.penalty || 0), 0);
+  const paidAmount = all.reduce((sum, p) => sum + paymentTotals(p).paid, 0);
   const unpaidAmount = totalAmount - paidAmount;
   const progress = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
   return { totalAmount, paidAmount, unpaidAmount, progress, hasInstallments: all.length > 0 };
@@ -122,8 +120,8 @@ export function getNextUnpaidInstallment(plans: InstallmentPlan[] | undefined): 
       .map((pay) => ({
         planId: p.id,
         planTitle: p.title,
-        amount: pay.amount,
-        penalty: pay.penalty || 0,
+        amount: paymentTotals(pay).remaining - Math.min(pay.penalty || 0, paymentTotals(pay).remaining),
+        penalty: Math.min(pay.penalty || 0, paymentTotals(pay).remaining),
         dueDate: pay.dueDate,
       })),
   );
