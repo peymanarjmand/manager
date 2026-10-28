@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useSettingsStore } from './store';
 import { Settings } from '../../types';
 import { CloseIcon, AlertIcon } from '../../components/Icons';
-import { usePasswordStore } from '../password-manager/store';
 import { usePhoneBookStore } from '../phone-book/store';
 import { useDailyTasksStore } from '../daily-tasks/store';
 import { useAccountantStore } from '../smart-accountant/store';
@@ -81,13 +80,11 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
     // ===== Backup/Export helpers =====
     const buildModulesData = () => {
-        const pm = usePasswordStore.getState().entries;
         const pb = usePhoneBookStore.getState().contacts;
         const dt = useDailyTasksStore.getState();
         const sa = useAccountantStore.getState();
         const st = useSettingsStore.getState().settings;
         return {
-            passwordManager: { entries: pm },
             phoneBook: { contacts: pb },
             dailyTasks: { tasks: dt.tasks, projects: dt.projects },
             smartAccountant: {
@@ -205,7 +202,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
                         <section>
                             <h4 className="font-semibold text-slate-200 mb-3">پشتیبان‌گیری</h4>
-                            <p className="text-xs text-slate-400 mb-3">فایل بکاپ شامل تمام داده‌های ماژول‌ها و تنظیمات است.</p>
+                            <p className="text-xs text-slate-400 mb-3">این خروجی شامل داده‌های عمومی ماژول‌ها و تنظیمات است. مشتریان و مدیر رمز فقط از «امنیت و بکاپ» خزانه، به‌صورت رمز‌شده پشتیبان‌گیری می‌شوند.</p>
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <button type="button" onClick={exportPlain} className="py-2 px-4 bg-slate-600 hover:bg-slate-700 text-white rounded-md text-sm transition">دریافت بکاپ (JSON)</button>
                             </div>

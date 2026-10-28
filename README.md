@@ -14,8 +14,12 @@
 
 - مدیریت رمزها (Password Manager)
   - دسته‌بندی‌ها: ایمیل‌ها، اطلاعات بانکی، حساب‌های وب، کیف‌پول‌ها، صرافی‌ها
-  - رمزنگاری سمت کاربر با «رمز عبور اصلی» (Master Password)؛ غیرقابل بازیابی
-  - افزودن/ویرایش/حذف ورودی‌ها، نگهداری امن مقادیر حساس
+  - خزانهٔ مشترک با مشتریان، رمز مستقل و کلید بازیابی، قفل خودکار ۱۰ دقیقه
+  - افزودن، ویرایش و بایگانی؛ داده و تصاویر پیش از ارسال رمز می‌شوند
+- مدیریت مشتریان
+  - پرونده، چند پروژه، حساب‌ها و سرویس‌ها، مدارک و یادداشت‌ها
+  - دفتر مالی مستقل با ماندهٔ دقیق تومانی و سابقهٔ اصلاح و ابطال
+  - [راهنمای خزانه، مهاجرت و آزمون‌ها](docs/customer-vault.md)
 
 - دفتر تلفن (Phone Book)
   - افزودن، جستجو، گروه‌بندی الفبایی
@@ -114,165 +118,36 @@
 
 ## پیکربندی Supabase
 
-این اپلیکیشن بدون احراز هویت کاربر، از کلید عمومی (Anon) برای خواندن/نوشتن استفاده می‌کند. برای راه‌اندازی سریع می‌توانید سیاست‌های RLS باز (صرفاً جهت توسعه) اعمال کنید؛ اما برای محیط واقعی حتماً سیاست‌های امن و احراز هویت کاربر را پیاده‌سازی کنید.
+برنامه از Supabase Auth و نشست کاربر واردشده برای دسترسی به داده‌های شخصی استفاده
+می‌کند. کلید عمومی همراه نشست کاربر استفاده می‌شود و مجوزها باید با RLS مالکیت
+کاربر محدود شوند. دستورهای قدیمی ایجاد جدول بدون `user_id`، RLS مالکیت و مجوزهای
+صریح، baseline معتبر برای راه‌اندازی پروژهٔ تازه نیستند.
 
-### ایجاد باکت ذخیره‌سازی تصاویر
-1. در Supabase → Storage یک باکت به نام `lm-images` بسازید.
-2. دسترسی باکت را «Public» بگذارید (برای توسعه). در حالت عملیاتی پیشنهاد می‌شود دسترسی کنترل‌شده تعریف کنید.
+### تغییر Data API در ۳۰ اکتبر ۲۰۲۶
 
-### جداول موردنیاز (SQL)
-اسکیماهای زیر مطابق استفاده داخلی اپلیکیشن هستند. این دستورات را در SQL Editor پروژه Supabase اجرا کنید.
+جدول‌های موجود مجوزهای خود را حفظ می‌کنند. برای هر جدول جدید در `public` باید
+در همان migration ساخت جدول، RLS، سیاست‌های مالکیت و `GRANT` صریح اضافه شود.
+بررسی ۲۷ اکتبر این پروژه، وجود مجوزها و RLS هر ۳۴ جدول فعلی را تأیید کرد؛ هیچ
+تغییر داده یا مجوزی برای رفع این اطلاعیه در تولید لازم نبود.
 
-```sql
--- جداول وضعیت/تنظیمات عمومی (JSON key-value)
-create table if not exists kv_store (
-  id text primary key,
-  value jsonb not null,
-  updated_at timestamptz default now()
-);
+- [نتیجهٔ بررسی و راهنمای محیط تازه](supabase/README.md)
+- [الگوی امن ساخت جدول جدید](supabase/templates/user-owned-table.sql)
+- [کوئری فقط‌خواندنی کنترل دسترسی](supabase/verify-data-api-access.sql)
+- [بازپخش مجوزها پس از بازیابی schema معتبر در محیط تازه](supabase/replay-data-api-grants.sql)
 
-create table if not exists state_settings (
-  id text primary key,
-  value jsonb not null,
-  updated_at timestamptz default now()
-);
+این مخزن تاریخچهٔ کامل migrationهای تولید را ندارد. ساخت پروژه/شاخهٔ تازه یا
+reset باید با schema معتبر شامل سیاست‌های RLS انجام شود. اسکریپت بازپخش فقط
+مجوزها را تنظیم می‌کند؛ جایگزین schema یا بکاپ داده نیست. reset را روی تولید
+اجرا نکنید. نمونهٔ مجوز `anon` در ایمیل Supabase برای داده‌های شخصی این برنامه
+لازم نیست و نباید بدون بررسی اعمال شود.
 
-create table if not exists state_phone_book (
-  id text primary key,
-  value jsonb not null,
-  updated_at timestamptz default now()
-);
+### ذخیره‌سازی تصاویر
 
-create table if not exists state_accountant (
-  id text primary key,
-  value jsonb not null,
-  updated_at timestamptz default now()
-);
-
-create table if not exists state_password_manager (
-  id text primary key,
-  value jsonb not null,
-  updated_at timestamptz default now()
-);
-
-create table if not exists state_daily_tasks (
-  id text primary key,
-  value jsonb not null,
-  updated_at timestamptz default now()
-);
-
--- تراکنش‌ها
-create table if not exists transactions (
-  id text primary key,
-  type text not null check (type in ('income','expense')),
-  amount numeric not null,
-  description text,
-  category text,
-  date timestamptz not null,
-  receipt_ref text
-);
-
--- دارایی‌ها
-create table if not exists assets (
-  id text primary key,
-  name text not null,
-  current_value numeric not null default 0,
-  quantity numeric not null default 0,
-  purchase_date timestamptz,
-  notes text
-);
-
--- اشخاص
-create table if not exists people (
-  id text primary key,
-  name text not null,
-  avatar_ref text
-);
-
--- دفتر بدهکار/بستانکار
-create table if not exists ledger_entries (
-  id text primary key,
-  person_id text not null references people(id) on delete cascade,
-  type text not null check (type in ('debt','credit')),
-  amount numeric not null,
-  description text,
-  date timestamptz not null,
-  is_settled boolean not null default false
-);
-
--- برنامه‌های اقساط
-create table if not exists installment_plans (
-  id text primary key,
-  title text not null,
-  loan_amount numeric not null default 0
-);
-
--- پرداخت‌های اقساط
-create table if not exists installment_payments (
-  id text primary key,
-  plan_id text not null references installment_plans(id) on delete cascade,
-  amount numeric not null default 0,
-  due_date timestamptz not null,
-  is_paid boolean not null default false,
-  paid_date timestamptz,
-  penalty numeric not null default 0
-);
-
--- چک‌ها
-create table if not exists checks (
-  id text primary key,
-  type text not null check (type in ('issued','received')),
-  amount numeric not null,
-  due_date timestamptz not null,
-  status text not null default 'pending',
-  subject text not null,
-  sayyad_id text,
-  payee_name text,
-  payee_national_id text,
-  drawer_name text,
-  drawer_national_id text,
-  description text,
-  cashed_date timestamptz
-);
-
--- هزینه‌های «درفک»
-create table if not exists darfak_expenses (
-  id text primary key,
-  title text not null,
-  amount numeric not null,
-  date timestamptz not null,
-  tags text[] default '{}',
-  note text,
-  attachment_ref text
-);
-
--- پرداخت‌های بیمه تامین اجتماعی
-create table if not exists social_insurance (
-  id text primary key,
-  year int not null,
-  month int not null,
-  days_covered int not null default 0,
-  amount numeric not null default 0,
-  pay_date timestamptz not null,
-  receipt_ref text,
-  note text
-);
-```
-
-### RLS (فقط جهت توسعه)
-برای هر جدول بالا، در صورت فعال‌سازی RLS:
-
-```sql
-alter table transactions enable row level security;
-create policy "transactions_open_select" on transactions for select using (true);
-create policy "transactions_open_insert" on transactions for insert with check (true);
-create policy "transactions_open_update" on transactions for update using (true);
-create policy "transactions_open_delete" on transactions for delete using (true);
-
--- همین الگو را برای سایر جداول تکرار کنید یا از UI سیاست‌های مشابه بسازید.
-```
-
-توجه: سیاست‌های فوق «باز» و ناامن هستند و فقط برای تست/توسعه توصیه می‌شوند. برای محیط عملیاتی حتماً کاربران را احراز هویت کنید و سیاست‌های دقیق‌تری بنویسید.
+باکت قدیمی `lm-images` خصوصی است و تصاویر سایر ماژول‌ها را بدون رمزنگاری سمت
+کاربر نگهداری می‌کند؛ نمایش آن‌ها با Signed URL است. خصوصی‌بودن باکت به معنی
+رمزنگاری مرورگر نیست. مشتریان و مدیر رمزِ مهاجرت‌کرده از باکت خصوصی `lm-vault`
+استفاده می‌کنند: فایل، نام و مشخصات پیش از ارسال رمز می‌شوند و فقط در حافظه
+برای نمایش یا دانلود باز می‌شوند. سیاست‌های باکت قدیمی در این تغییر دست‌نخورده‌اند.
 
 ---
 
@@ -281,7 +156,7 @@ create policy "transactions_open_delete" on transactions for delete using (true)
 1) اولین اجرا → تعیین «رمز عبور اصلی» و ورود. این رمز فقط برای رمزگشایی داده‌های حساس در دستگاه شما استفاده می‌شود و قابل بازیابی نیست.
 
 2) داشبورد → انتخاب ماژول:
-- Password Manager: ورودی اضافه کنید؛ داده‌های حساس به‌صورت رمزنگاری‌شده در مرورگر ذخیره و در صورت تنظیم Supabase همگام می‌شود.
+- Password Manager / مشتریان: خزانه را راه‌اندازی کنید، کلید بازیابی و بکاپ را دریافت کنید؛ انتقال رمزهای قدیمی فقط پس از آزمون و تأیید شما نهایی می‌شود. این دو بخش آنلاین‌اند و ذخیرهٔ دائمی مرورگر ندارند.
 - Phone Book: مخاطب اضافه کنید، تصویر بارگذاری کنید، از vCard وارد/خروجی بگیرید.
 - Smart Accountant: تراکنش، دارایی، شخص، دفتر، اقساط و چک‌ها را مدیریت کنید. تصاویر رسید/ضمائم در باکت `lm-images` ذخیره می‌شوند.
 - Daily Tasks: تسک‌ها و پروژه‌ها را مدیریت کنید.
@@ -304,9 +179,9 @@ create policy "transactions_open_delete" on transactions for delete using (true)
 
 ## نکات امنیتی مهم
 
-- رمز عبور اصلی (Master Password) قابل بازیابی نیست. فراموشی آن به معنی عدم دسترسی به داده‌های رمزنگاری‌شده است.
-- باکت `lm-images` اگر Public باشد، لینک فایل‌ها عمومی خواهد بود. در تولید، دسترسی‌ها را محدود کنید.
-- بدون احراز هویت کاربری، جداول با سیاست‌های RLS باز، عمومی هستند. این وضعیت فقط برای توسعه مناسب است.
+- رمز خزانه با کلید بازیابی قابل جایگزینی است. بدون رمز و کلید بازیابی، بازگشایی داده ممکن نیست. رمز ورود Supabase مستقل است.
+- باکت `lm-images` خصوصی است؛ تصاویر از مسیر کنترل‌شده و Signed URL استفاده می‌کنند.
+- دسترسی جدول‌های شخصی باید به کاربر واردشده و مالک همان ردیف محدود بماند؛ سیاست RLS باز اضافه نکنید.
 - هرگز Seed Phrase کیف پول‌ها را با افراد دیگر به اشتراک نگذارید.
 
 ---
@@ -314,8 +189,8 @@ create policy "transactions_open_delete" on transactions for delete using (true)
 ## خطاهای رایج و رفع آن
 
 - پیام «Supabase is not configured»: مقادیر `VITE_SUPABASE_URL` و `VITE_SUPABASE_ANON_KEY` را در `.env` تنظیم و برنامه را ری‌استارت کنید.
-- خطای آپلود تصویر: باکت `lm-images` را بسازید و عمومی کنید (برای توسعه).
-- خطای upsert/JSON: جداول بخش «SQL» را ایجاد کنید.
+- خطای آپلود تصویر: وجود باکت خصوصی `lm-images`، نشست کاربر و سیاست‌های Storage را بررسی کنید.
+- خطای upsert/JSON یا permission denied: کوئری کنترل دسترسی در `supabase/verify-data-api-access.sql` را اجرا و schema و مجوزهای همان جدول را بررسی کنید.
 - تاریخ/زمان: از فرمت ISO استفاده می‌شود؛ نمایش تاریخ جلالی با `jalali-moment` انجام می‌شود.
 
 ---

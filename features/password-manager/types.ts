@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 export type PasswordCategory = 'emails' | 'banks' | 'accounts' | 'wallets' | 'exchanges';
 
 export interface BasePasswordEntry {
+    archived?: boolean;
     id: string;
     category: PasswordCategory;
     image?: string; // base64

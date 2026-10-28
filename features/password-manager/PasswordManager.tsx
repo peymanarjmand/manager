@@ -1,378 +1,315 @@
-import React, { useState, useMemo, ChangeEvent, useRef } from 'react';
-import { PASSWORD_CATEGORIES } from './constants';
-import { AnyPasswordEntry, PasswordCategory } from './types';
-import { confirm } from '../../lib/confirm';
-import { BackIcon, PlusIcon, EditIcon, DeleteIcon, EyeIcon, EyeOffIcon, CloseIcon, AlertIcon, DefaultImageIcon, CopyIcon, CheckCircleIcon } from '../../components/Icons';
-import { usePasswordStore } from './store';
-import { saveImageDataURL, isImageRef, getObjectURLByRef } from '../../lib/idb-images';
-import { useSettingsStore } from '../settings/store';
-import { newId } from '../../lib/id';
+import React, { useEffect, useState } from "react";
+import { PASSWORD_CATEGORIES } from "./constants";
+import type { AnyPasswordEntry, PasswordCategory } from "./types";
+import { loadPasswords, savePassword, usePasswordStore } from "./store";
+import { VaultGate, VaultToolbar } from "../vault/VaultGate";
+import { Gallery } from "../vault/Gallery";
+import {
+  buttonClass,
+  primaryClass,
+  Field,
+  ErrorText,
+  Modal,
+} from "../vault/ui";
+import { history } from "../vault/repository";
+import { tehranDateTime } from "../customers/domain";
 
-type ModalState = {
-    isOpen: boolean;
-    entry: AnyPasswordEntry | null;
-}
-
-// Reusable Input Component
-const FormInput = ({ label, id, value, onChange, type = 'text', required = false, isSecret = false }) => {
-    const [isRevealed, setIsRevealed] = useState(false);
-    return (
-        <div>
-            <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1">{label}</label>
-            <div className="relative">
-                <input
-                    type={isSecret ? (isRevealed ? 'text' : 'password') : type}
-                    id={id}
-                    name={id}
-                    value={value || ''}
-                    onChange={onChange}
-                    required={required}
-                    className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition"
-                />
-                {isSecret && (
-                    <button type="button" onClick={() => setIsRevealed(!isRevealed)} className="absolute inset-y-0 left-0 flex items-center px-3 text-slate-400 hover:text-sky-400" aria-label={isRevealed ? "پنهان کردن" : "نمایش"}>
-                        {isRevealed ? <EyeOffIcon /> : <EyeIcon />}
-                    </button>
-                )}
-            </div>
-        </div>
-    );
+const FIELDS: Record<
+  PasswordCategory,
+  { key: string; label: string; secret?: boolean; multiline?: boolean }[]
+> = {
+  emails: [
+    { key: "email", label: "آدرس ایمیل" },
+    { key: "password", label: "رمز عبور", secret: true },
+    { key: "phone", label: "موبایل مرتبط" },
+    { key: "backupEmail", label: "ایمیل پشتیبان" },
+  ],
+  banks: [
+    { key: "bankName", label: "نام بانک" },
+    { key: "cardNumber", label: "شماره کارت" },
+    { key: "cardPin", label: "رمز کارت", secret: true },
+    { key: "mobileBankUser", label: "نام کاربری همراه بانک" },
+    { key: "mobileBankPass", label: "رمز همراه بانک", secret: true },
+  ],
+  accounts: [
+    { key: "website", label: "نام وب‌سایت یا اپلیکیشن" },
+    { key: "username", label: "نام کاربری" },
+    { key: "password", label: "رمز عبور", secret: true },
+  ],
+  wallets: [
+    { key: "walletName", label: "نام کیف پول" },
+    { key: "address", label: "آدرس کیف پول" },
+    {
+      key: "seedPhrase",
+      label: "عبارت بازیابی",
+      secret: true,
+      multiline: true,
+    },
+  ],
+  exchanges: [
+    { key: "exchangeName", label: "نام صرافی" },
+    { key: "username", label: "نام کاربری" },
+    { key: "password", label: "رمز عبور", secret: true },
+    { key: "email", label: "ایمیل" },
+    { key: "phone", label: "موبایل" },
+  ],
 };
-
-// Form Modal Component
-const ItemFormModal = ({ isOpen, onClose, onSave, entry, category }) => {
-    const [formData, setFormData] = useState(entry || {});
-    const [imagePreview, setImagePreview] = useState(entry?.image || null);
-    if (!isOpen) return null;
-
-    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target as HTMLInputElement;
-        const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined;
-        setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    };
-    
-    const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const base64String = reader.result as string;
-                // Save to IndexedDB and store just a reference
-                const ref = await saveImageDataURL(base64String);
-                setImagePreview(base64String);
-                setFormData(prev => ({...prev, image: ref}));
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        }
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSave(formData);
-    };
-
-    const getTitle = (entry, category) => {
-        if(entry) return "ویرایش مورد";
-        const catInfo = PASSWORD_CATEGORIES.find(c => c.id === category);
-        return `افزودن به ${catInfo?.title || 'لیست'}`;
-    }
-
-    const renderFields = () => {
-        switch (category) {
-            case 'emails': return <>
-                <FormInput label="آدرس ایمیل" id="email" value={formData.email} onChange={handleChange} required />
-                <FormInput label="رمز عبور" id="password" value={formData.password} onChange={handleChange} isSecret />
-                <FormInput label="شماره تلفن متصل" id="phone" value={formData.phone} onChange={handleChange} />
-                <FormInput label="ایمیل پشتیبان" id="backupEmail" value={formData.backupEmail} onChange={handleChange} />
-            </>;
-            case 'banks': return <>
-                <FormInput label="نام بانک" id="bankName" value={formData.bankName} onChange={handleChange} required/>
-                <FormInput label="شماره کارت" id="cardNumber" value={formData.cardNumber} onChange={handleChange} />
-                <FormInput label="رمز کارت" id="cardPin" value={formData.cardPin} onChange={handleChange} isSecret/>
-                <FormInput label="نام کاربری همراه بانک" id="mobileBankUser" value={formData.mobileBankUser} onChange={handleChange} />
-                <FormInput label="رمز عبور همراه بانک" id="mobileBankPass" value={formData.mobileBankPass} onChange={handleChange} isSecret/>
-            </>;
-            case 'accounts': return <>
-                <FormInput label="نام وب‌سایت/اپلیکیشن" id="website" value={formData.website} onChange={handleChange} required/>
-                <FormInput label="نام کاربری" id="username" value={formData.username} onChange={handleChange} />
-                <FormInput label="رمز عبور" id="password" value={formData.password} onChange={handleChange} isSecret/>
-            </>;
-            case 'wallets': return <>
-                <FormInput label="نام کیف پول" id="walletName" value={formData.walletName} onChange={handleChange} required/>
-                <FormInput label="آدرس کیف پول" id="address" value={formData.address} onChange={handleChange} />
-                <div className="bg-amber-500/10 p-3 rounded-md flex items-start ring-1 ring-amber-500/30 text-amber-300 text-xs">
-                    <AlertIcon className="h-5 w-5 text-amber-400 shrink-0 mr-2"/>
-                    <p>هشدار: ذخیره عبارت بازیابی (Seed Phrase) ریسک امنیتی بالایی دارد. با احتیاط کامل عمل کنید.</p>
-                </div>
-                <div>
-                  <label htmlFor="seedPhrase" className="block text-sm font-medium text-slate-300 mb-1">عبارت بازیابی</label>
-                  <textarea id="seedPhrase" name="seedPhrase" value={formData.seedPhrase || ''} onChange={handleChange} rows={3} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition font-mono" />
-                </div>
-            </>;
-            case 'exchanges': return <>
-                <FormInput label="نام صرافی" id="exchangeName" value={formData.exchangeName} onChange={handleChange} required/>
-                <FormInput label="نام کاربری" id="username" value={formData.username} onChange={handleChange} />
-                <FormInput label="رمز عبور" id="password" value={formData.password} onChange={handleChange} isSecret/>
-                <FormInput label="ایمیل متصل" id="email" value={formData.email} onChange={handleChange} />
-                <FormInput label="شماره تلفن متصل" id="phone" value={formData.phone} onChange={handleChange} />
-                <div className="flex items-center">
-                    <input type="checkbox" id="twoFA" name="twoFA" checked={!!formData.twoFA} onChange={handleChange} className="h-4 w-4 rounded border-gray-300 text-sky-600 focus:ring-sky-500"/>
-                    <label htmlFor="twoFA" className="mr-2 block text-sm text-slate-300">تایید دو مرحله‌ای فعال است</label>
-                </div>
-            </>;
-            default: return null;
-        }
-    };
-    
-    return (
-      <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose} role="dialog" aria-modal="true">
-          <div className="bg-slate-800 rounded-xl w-full max-w-lg shadow-2xl ring-1 ring-white/10 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-              <form onSubmit={handleSubmit}>
-                  <div className="flex justify-between items-center p-4 border-b border-white/10 sticky top-0 bg-slate-800 z-10">
-                      <h3 className="text-xl font-bold text-slate-100">{getTitle(entry, category)}</h3>
-                      <button type="button" onClick={onClose} className="text-slate-400 hover:text-white transition">
-                          <CloseIcon />
-                      </button>
-                  </div>
-                  <div className="p-6 space-y-4">
-                      {renderFields()}
-                      <div>
-                          <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">توضیحات</label>
-                          <textarea id="description" name="description" value={formData.description || ''} onChange={handleChange} rows={3} className="w-full bg-slate-700/50 text-white rounded-md py-2 px-3 focus:ring-2 focus:ring-sky-400 focus:outline-none transition" />
-                      </div>
-                      <div>
-                          <label className="block text-sm font-medium text-slate-300 mb-1">تصویر</label>
-                          <div className="mt-1 flex items-center space-x-4 space-x-reverse">
-                              <span className="h-20 w-20 rounded-lg overflow-hidden bg-slate-700 flex items-center justify-center">
-                                  {imagePreview ? <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" /> : <DefaultImageIcon />}
-                              </span>
-                              <label htmlFor="file-upload" className="cursor-pointer bg-slate-700 text-slate-300 font-medium py-2 px-4 rounded-md hover:bg-slate-600 transition">
-                                  <span>بارگذاری تصویر</span>
-                                  <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleImageChange} accept="image/*"/>
-                              </label>
-                          </div>
-                      </div>
-                  </div>
-                  <div className="px-6 py-4 bg-white/[0.04] border-t border-white/10 flex justify-end space-x-3 space-x-reverse sticky bottom-0 z-10">
-                      <button type="button" onClick={onClose} className="py-2 px-4 border border-slate-600 rounded-md text-sm font-medium text-slate-300 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-slate-500 transition">لغو</button>
-                      <button type="submit" className="py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-md text-sm transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-800 focus:ring-sky-400">ذخیره</button>
-                  </div>
-              </form>
-          </div>
-      </div>
-    );
+type Editable = AnyPasswordEntry & {
+  archived?: boolean;
+  [key: string]: unknown;
 };
-
-
-// Item Card Component
-const ItemCard = ({ entry, onEdit, onDelete }) => {
-    const [isRevealed, setIsRevealed] = useState(false);
-    const [objectURL, setObjectURL] = useState<string | null>(null);
-    const settings = useSettingsStore(state => state.settings);
-    const [copied, setCopied] = useState(false);
-    const clearTimerRef = useRef<number | null>(null);
-
-    React.useEffect(() => {
-        let revoked: string | null = null;
-        (async () => {
-            if (entry.image && isImageRef(entry.image)) {
-                const url = await getObjectURLByRef(entry.image);
-                if (url) {
-                    setObjectURL(url);
-                    revoked = url;
-                }
-            }
-        })();
-        return () => {
-            if (revoked) URL.revokeObjectURL(revoked);
-        };
-    }, [entry.image]);
-
-    React.useEffect(() => {
-        return () => {
-            if (clearTimerRef.current) {
-                window.clearTimeout(clearTimerRef.current);
-                clearTimerRef.current = null;
-            }
-        };
-    }, []);
-
-    const getTitle = () => {
-        switch (entry.category) {
-            case 'emails': return entry.email;
-            case 'banks': return entry.bankName;
-            case 'accounts': return entry.website;
-            case 'wallets': return entry.walletName;
-            case 'exchanges': return entry.exchangeName;
-        }
-    };
-    
-    const getSecretField = () => {
-        const secret = entry.password || entry.cardPin || entry.mobileBankPass || '••••••••';
-        return isRevealed ? secret : '••••••••';
-    }
-
-    const getRawSecret = () => (entry.password || entry.cardPin || entry.mobileBankPass || '');
-
-    const handleCopy = async () => {
-        const raw = getRawSecret();
-        if (!raw) return;
-        try {
-            await navigator.clipboard.writeText(raw);
-            setCopied(true);
-            window.setTimeout(() => setCopied(false), 1500);
-            if (settings.clipboardAutoClearEnabled) {
-                const delayMs = Math.max(1, settings.clipboardClearSeconds || 20) * 1000;
-                if (clearTimerRef.current) window.clearTimeout(clearTimerRef.current);
-                clearTimerRef.current = window.setTimeout(async () => {
-                    try {
-                        await navigator.clipboard.writeText('');
-                    } catch (err) {
-                        console.warn('Clipboard clear failed:', err);
-                    }
-                }, delayMs) as unknown as number;
-            }
-        } catch (err) {
-            console.warn('Clipboard write failed:', err);
-        }
-    };
-
-    const hasSecret = entry.password || entry.cardPin || entry.mobileBankPass;
-
-    return (
-        <div className="bg-white/[0.04] rounded-xl p-4 ring-1 ring-white/10 flex flex-col space-y-3 transition-shadow hover:shadow-lg hover:shadow-slate-900/50">
-            <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3 space-x-reverse">
-                    <div className="w-12 h-12 bg-slate-700 rounded-lg flex-shrink-0 flex items-center justify-center">
-                        {entry.image ? <img src={objectURL || (isImageRef(entry.image) ? '' : entry.image)} className="w-full h-full object-cover rounded-lg" alt={getTitle()}/> : <span className="text-slate-500">{PASSWORD_CATEGORIES.find(c => c.id === entry.category).icon}</span>}
-                    </div>
-                    <div>
-                        <h4 className="font-bold text-slate-100 truncate" title={getTitle()}>{getTitle()}</h4>
-                        {entry.username && <p className="text-sm text-slate-400">{entry.username}</p>}
-                        {entry.mobileBankUser && <p className="text-sm text-slate-400">{entry.mobileBankUser}</p>}
-                    </div>
-                </div>
-                <div className="flex items-center space-x-1 space-x-reverse text-slate-400">
-                   <button onClick={() => onEdit(entry)} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-sky-400 transition" aria-label="ویرایش"><EditIcon/></button>
-                   <button onClick={() => onDelete(entry.id)} className="p-1.5 hover:bg-slate-700 rounded-full hover:text-rose-400 transition" aria-label="حذف"><DeleteIcon/></button>
-                </div>
-            </div>
-            {hasSecret && (
-                <div className="flex items-center justify-between bg-slate-900/50 rounded-md px-3 py-1.5">
-                    <span className="text-sm text-slate-300 font-mono tracking-wider">{getSecretField()}</span>
-                    <div className="flex items-center gap-2">
-                        <button onClick={handleCopy} className="text-slate-400 hover:text-emerald-400 transition" title="کپی رمز">
-                            {copied ? <CheckCircleIcon /> : <CopyIcon />}
-                        </button>
-                        <button onClick={() => setIsRevealed(!isRevealed)} className="text-slate-400 hover:text-sky-400 transition" aria-label={isRevealed ? "پنهان کردن رمز" : "نمایش رمز"}>
-                            {isRevealed ? <EyeOffIcon/> : <EyeIcon/>}
-                        </button>
-                    </div>
-                </div>
-            )}
-             {entry.description && <p className="text-sm text-slate-400 pt-1 border-t border-white/10">{entry.description}</p>}
-        </div>
-    );
-}
-
-// Main Component
-export const PasswordManager = ({ onNavigateBack }: { onNavigateBack: () => void; }): React.ReactNode => {
-    const [activeCategory, setActiveCategory] = useState<PasswordCategory>('emails');
-    const [modalState, setModalState] = useState<ModalState>({ isOpen: false, entry: null });
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const entries = usePasswordStore((state) => state.entries);
-    const { saveEntry, deleteEntry } = usePasswordStore.getState();
-
-    const handleSave = (formDataFromModal: Omit<AnyPasswordEntry, 'id' | 'category'> & { id?: string }) => {
-        const entryToSave: AnyPasswordEntry = {
-            ...formDataFromModal,
-            id: formDataFromModal.id || newId(),
-            category: activeCategory,
-        } as AnyPasswordEntry;
-        saveEntry(activeCategory, entryToSave);
-        closeModal();
-    };
-
-    const handleDelete = async (id: string) => {
-        if (await confirm({ title: 'حذف مورد', message: 'آیا از حذف این مورد اطمینان دارید؟ این عمل قابل بازگشت نیست.', confirmText: 'حذف', tone: 'danger' })) {
-            deleteEntry(activeCategory, id);
-        }
-    };
-    
-    const openModal = (entry: AnyPasswordEntry | null = null) => setModalState({ isOpen: true, entry });
-    const closeModal = () => setModalState({ isOpen: false, entry: null });
-
-    const filteredEntries = useMemo(() => {
-        if (!searchTerm) {
-            return entries[activeCategory];
-        }
-        return entries[activeCategory].filter(entry => {
-            const values = Object.values(entry).join(' ').toLowerCase();
-            return values.includes(searchTerm.toLowerCase());
-        })
-    }, [entries, activeCategory, searchTerm]);
-
-    return (
-        <div className="container mx-auto px-4 py-8 sm:py-12">
-            <ItemFormModal
-                isOpen={modalState.isOpen}
-                onClose={closeModal}
-                onSave={handleSave}
-                entry={modalState.entry}
-                category={activeCategory}
+function Editor({
+  entry,
+  category,
+  onClose,
+}: {
+  entry: Editable;
+  category: PasswordCategory;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<Editable>(() => ({ ...entry })),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
+  return (
+    <Modal
+      title="اطلاعات حساب"
+      onClose={() => {
+        if (!busy) onClose();
+      }}
+    >
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!String(draft[FIELDS[category][0].key] || "").trim()) {
+            setError("عنوان اصلی حساب را وارد کنید.");
+            return;
+          }
+          setBusy(true);
+          setError("");
+          void savePassword(category, draft)
+            .then(onClose)
+            .catch((e) => setError(e.message))
+            .finally(() => setBusy(false));
+        }}
+      >
+        <ErrorText>{error}</ErrorText>
+        {FIELDS[category].map((f) => (
+          <Field
+            key={f.key}
+            {...f}
+            value={String(draft[f.key] || "")}
+            onChange={(v) => setDraft({ ...draft, [f.key]: v })}
+          />
+        ))}
+        {category === "exchanges" && (
+          <label className="flex gap-2">
+            <input
+              type="checkbox"
+              checked={!!draft.twoFA}
+              onChange={(e) => setDraft({ ...draft, twoFA: e.target.checked })}
             />
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-                <div className="flex items-center gap-4">
-                     <button onClick={onNavigateBack} className="flex items-center space-x-2 space-x-reverse bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 px-4 rounded-lg transition" title="بازگشت به داشبورد">
-                        <BackIcon />
-                    </button>
-                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">مدیر رمز عبور</h2>
-                </div>
-                <button onClick={() => openModal()} className="w-full sm:w-auto flex items-center justify-center space-x-2 space-x-reverse bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-5 rounded-lg transition">
-                    <PlusIcon />
-                    <span>افزودن</span>
-                </button>
-            </div>
-            
-            {/* Tabs */}
-            <div className="mb-6">
-                <div className="border-b border-white/10">
-                    <nav className="-mb-px flex space-x-4 space-x-reverse overflow-x-auto" aria-label="Tabs">
-                        {PASSWORD_CATEGORIES.map(cat => (
-                            <button key={cat.id} onClick={() => { setActiveCategory(cat.id); setSearchTerm(''); }}
-                                className={`${activeCategory === cat.id ? 'border-sky-400 text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'}
-                                whitespace-nowrap flex items-center py-3 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none`}
-                                aria-current={activeCategory === cat.id ? 'page' : undefined}>
-                                <span className="ml-2">{cat.icon}</span>
-                                {cat.title}
-                            </button>
-                        ))}
-                    </nav>
-                </div>
-            </div>
-
-            {/* Content */}
-            <div>
-                 <div className="mb-6">
-                    <input type="search" placeholder={`جستجو در ${PASSWORD_CATEGORIES.find(c => c.id === activeCategory).title}...`}
-                    value={searchTerm}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white/[0.05] text-white rounded-md py-2.5 px-4 focus:ring-2 focus:ring-sky-400 focus:outline-none transition placeholder-slate-500" />
-                 </div>
-                {filteredEntries.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
-                       {filteredEntries.map((entry: AnyPasswordEntry) => (
-                           <ItemCard entry={entry} onEdit={openModal} onDelete={handleDelete}/>
-                       ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-16 px-6 bg-white/[0.03] rounded-xl ring-1 ring-white/10">
-                        <div className="text-5xl text-slate-600 mb-4">{PASSWORD_CATEGORIES.find(c => c.id === activeCategory).icon}</div>
-                        <h3 className="text-xl font-semibold text-slate-200">هنوز موردی اضافه نشده است</h3>
-                        <p className="text-slate-400 mt-2">برای شروع، روی دکمه "افزودن" کلیک کنید.</p>
-                    </div>
-                )}
-            </div>
+            دومرحله‌ای فعال است
+          </label>
+        )}
+        <Field
+          label="توضیحات"
+          value={draft.description}
+          multiline
+          onChange={(description) => setDraft({ ...draft, description })}
+        />
+        <p className="text-xs text-slate-400">
+          تصاویر را پس از ذخیره، در جزئیات حساب اضافه کنید.
+        </p>
+        <button className={primaryClass} disabled={busy}>
+          {busy ? "در حال تأیید ذخیره…" : "ذخیره"}
+        </button>
+      </form>
+    </Modal>
+  );
+}
+export function PasswordManager({
+  onNavigateBack,
+}: {
+  onNavigateBack: () => void;
+}) {
+  return (
+    <VaultGate onBack={onNavigateBack}>
+      <PasswordContent onBack={onNavigateBack} />
+    </VaultGate>
+  );
+}
+function PasswordContent({ onBack }: { onBack: () => void }) {
+  const state = usePasswordStore(),
+    [category, setCategory] = useState<PasswordCategory>("emails"),
+    [search, setSearch] = useState(""),
+    [archived, setArchived] = useState(false),
+    [editing, setEditing] = useState<Editable | null>(null),
+    [selected, setSelected] = useState<string | null>(null),
+    [error, setError] = useState(""),
+    [versions, setVersions] = useState<Awaited<
+      ReturnType<typeof history>
+    > | null>(null);
+  useEffect(() => {
+    void loadPasswords().catch(() => {});
+  }, []);
+  const entries = state.entries[category] as Editable[],
+    chosen = entries.find((e) => e.id === selected);
+  return (
+    <section dir="rtl" className="max-w-4xl mx-auto p-4 space-y-5">
+      <header className="flex justify-between gap-3 flex-wrap">
+        <div className="flex gap-3 items-center">
+          <button className={buttonClass} onClick={onBack}>
+            بازگشت
+          </button>
+          <h1 className="text-xl font-bold">مدیر رمز عبور</h1>
         </div>
-    );
-};
+        <VaultToolbar />
+      </header>
+      <ErrorText>{error || state.error}</ErrorText>
+      {!state.loaded ? (
+        <button
+          className={buttonClass}
+          onClick={() => void loadPasswords().catch(() => {})}
+        >
+          دریافت کامل اطلاعات
+        </button>
+      ) : (
+        <>
+          <nav className="flex overflow-x-auto gap-2">
+            {PASSWORD_CATEGORIES.map((c) => (
+              <button
+                key={c.id}
+                className={`${buttonClass} whitespace-nowrap ${c.id === category ? "bg-teal-800" : ""}`}
+                onClick={() => {
+                  setCategory(c.id);
+                  setSelected(null);
+                }}
+              >
+                {c.title}
+              </button>
+            ))}
+          </nav>
+          <div className="flex gap-3 flex-wrap">
+            <button
+              className={primaryClass}
+              onClick={() =>
+                setEditing({ id: crypto.randomUUID(), category } as Editable)
+              }
+            >
+              افزودن حساب
+            </button>
+            <button
+              className={buttonClass}
+              onClick={() => setArchived(!archived)}
+            >
+              {archived ? "حساب‌های فعال" : "بایگانی"}
+            </button>
+            <button
+              className={buttonClass}
+              onClick={() => void loadPasswords().catch(() => {})}
+            >
+              به‌روزرسانی
+            </button>
+          </div>
+          <Field
+            label="جست‌وجو در نام و ایمیل حساب"
+            value={search}
+            onChange={setSearch}
+          />
+          <div className="grid sm:grid-cols-2 gap-3">
+            {entries
+              .filter((e) => !!e.archived === archived)
+              .filter((e) =>
+                FIELDS[category]
+                  .filter((f) => !f.secret)
+                  .map((f) => e[f.key])
+                  .join(" ")
+                  .toLocaleLowerCase("fa")
+                  .includes(search.toLocaleLowerCase("fa")),
+              )
+              .map((e) => (
+                <button
+                  key={e.id}
+                  className="p-5 bg-slate-900 border border-slate-700 rounded-2xl text-right break-all"
+                  onClick={() => {
+                    setSelected(e.id);
+                    setVersions(null);
+                  }}
+                >
+                  {String(e[FIELDS[category][0].key] || "حساب")}
+                </button>
+              ))}
+          </div>
+        </>
+      )}
+      {chosen && !editing && (
+        <Modal
+          title={String(chosen[FIELDS[category][0].key] || "حساب")}
+          onClose={() => setSelected(null)}
+        >
+          <div className="space-y-4">
+            <div className="flex gap-2 flex-wrap">
+              <button
+                className={primaryClass}
+                onClick={() => setEditing(chosen)}
+              >
+                ویرایش
+              </button>
+              <button
+                className={buttonClass}
+                onClick={() =>
+                  void savePassword(category, {
+                    ...chosen,
+                    archived: !chosen.archived,
+                  }).catch((e) => setError(e.message))
+                }
+              >
+                {chosen.archived ? "خروج از بایگانی" : "بایگانی"}
+              </button>
+              <button
+                className={buttonClass}
+                onClick={() =>
+                  void history("password", "lifeManagerPasswords")
+                    .then(setVersions)
+                    .catch((e) => setError(e.message))
+                }
+              >
+                تاریخچه
+              </button>
+            </div>
+            {FIELDS[category].map((f) => (
+              <Field key={f.key} {...f} value={String(chosen[f.key] || "")} />
+            ))}
+            {category === "exchanges" && (
+              <Field
+                label="دومرحله‌ای"
+                value={chosen.twoFA ? "فعال" : "غیرفعال"}
+              />
+            )}
+            <Field label="توضیحات" value={chosen.description} multiline />
+            <Gallery parent={{ kind: "password", id: chosen.id }} />
+            {versions &&
+              versions.map((v) => (
+                <Field
+                  key={v.revision}
+                  label={`نسخهٔ ${v.revision} · ${tehranDateTime(v.recorded_at)}`}
+                  secret
+                  multiline
+                  value={JSON.stringify(v.data, null, 2)}
+                />
+              ))}
+          </div>
+        </Modal>
+      )}
+      {editing && (
+        <Editor
+          key={editing.id}
+          entry={editing}
+          category={category}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </section>
+  );
+}

@@ -1,12 +1,9 @@
 import { supabase, SUPABASE_ENABLED } from './supabase';
 
 // Supabase-backed KV storage for persisted JSON states with local fallback
-// Table schema expectation:
-// create table if not exists kv_store (
-//   id text primary key,
-//   value jsonb not null,
-//   updated_at timestamptz default now()
-// );
+// Schema/RLS/grants setup: see supabase/README.md and its user-owned-table template.
+// The live table also has user_id with ownership RLS; do not recreate it from
+// a simplified { id, value, updated_at } shape or rely on automatic API grants.
 
 export const supabaseStateStorage = {
   async getItem(key: string): Promise<string | null> {

@@ -2,14 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import moment from 'jalali-moment';
 import {
   Car, Calculator, ClipboardCheck, HeartPulse, KeyRound, Coins, Phone, Settings as SettingsIcon,
-  ArrowDownLeft, ArrowUpRight,
+  ArrowDownLeft, ArrowUpRight, BriefcaseBusiness,
 } from 'lucide-react';
 import { DASHBOARD_ITEMS } from './constants';
-import { DashboardItem, View } from '../../types';
+import { View, DashboardItem } from '../../types';
 import { DateTimeDisplay } from '../../components/DateTimeDisplay';
 import { FocusTimer } from './components/FocusTimer';
 import { SettingsModal } from '../settings/SettingsModal';
-import { useDashboardStore } from './store';
 import { useAccountantStore } from '../smart-accountant/store';
 import { getNextUnpaidInstallment, computeTomanReceivablesPayables, computeMonthInstallmentTotals } from '../smart-accountant/calculations';
 import { formatCurrency } from '../smart-accountant/SmartAccountantShared';
@@ -20,6 +19,7 @@ type IconCmp = React.ComponentType<{ size?: number; className?: string; strokeWi
 const MOD: Record<string, { Icon: IconCmp; chip: string; icon: string }> = {
   'my-car': { Icon: Car, chip: 'bg-brand-500/15', icon: 'text-brand-300' },
   'smart-accountant': { Icon: Calculator, chip: 'bg-emerald-500/15', icon: 'text-emerald-300' },
+  customers: { Icon: BriefcaseBusiness, chip: 'bg-sky-500/15', icon: 'text-sky-300' },
   'daily-tasks': { Icon: ClipboardCheck, chip: 'bg-rose-500/15', icon: 'text-rose-300' },
   'health-dashboard': { Icon: HeartPulse, chip: 'bg-pink-500/15', icon: 'text-pink-300' },
   'password-manager': { Icon: KeyRound, chip: 'bg-violet-500/15', icon: 'text-violet-300' },
@@ -32,7 +32,6 @@ const fa = (n: number) => n.toLocaleString('fa-IR');
 
 export const Dashboard = ({ onNavigate }: { onNavigate: (view: View) => void }): React.ReactNode => {
   const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
-  const itemsOrder = useDashboardStore((state) => state.itemsOrder);
 
   const installments = useAccountantStore((s) => s.installments);
   const ledger = useAccountantStore((s) => s.ledger);
@@ -51,15 +50,6 @@ export const Dashboard = ({ onNavigate }: { onNavigate: (view: View) => void }):
   }, [installments]);
   const dueLabel = useMemo(() => (nextInst ? moment(nextInst.dueDate).locale('fa').format('jD jMMMM') : ''), [nextInst]);
 
-  const orderedItems: DashboardItem[] = useMemo(() => {
-    const map = new Map(DASHBOARD_ITEMS.map((i) => [i.id, i] as const));
-    const ordered: DashboardItem[] = [];
-    (itemsOrder || []).forEach((id) => {
-      const it = map.get(id);
-      if (it) { ordered.push(it); map.delete(id); }
-    });
-    return [...ordered, ...DASHBOARD_ITEMS.filter((i) => map.has(i.id))];
-  }, [itemsOrder]);
 
   const openItem = (item: DashboardItem) => {
     if (item.id === 'settings') setSettingsModalOpen(true);
@@ -131,7 +121,7 @@ export const Dashboard = ({ onNavigate }: { onNavigate: (view: View) => void }):
       {/* Modules */}
       <h2 className="mt-7 mb-3 text-base font-medium text-slate-200">ابزارها</h2>
       <div className="grid grid-cols-4 gap-x-3 gap-y-4">
-        {orderedItems.map((item) => {
+        {DASHBOARD_ITEMS.map((item) => {
           const m = MOD[item.id] || MOD.settings;
           return (
             <button key={item.id} onClick={() => openItem(item)} className="flex flex-col items-center gap-2 transition active:scale-95">

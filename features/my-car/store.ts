@@ -4,51 +4,10 @@ import { enqueue } from '../../lib/outbox';
 import { MyCarState } from './types';
 import type { Vehicle, VehicleInsurance, VehicleMaintenanceRecord, VehicleExpense } from './types';
 
-// Expected Supabase schema (PostgreSQL):
-// 
-// create table if not exists vehicles (
-//   id text primary key,
-//   name text not null,
-//   brand text,
-//   model text,
-//   year int,
-//   plate_number text,
-//   color text,
-//   engine_number text,
-//   chassis_number text,
-//   vin text,
-//   image_ref text,
-//   created_at timestamptz default now()
-// );
-//
-// create table if not exists vehicle_insurances (
-//   id text primary key,
-//   vehicle_id text not null references vehicles(id) on delete cascade,
-//   type text not null check (type in ('third_party','body')),
-//   company text,
-//   policy_number text,
-//   start_date date not null,
-//   end_date date not null,
-//   discount_percent numeric,
-//   premium_amount numeric,
-//   coverage_description text,
-//   document_ref text,
-//   created_at timestamptz default now()
-// );
-//
-// create table if not exists vehicle_maintenances (
-//   id text primary key,
-//   vehicle_id text not null references vehicles(id) on delete cascade,
-//   service_date date not null,
-//   odometer_km numeric,
-//   next_odometer_km numeric,
-//   items_description text not null,
-//   next_service_date date,
-//   cost numeric,
-//   notes text,
-//   invoice_ref text,
-//   created_at timestamptz default now()
-// );
+// Database setup: see supabase/README.md. Existing vehicle tables include
+// user_id and ownership RLS (child-table policies also check the parent vehicle).
+// Use the reviewed schema for new environments; new-table migrations must
+// include RLS, ownership policies, and explicit Data API grants together.
 
 function genId() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {

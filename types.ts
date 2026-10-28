@@ -247,6 +247,7 @@ export interface VehicleExpense {
 
 export type View =
   | 'dashboard'
+  | 'customers'
   | 'password-manager'
   | 'smart-accountant'
   | 'phone-book'

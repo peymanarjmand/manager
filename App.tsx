@@ -9,8 +9,10 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { SyncIndicator } from './components/SyncIndicator';
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
 import { BottomNav } from './components/BottomNav';
+import { initializeVault, installVaultLock, lockVault } from './features/vault/session';
 
 const PasswordManager = React.lazy(() => import('./features/password-manager/PasswordManager').then(m => ({ default: m.PasswordManager })));
+const Customers = React.lazy(() => import('./features/customers/Customers').then(m => ({ default: m.Customers })));
 const PhoneBook = React.lazy(() => import('./features/phone-book/PhoneBook').then(m => ({ default: m.PhoneBook })));
 const SmartAccountant = React.lazy(() => import('./features/smart-accountant/SmartAccountant.tsx').then(m => ({ default: m.SmartAccountant })));
 const Assets = React.lazy(() => import('./features/assets/Assets').then(m => ({ default: m.Assets })));
@@ -28,6 +30,12 @@ function App(): React.ReactNode {
   const [session, setSession] = useState<any>(null);
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    installVaultLock();
+    if (session?.user?.id) void initializeVault(session.user.id);
+    else lockVault(true);
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (!SUPABASE_ENABLED) {
@@ -100,7 +108,7 @@ function App(): React.ReactNode {
     if (!go) return;
     const modules: View[] = [
       'smart-accountant', 'assets', 'daily-tasks', 'my-car',
-      'phone-book', 'darfak', 'health-dashboard', 'password-manager',
+      'phone-book', 'darfak', 'health-dashboard', 'password-manager', 'customers',
     ];
     const url = new URL(window.location.href);
     url.searchParams.delete('go');
@@ -113,6 +121,7 @@ function App(): React.ReactNode {
   }, []);
 
   const handleLogout = async () => {
+    lockVault(true);
     await supabase.auth.signOut();
     setSession(null);
     // window.location.reload();
@@ -175,6 +184,7 @@ function App(): React.ReactNode {
             <Suspense fallback={<div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Loading...</div>}>
               {currentView === 'health-dashboard' && <HealthDashboard onNavigateBack={() => handleNavigate('dashboard')} />}
               {currentView === 'password-manager' && <PasswordManager onNavigateBack={() => handleNavigate('dashboard')} />}
+              {currentView === 'customers' && <Customers onNavigateBack={() => handleNavigate('dashboard')} />}
               {currentView === 'smart-accountant' && <SmartAccountant onNavigateBack={() => handleNavigate('dashboard')} />}
               {currentView === 'phone-book' && <PhoneBook onNavigateBack={() => handleNavigate('dashboard')} />}
               {currentView === 'daily-tasks' && <DailyTasks onNavigateBack={() => handleNavigate('dashboard')} />}
